@@ -575,9 +575,7 @@ export const initVoiceAddBridge = () => {
   }
 
   const getVoiceBtn = () => {
-    const el =
-      document.getElementById('startVoiceCaptureGlobal') ||
-      document.getElementById('quickAddVoice');
+    const el = document.getElementById('startVoiceCaptureGlobal');
     return el instanceof HTMLElement ? el : null;
   };
 

@@ -4,14 +4,14 @@
 
 - **Mobile runtime (primary):** `mobile.html` loads `js/reminders.js` (module), `mobile.js` (module), and `js/assistant.js` for assistant form behavior.
 - **Legacy shell runtime:** `index.html` loads `state.js` and root `assistant.js`.
-- **Shared routing/navigation utilities:** `js/router.js` (hash-route toggling for legacy shell) and `js/navigation.js` (drawer/quick-add/global `app:navigate` handling in mobile contexts).
+- **Shared routing/navigation utilities:** `js/router.js` (hash-route toggling for legacy shell) and `js/navigation.js` (drawer/universal-capture/global `app:navigate` handling in mobile contexts).
 - **Server endpoints (Cloudflare Pages Functions):** `functions/api/assistant-chat.ts`, `functions/api/parse-entry.js`, `functions/api/embed.ts`, and `functions/api/push-reminder-sync.js`. (The Vercel-era `api/assistant.ts`, `api/chat.ts`, `api/search.ts`, and `api/capture.js` endpoints have been removed.)
 
 ## 1) All capture entry points
 
 ### Mobile capture entry points
-- `#universalInput` in `mobile.html` capture view.
-- Reminder quick-add form/input (`#quickAddForm`, `#quickAddInput`) used by reminders flow.
+- Fixed `#thinkingBarInput` / `#thinkingBarForm` in `mobile.html`, used as the single freeform capture surface.
+- Non-visual `memoryCueQuickAddNow({ forceText })` seam used for Inbox-to-reminder conversion and regression coverage.
 - FAB "new reminder" action dispatching `cue:prepare`/`cue:open`.
 - Inbox quick-actions "Create Reminder" and "Convert to Note" in `js/entries.js`.
 - Smart capture path in `mobile.js` (`sendAssistantMessage` flow) that classifies text and routes to assistant/reminder/inbox.
@@ -62,7 +62,7 @@ The Vercel-era `POST /api/assistant`, `POST /api/chat`, `POST /api/search`, and 
 - **Custom-event navigation:** mobile shell dispatches and listens for `window` `CustomEvent('app:navigate', { detail: { view }})`.
 - **View toggles:** mobile view panels use `data-view` + `hidden`/`aria-hidden` switching.
 - **Bottom nav:** `mobile.html` footer buttons with `data-nav-target` dispatch `app:navigate`.
-- **Drawer/quick-add controls:** `js/navigation.js` manages drawer open/close and quick-add panel visibility.
+- **Drawer/global capture controls:** `js/navigation.js` manages drawer open/close and focuses the universal capture bar when requested.
 
 ## 6) Which files control each system
 

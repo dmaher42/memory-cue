@@ -1,4 +1,3 @@
-import { captureInput } from '../core/capturePipeline.js';
 import { addDelegatedEvent } from './uiEvents.js';
 
 export const dispatchReminderSheetOpen = (trigger, prefillText = '') => {
@@ -34,76 +33,8 @@ export const dispatchReminderSheetOpen = (trigger, prefillText = '') => {
 };
 
 export function initQuickCapture() {
-  const quickForm = document.getElementById('quickAddForm');
-  const quickInput = document.getElementById('reminderQuickAdd');
-  const voiceButton =
-    quickInput instanceof HTMLInputElement
-      ? document.getElementById('startVoiceCaptureGlobal')
-      : null;
-
-  const startVoiceCapture = () => {
-    if (!(quickInput instanceof HTMLInputElement)) return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (typeof SpeechRecognition !== 'function') {
-      window.alert('Voice capture not supported on this device.');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = document.documentElement.lang || 'en-US';
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = (event) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript;
-      if (typeof transcript !== 'string') return;
-      quickInput.value = transcript.trim();
-      quickInput.dispatchEvent(new Event('input', { bubbles: true }));
-      try { quickInput.focus({ preventScroll: true }); } catch { quickInput.focus(); }
-    };
-    recognition.onerror = (event) => {
-      if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
-        window.alert('Voice capture not supported on this device.');
-      }
-    };
-    recognition.start();
-  };
-
   addDelegatedEvent('click', '[data-trigger="open-cue"]', (event, trigger) => {
     event.preventDefault();
     dispatchReminderSheetOpen(trigger);
-  });
-
-  if (voiceButton instanceof HTMLElement) {
-    voiceButton.addEventListener('click', startVoiceCapture);
-  }
-
-  if (!(quickForm instanceof HTMLFormElement) || !(quickInput instanceof HTMLInputElement)) return;
-  if (typeof window.memoryCueQuickAddNow === 'function') return;
-
-  quickForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const text = (quickInput.value || '').trim();
-    if (!text) return;
-
-    console.log('[ui]', 'quick capture triggered');
-    try {
-      const result = await captureInput({ text, source: 'quick_capture' });
-      const reply = typeof result?.message === 'string' ? result.message.trim() : '';
-      const needsFollowUp = reply.endsWith('?');
-      const output = document.getElementById('assistantOutput');
-
-      if (output instanceof HTMLElement && reply) {
-        output.textContent = reply;
-      } else if (needsFollowUp && reply) {
-        window.alert(reply);
-      }
-
-      if (!needsFollowUp) {
-        quickInput.value = '';
-        quickInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    } catch (error) {
-      console.error('Quick capture failed', error);
-    }
   });
 }

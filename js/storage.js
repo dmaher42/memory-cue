@@ -509,7 +509,7 @@
   // Voice notes (integrate with existing voice functionality)
   document.getElementById('voiceNotes')?.addEventListener('click', () => {
     // Trigger existing voice functionality if available
-    const voiceBtn = document.getElementById('voiceBtn') || document.getElementById('quickAddVoice');
+    const voiceBtn = document.getElementById('voiceBtn');
     if (voiceBtn) {
       voiceBtn.click();
     } else {

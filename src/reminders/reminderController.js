@@ -1057,8 +1057,6 @@ export async function initReminders(sel = {}) {
   const emptyStateEl = $(sel.emptyStateSel);
   const listWrapper = $(sel.listWrapperSel);
   const categoryDatalist = $(sel.categoryOptionsSel);
-  const quickCategorySelect =
-    typeof document !== 'undefined' ? document.getElementById('quickAddCategory') : null;
   const categoryChoiceButtons =
     typeof document !== 'undefined'
       ? Array.from(document.querySelectorAll('[data-category-choice]'))
@@ -1356,24 +1354,6 @@ export async function initReminders(sel = {}) {
     } catch {}
   }
 
-  function ensureQuickCategoryOption(value) {
-    if (!quickCategorySelect || typeof quickCategorySelect.querySelectorAll !== 'function') {
-      return null;
-    }
-    const normalized = normalizeCategory(value);
-    const existing = Array.from(quickCategorySelect.querySelectorAll('option')).find(
-      (option) => option.value.trim().toLowerCase() === normalized.toLowerCase(),
-    );
-    if (existing) {
-      return existing.value;
-    }
-    const option = document.createElement('option');
-    option.value = normalized;
-    option.textContent = normalized;
-    quickCategorySelect.appendChild(option);
-    return normalized;
-  }
-
   function syncCategoryChoiceState(value = categoryInput?.value) {
     const activeCategory = normalizeCategory(value).toLowerCase();
     let matchesBoardColumn = false;
@@ -1439,10 +1419,6 @@ export async function initReminders(sel = {}) {
       // repeat: entry?.repeat || prev.repeat || null,
     };
     saveLastDefaults(next);
-    const quickCategoryValue = ensureQuickCategoryOption(next.category);
-    if (quickCategorySelect && quickCategoryValue) {
-      quickCategorySelect.value = quickCategoryValue;
-    }
     syncCategoryChoiceState(next.category);
   }
 
@@ -1494,10 +1470,6 @@ export async function initReminders(sel = {}) {
     const d = loadLastDefaults();
     const categoryValue = normalizeCategory(d.category || categoryInput?.value || DEFAULT_CATEGORY);
     if (categoryInput) categoryInput.value = categoryValue;
-    const quickCategoryValue = ensureQuickCategoryOption(categoryValue);
-    if (quickCategorySelect && quickCategoryValue) {
-      quickCategorySelect.value = quickCategoryValue;
-    }
     syncCategoryChoiceState(categoryValue);
     if (d.priority) setPriorityInputValue(d.priority);
   }
@@ -1534,72 +1506,9 @@ export async function initReminders(sel = {}) {
 
   categoryInput?.addEventListener('input', () => syncCategoryChoiceState(categoryInput.value));
   categoryInput?.addEventListener('change', () => syncCategoryChoiceState(categoryInput.value));
-  quickCategorySelect?.addEventListener('change', () => {
-    const categoryValue = normalizeCategory(quickCategorySelect.value);
-    const previous = loadLastDefaults();
-    saveLastDefaults({
-      ...previous,
-      category: categoryValue,
-    });
-    if (categoryInput) {
-      categoryInput.value = categoryValue;
-    }
-    syncCategoryChoiceState(categoryValue);
-  });
 
   applyStoredDefaultsToInputs();
-
-  const quickForm =
-    typeof document !== 'undefined' ? document.getElementById('quickAddForm') : null;
-  const quickInput =
-    typeof document !== 'undefined' ? document.getElementById('reminderQuickAdd') : null;
-  const quickBtn =
-    typeof document !== 'undefined'
-      ? document.getElementById('quickAddSubmit') || document.querySelector('[data-quick-add-submit]')
-      : null;
-  const quickVoiceBtn =
-    typeof document !== 'undefined'
-      ? document.getElementById('quickAddVoice') || document.getElementById('voiceBtn')
-      : null;
-  const quickOptionsToggle =
-    typeof document !== 'undefined' ? document.getElementById('quickAddOptionsToggle') : null;
-  const quickOptionsPanel =
-    typeof document !== 'undefined' ? document.getElementById('quickAddOptions') : null;
-  const quickAddParsingIndicator =
-    typeof document !== 'undefined' ? document.getElementById('quickAddParsingIndicator') : null;
-  const quickAddSuccessIndicator =
-    typeof document !== 'undefined' ? document.getElementById('quickAddSuccessIndicator') : null;
-  const pillVoiceBtn =
-    typeof document !== 'undefined' ? document.querySelector('.pill-voice-btn') : null;
-  // Track the currently focused input mode to prevent cross-triggering between quick add and search.
-  let activeMode = null;
   let isQuickAddSubmitting = false;
-  let stopQuickAddVoiceListening = null;
-
-  const setQuickOptionsOpen = (shouldOpen) => {
-    if (!(quickOptionsToggle instanceof HTMLElement) || !(quickOptionsPanel instanceof HTMLElement)) {
-      return;
-    }
-    quickOptionsToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-    quickOptionsPanel.hidden = !shouldOpen;
-  };
-
-  quickOptionsToggle?.addEventListener('click', () => {
-    setQuickOptionsOpen(quickOptionsToggle.getAttribute('aria-expanded') !== 'true');
-  });
-
-  quickForm?.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || quickOptionsToggle?.getAttribute('aria-expanded') !== 'true') {
-      return;
-    }
-    event.preventDefault();
-    setQuickOptionsOpen(false);
-    quickOptionsToggle.focus();
-  });
-
-  quickForm?.querySelector('[data-open-add-task]')?.addEventListener('click', () => {
-    setQuickOptionsOpen(false);
-  });
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
   const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
@@ -2284,11 +2193,6 @@ export async function initReminders(sel = {}) {
       return;
     }
 
-    // Keep search behavior scoped to the search field focus state.
-    inboxSearchInput.addEventListener('focus', () => {
-      activeMode = 'search';
-    });
-
     const formatDateLabel = (timestamp) => {
       if (!Number.isFinite(timestamp)) {
         return 'No date';
@@ -2432,7 +2336,7 @@ export async function initReminders(sel = {}) {
     }
 
     const runSearch = async () => {
-      if (activeMode !== 'search' && document.activeElement !== inboxSearchInput) {
+      if (document.activeElement !== inboxSearchInput) {
         return;
       }
       const query = inboxSearchInput.value || '';
@@ -2516,7 +2420,7 @@ export async function initReminders(sel = {}) {
     };
 
     const queueAutocomplete = () => {
-      if (activeMode !== 'search' && document.activeElement !== inboxSearchInput) {
+      if (document.activeElement !== inboxSearchInput) {
         return;
       }
       const trimmed = (inboxSearchInput.value || '').trim();
@@ -2603,22 +2507,15 @@ export async function initReminders(sel = {}) {
   }
 
   async function quickAddNow(options = {}) {
-    const forcedText = typeof options.forceText === 'string' ? options.forceText.trim() : '';
-    if (!quickInput && !forcedText) return null;
     if (isQuickAddSubmitting) {
       return null;
-    }
-    if (typeof stopQuickAddVoiceListening === 'function') {
-      try {
-        stopQuickAddVoiceListening();
-      } catch {}
     }
     const text =
       typeof options.forceText === 'string'
         ? options.forceText
         : typeof options.text === 'string'
           ? options.text
-          : (quickInput.value || '').trim();
+          : '';
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
@@ -2633,16 +2530,6 @@ export async function initReminders(sel = {}) {
       : 'quick-add';
 
     isQuickAddSubmitting = true;
-    if (quickInput && typeof quickInput.disabled !== 'undefined') {
-      quickInput.disabled = true;
-      quickInput.setAttribute('aria-busy', 'true');
-    }
-    if (quickAddParsingIndicator instanceof HTMLElement) {
-      quickAddParsingIndicator.hidden = false;
-    }
-    if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
-      quickBtn.disabled = true;
-    }
 
     let entry = null;
 
@@ -2655,70 +2542,58 @@ export async function initReminders(sel = {}) {
       if (routed.kind === 'reflection') {
         entry = saveReflectionQuickNote(routedText);
       } else {
-          const basePayload = buildQuickReminder(inferredSchedule.cleanedText || routedText);
-          if (quickCategorySelect && typeof quickCategorySelect.value === 'string') {
-            basePayload.category = normalizeCategory(quickCategorySelect.value);
-          }
-          const optionDueIso =
-            options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
-              ? options.dueDate.toISOString()
-              : typeof options?.dueDate === 'string' && options.dueDate.trim()
-                ? options.dueDate.trim()
-                : null;
+        const basePayload = buildQuickReminder(inferredSchedule.cleanedText || routedText);
+        const optionDueIso =
+          options?.dueDate instanceof Date && !Number.isNaN(options.dueDate.getTime())
+            ? options.dueDate.toISOString()
+            : typeof options?.dueDate === 'string' && options.dueDate.trim()
+              ? options.dueDate.trim()
+              : null;
 
-          if (optionDueIso) {
-            basePayload.dueAt = optionDueIso;
-          } else if (inferredSchedule.dueDate instanceof Date && !Number.isNaN(inferredSchedule.dueDate.getTime())) {
-            basePayload.dueAt = inferredSchedule.dueDate.toISOString();
-          }
-          if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
-            basePayload.notifyAt = options.notifyAt.toISOString();
-          } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
-            basePayload.notifyAt = options.notifyAt.trim();
-          } else if (inferredSchedule.notifyAt instanceof Date && !Number.isNaN(inferredSchedule.notifyAt.getTime())) {
-            basePayload.notifyAt = inferredSchedule.notifyAt.toISOString();
-          }
+        if (optionDueIso) {
+          basePayload.dueAt = optionDueIso;
+        } else if (inferredSchedule.dueDate instanceof Date && !Number.isNaN(inferredSchedule.dueDate.getTime())) {
+          basePayload.dueAt = inferredSchedule.dueDate.toISOString();
+        }
+        if (options?.notifyAt instanceof Date && !Number.isNaN(options.notifyAt.getTime())) {
+          basePayload.notifyAt = options.notifyAt.toISOString();
+        } else if (typeof options?.notifyAt === 'string' && options.notifyAt.trim()) {
+          basePayload.notifyAt = options.notifyAt.trim();
+        } else if (inferredSchedule.notifyAt instanceof Date && !Number.isNaN(inferredSchedule.notifyAt.getTime())) {
+          basePayload.notifyAt = inferredSchedule.notifyAt.toISOString();
+        }
 
-          if (typeof options?.category === 'string' && options.category.trim()) {
-            basePayload.category = options.category.trim();
-          }
-          if (typeof options?.priority === 'string' && options.priority.trim()) {
-            basePayload.priority = options.priority.trim();
-          }
-          if (typeof options?.notes === 'string' && options.notes.trim()) {
-            basePayload.notes = options.notes.trim();
-          }
+        if (typeof options?.category === 'string' && options.category.trim()) {
+          basePayload.category = options.category.trim();
+        }
+        if (typeof options?.priority === 'string' && options.priority.trim()) {
+          basePayload.priority = options.priority.trim();
+        }
+        if (typeof options?.notes === 'string' && options.notes.trim()) {
+          basePayload.notes = options.notes.trim();
+        }
 
-          if (routed.kind === 'task') {
-            basePayload.category = 'Tasks';
-          } else if (routed.kind === 'footy-drill') {
-            basePayload.category = 'Footy – Drills';
-          }
+        if (routed.kind === 'task') {
+          basePayload.category = 'Tasks';
+        } else if (routed.kind === 'footy-drill') {
+          basePayload.category = 'Footy – Drills';
+        }
 
-          entry = createReminderFromPayload(basePayload, { closeSheet: false });
-          if (quickAddSource !== 'inbox-swipe') {
-            saveInboxEntry({
-              text: t,
-              source: quickAddSource,
-              parsedType: 'reminder',
-              entryPoint: 'reminders.quickAddNow',
-              metadata: {
-                mirroredReminderId: entry?.id || null,
-              },
-            });
-          }
+        entry = createReminderFromPayload(basePayload, { closeSheet: false });
+        if (quickAddSource !== 'inbox-swipe') {
+          saveInboxEntry({
+            text: t,
+            source: quickAddSource,
+            parsedType: 'reminder',
+            entryPoint: 'reminders.quickAddNow',
+            metadata: {
+              mirroredReminderId: entry?.id || null,
+            },
+          });
+        }
       }
 
       if (entry && typeof document !== 'undefined') {
-        setQuickOptionsOpen(false);
-        if (quickInput instanceof HTMLInputElement) {
-          quickInput.value = '';
-          try {
-            quickInput.focus({ preventScroll: true });
-          } catch {
-            quickInput.focus();
-          }
-        }
         try {
           document.dispatchEvent(
             new CustomEvent('reminder:quick-add:complete', { detail: { entry } }),
@@ -2726,24 +2601,8 @@ export async function initReminders(sel = {}) {
         } catch {
           // Ignore dispatch issues so the add flow can finish silently.
         }
-        if (quickAddSuccessIndicator instanceof HTMLElement) {
-          quickAddSuccessIndicator.hidden = false;
-          setTimeout(() => {
-            quickAddSuccessIndicator.hidden = true;
-          }, 1200);
-        }
       }
     } finally {
-      if (quickInput && typeof quickInput.disabled !== 'undefined') {
-        quickInput.disabled = false;
-        quickInput.setAttribute('aria-busy', 'false');
-      }
-      if (quickAddParsingIndicator instanceof HTMLElement) {
-        quickAddParsingIndicator.hidden = true;
-      }
-      if (quickBtn && typeof quickBtn.disabled !== 'undefined') {
-        quickBtn.disabled = false;
-      }
       isQuickAddSubmitting = false;
     }
 
@@ -2754,234 +2613,7 @@ export async function initReminders(sel = {}) {
     window.memoryCueQuickAddNow = quickAddNow;
   }
 
-  quickBtn?.addEventListener('click', () => {
-    activeMode = 'quick-add';
-    quickAddNow();
-  });
-
-  quickInput?.addEventListener('focus', () => {
-    activeMode = 'quick-add';
-    // Clear search dropdown when user switches into quick add mode.
-    const inboxSearchResults = document.getElementById('inboxSearchResults');
-    if (inboxSearchResults) {
-      inboxSearchResults.innerHTML = '';
-      inboxSearchResults.dataset.mode = '';
-    }
-  });
-
-  quickInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === 'NumpadEnter') {
-      if (activeMode !== 'quick-add' && document.activeElement !== quickInput) {
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      quickAddNow();
-    }
-  });
-
-  quickForm?.addEventListener('submit', (event) => {
-    if (activeMode !== 'quick-add' && document.activeElement !== quickInput) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    quickAddNow();
-  });
-
   setupInboxSearch();
-
-  function setupQuickAddVoiceSupport() {
-    if (
-      typeof HTMLElement === 'undefined' ||
-      !(quickVoiceBtn instanceof HTMLElement) ||
-      !(quickInput instanceof HTMLInputElement)
-    ) {
-      return;
-    }
-
-    if (quickVoiceBtn.dataset.voiceBound === 'true') {
-      return;
-    }
-    quickVoiceBtn.dataset.voiceBound = 'true';
-
-    if (typeof window === 'undefined') {
-      quickVoiceBtn.setAttribute('disabled', 'true');
-      quickVoiceBtn.setAttribute('aria-disabled', 'true');
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      quickVoiceBtn.setAttribute('disabled', 'true');
-      quickVoiceBtn.setAttribute('aria-disabled', 'true');
-      if (!quickVoiceBtn.getAttribute('title')) {
-        quickVoiceBtn.title = 'Voice input is not supported in this browser.';
-      }
-      return;
-    }
-
-    let recognition = null;
-    let isListening = false;
-
-    const updateListening = (state) => {
-      isListening = state;
-      quickVoiceBtn.setAttribute('aria-pressed', state ? 'true' : 'false');
-      quickVoiceBtn.dataset.listening = state ? 'true' : 'false';
-      quickVoiceBtn.classList.toggle('is-listening', state);
-      quickVoiceBtn.classList.toggle('mic-active', state);
-    };
-
-    recognition = new SpeechRecognition();
-    recognition.lang = 'en-AU';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-
-    recognition.addEventListener('result', (event) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript?.trim() || '';
-      if (!transcript) {
-        return;
-      }
-      quickInput.value =
-        quickInput.value.trim().length > 0 ? `${quickInput.value} ${transcript}` : transcript;
-      try {
-        quickInput.focus({ preventScroll: true });
-      } catch {
-        quickInput.focus();
-      }
-    });
-
-    recognition.addEventListener('end', () => {
-      updateListening(false);
-    });
-
-    recognition.addEventListener('error', (event) => {
-      console.error('Mic error:', event?.error);
-      updateListening(false);
-    });
-
-    const stopListening = () => {
-      if (!isListening || !recognition) {
-        return;
-      }
-      try {
-        recognition.stop();
-      } catch (error) {
-        console.error('Mic stop error:', error);
-      }
-      updateListening(false);
-    };
-
-    stopQuickAddVoiceListening = stopListening;
-
-    quickVoiceBtn.addEventListener('click', () => {
-      if (!recognition) {
-        return;
-      }
-
-      if (isListening) {
-        stopListening();
-        return;
-      }
-
-      try {
-        recognition.start();
-        updateListening(true);
-      } catch (error) {
-        console.error('Mic start error:', error);
-        updateListening(false);
-      }
-    });
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pagehide', stopListening);
-    }
-
-    updateListening(false);
-  }
-
-  setupQuickAddVoiceSupport();
-
-  const SpeechRecognition =
-    typeof window !== 'undefined'
-      ? window.SpeechRecognition || window.webkitSpeechRecognition
-      : null;
-  let voiceSpeechRecognition = null;
-  const voiceSupported = !!SpeechRecognition;
-
-  if (voiceSupported) {
-    voiceSpeechRecognition = new SpeechRecognition();
-    voiceSpeechRecognition.lang = 'en-AU';
-    voiceSpeechRecognition.interimResults = false;
-    voiceSpeechRecognition.maxAlternatives = 1;
-  }
-
-  function showVoiceNotSupportedMessage() {
-    try {
-      if (typeof toast === 'function') {
-        toast('Voice input is not supported on this device. You can still type your reminder.');
-        return;
-      }
-    } catch {}
-
-    try {
-      alert('Voice input is not supported on this device. You can still type your reminder.');
-    } catch {
-      console.warn('Voice input is not supported on this device.');
-    }
-  }
-
-  if (pillVoiceBtn) {
-    if (voiceSupported && voiceSpeechRecognition) {
-      pillVoiceBtn.addEventListener('click', () => {
-        try {
-          voiceSpeechRecognition.start();
-          pillVoiceBtn.classList.add('is-recording');
-        } catch (error) {
-          console.warn('Voice input failed to start', error);
-        }
-      });
-    } else {
-      pillVoiceBtn.addEventListener('click', () => {
-        showVoiceNotSupportedMessage();
-      });
-    }
-  }
-
-  if (voiceSpeechRecognition) {
-    voiceSpeechRecognition.addEventListener('result', (event) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript?.trim();
-      handleVoiceReminderTranscript(transcript);
-    });
-
-    voiceSpeechRecognition.addEventListener('end', () => {
-      if (pillVoiceBtn) {
-        pillVoiceBtn.classList.remove('is-recording');
-      }
-    });
-
-    voiceSpeechRecognition.addEventListener('error', () => {
-      if (pillVoiceBtn) {
-        pillVoiceBtn.classList.remove('is-recording');
-      }
-    });
-  }
-
-  function formatReminderText(rawText) {
-    if (!rawText) return '';
-
-    let text = rawText.trim();
-
-    text = text.charAt(0).toUpperCase() + text.slice(1);
-
-    if (!/[.!?]$/.test(text)) {
-      text += '.';
-    }
-
-    return text;
-  }
 
   const REMINDER_MONTH_NAME_TO_INDEX = Object.freeze({
     jan: 0,
@@ -3311,42 +2943,6 @@ export async function initReminders(sel = {}) {
     result.dueDate = dueDate;
     result.notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
     return result;
-  }
-
-  function parseNaturalDateTime(rawText) {
-    const { dueDate, notifyAt } = parseReminderScheduleFromText(rawText);
-    return { dueDate, notifyAt };
-  }
-
-  function handleVoiceReminderTranscript(rawText) {
-    if (!rawText || !quickInput) return;
-
-    const cleanedText = formatReminderText(rawText);
-    const { dueDate, notifyAt } = parseNaturalDateTime(rawText);
-
-    quickInput.value = cleanedText;
-
-    quickAddNow({ text: cleanedText, dueDate, notifyAt });
-  }
-
-  if (typeof window !== 'undefined') {
-    if (!window.memoryCueQuickAddShortcutsBound) {
-      window.memoryCueQuickAddShortcutsBound = true;
-      window.addEventListener('keydown', (e) => {
-        if (
-          e.target &&
-          (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
-        ) {
-          return;
-        }
-        if (e.key === '/' || e.key === 'q' || e.key === 'Q') {
-          if (quickInput) {
-            e.preventDefault();
-            quickInput.focus();
-          }
-        }
-      });
-    }
   }
 
   try {
@@ -7181,17 +6777,6 @@ export async function initReminders(sel = {}) {
           existing.add(key);
         }
       });
-    }
-
-    if (quickCategorySelect) {
-      const selectedCategory = normalizeCategory(
-        quickCategorySelect.value || loadLastDefaults().category || DEFAULT_CATEGORY,
-      );
-      allCategories.forEach((category) => ensureQuickCategoryOption(category));
-      const resolvedCategory = ensureQuickCategoryOption(selectedCategory);
-      if (resolvedCategory) {
-        quickCategorySelect.value = resolvedCategory;
-      }
     }
 
     if (suppressRenderMemoryEvent) {

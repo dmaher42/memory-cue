@@ -2,8 +2,8 @@
 
 ## Search scope used
 - `captureInput`
-- `universalInput`
-- `quickAddInput`
+- `thinkingBarInput`
+- `memoryCueQuickAddNow`
 - `assistant capture`
 - `saveUniversalInputBtn`
 
@@ -15,24 +15,24 @@
    - Write target: `MemoryCueState.addEntry()` → localStorage key `memoryCueState`.
 
 2. **Mobile universal capture / thinking bar**
-   - Entry: `mobile.html` `#universalInput` (capture view), submitted via `#quickAddForm`.
-   - Handler: `mobile.js` assistant/capture logic (`sendAssistantMessage`, `detectIntent`).
+   - Entry: fixed `mobile.html` `#thinkingBarInput`, submitted via `#thinkingBarForm` from any primary view.
+   - Handler: `mobile.js` calls `handleChatMessage()`, which uses the canonical capture pipeline.
    - Write targets by intent:
      - Inbox path: localStorage `memoryEntries`.
      - Reminder path: `window.memoryCueQuickAddNow(...)` from reminders module.
-     - Assistant path: submits to `#assistantForm` (handled by `js/assistant.js` to `/api/assistant-chat`).
+     - Note and assistant paths: handled by the same capture/chat routing layer.
 
-3. **Reminders quick-add**
-   - Entry: `#quickAddInput` / `#quickAddForm` in reminders surface.
-   - Handler: `js/reminders.js` quick-add handlers and `memoryCueQuickAddNow`.
+3. **Programmatic reminder conversion seam**
+   - Entry: `window.memoryCueQuickAddNow({ forceText, ...options })`; there is no separate reminder quick-add form in the UI.
+   - Handler: `src/reminders/reminderController.js`, exposed through `js/reminders.js`.
    - Write targets:
      - Reminders list persisted to `memoryCue:offlineReminders`.
      - Scheduled notification mirror persisted to `scheduledReminders`.
-     - Some smart-capture branches also write notes (`memoryCueNotes`) and inbox entries (`memoryEntries`).
+     - Prefix routes can also write notes (`memoryCueNotes`) and mirrored inbox entries (`memoryEntries`).
 
-4. **Reminder sheet open from quick-add triggers**
-   - Entry points: `js/entries.js` quick form submit, FAB triggers in `mobile.html`, and cue events.
-   - Handler: dispatches `open-reminder-sheet` / `cue:prepare` / `cue:open`.
+4. **Reminder sheet open triggers**
+   - Entry points: explicit add/FAB controls in `mobile.html`, Inbox actions, and cue events.
+   - Handler: dispatches `open-reminder-sheet` / `cue:prepare` / `cue:open`, then the reminder controller opens `#create-sheet`.
    - Write target: reminder persistence in `js/reminders.js` (`memoryCue:offlineReminders`).
 
 5. **Inbox item conversions (not raw capture but capture-adjacent)**

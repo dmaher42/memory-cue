@@ -1315,10 +1315,6 @@ function openEditor() {
         'click',
         (event) => {
           event.preventDefault();
-          const disclosure = trigger.closest('details.reminders-fast-add-more');
-          if (disclosure instanceof HTMLElement && disclosure.tagName === 'DETAILS') {
-            disclosure.open = false;
-          }
           triggerCueOpen(trigger);
         },
         listenerOptions,
@@ -1460,7 +1456,7 @@ const bootstrapReminders = () => {
     importBtnSel: '#importBackupBtn',
     openSettingsSel: '[data-open="settings"]',
     dateFeedbackSel: '#dateFeedback',
-    voiceBtnSel: '#startVoiceCaptureGlobal, #quickAddVoice',
+    voiceBtnSel: '#startVoiceCaptureGlobal',
   })
     .then(() => {
       // Wire Firebase auth + notes sync for mobile

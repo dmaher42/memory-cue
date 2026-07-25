@@ -9,16 +9,16 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 4. UI refresh/event dispatch updates views that read capture entries.
 
 ## Main intent flow
-1. Quick-add text is routed by `quickAddNow()` in `js/reminders.js`.
-2. Intent detection happens in existing quick-add routing (for prefixes and reminder parsing).
+1. Freeform text enters through the universal `#thinkingBarInput` and the canonical capture pipeline.
+2. Reminder conversions can call the non-visual `quickAddNow({ forceText })` seam in `src/reminders/reminderController.js` for prefixes and reminder parsing.
 3. Depending on route, the app creates either:
    - a reminder (`addItem()` / reminder payload path), or
    - a note path (e.g., reflection quick route), or
    - inbox/raw capture record (`memoryEntries`) as fallback/parallel capture.
 
 ## Main reminder flow
-1. Input enters via quick add or reminder sheet.
-2. Reminder is normalized through reminder creation helpers in `js/reminders.js`.
+1. Input enters through universal capture, Inbox conversion, or the structured reminder sheet.
+2. Reminder data is normalized through creation helpers in `src/reminders/reminderController.js` (exported via `js/reminders.js`).
 3. Reminders persist to the reminders offline store (`memoryCue:offlineReminders`) and render in reminders UI.
 4. Existing reminder sync/scheduling paths run from the same module.
 

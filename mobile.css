@@ -151,10 +151,6 @@ body.app-shell #mobile-nav-shell .floating-card {
   color: var(--muted);
 }
 
-body.app-shell .reminders-quick-bar {
-  display: none !important;
-}
-
 body.app-shell #mobile-nav-shell .floating-card.active,
 body.app-shell #mobile-nav-shell .floating-card[aria-current='page'] {
   outline: none;

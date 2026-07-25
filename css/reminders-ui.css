@@ -113,39 +113,6 @@
   white-space: nowrap;
 }
 
-#view-reminders .reminders-voice-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  align-self: center;
-  border: 1px solid color-mix(in srgb, var(--card-border) 72%, transparent);
-  border-radius: 999px;
-  min-height: 2.3rem;
-  padding: 0.52rem 0.88rem;
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #e2e8f0) 18%);
-  color: var(--text-main);
-  font-family: inherit;
-  font-size: 0.81rem;
-  line-height: 1;
-  font-weight: 680;
-  letter-spacing: -0.01em;
-  box-shadow: none;
-  white-space: nowrap;
-}
-
-.reminders-voice-button:hover,
-.reminders-voice-button:focus-visible {
-  background: color-mix(in srgb, var(--color-secondary, #e2e8f0) 56%, #ffffff 44%);
-  outline: 3px solid color-mix(in srgb, var(--accent-color) 16%, transparent);
-  outline-offset: 2px;
-}
-
-.reminders-voice-button.is-listening {
-  background: color-mix(in srgb, var(--accent-color) 16%, #ffffff 84%);
-  border-color: color-mix(in srgb, var(--accent-color) 30%, transparent);
-}
-
 .reminders-add-button:hover,
 .reminders-add-button:focus-visible {
   background: var(--color-primary-hover, #0d5c56);
@@ -412,7 +379,6 @@
   }
 
   #view-reminders .reminders-add-button,
-  #view-reminders .reminders-voice-button,
   #view-reminders .reminders-sort-btn,
   #view-reminders #reminderSortToggle {
     min-height: 2rem;
@@ -889,7 +855,6 @@
 }
 
 #view-reminders .reminders-add-button,
-#view-reminders .reminders-voice-button,
 #view-reminders .reminders-sort-trigger,
 #view-reminders #reminderSortToggle {
   min-height: 2.15rem;
@@ -901,7 +866,6 @@
 }
 
 #view-reminders .reminders-screen-header .reminders-add-button,
-#view-reminders .reminders-screen-header .reminders-voice-button,
 #view-reminders .reminders-screen-header #voiceAddBtn,
 #view-reminders .reminders-screen-header .reminders-sort-trigger,
 #view-reminders .reminders-screen-header #reminderSortToggle {
@@ -985,7 +949,6 @@
   }
 
   #view-reminders .reminders-add-button,
-  #view-reminders .reminders-voice-button,
   #view-reminders .reminders-sort-trigger,
   #view-reminders #reminderSortToggle {
     min-height: 1.95rem;
@@ -995,7 +958,6 @@
   }
 
   #view-reminders .reminders-screen-header .reminders-add-button,
-  #view-reminders .reminders-screen-header .reminders-voice-button,
   #view-reminders .reminders-screen-header #voiceAddBtn,
   #view-reminders .reminders-screen-header .reminders-sort-trigger,
   #view-reminders .reminders-screen-header #reminderSortToggle {
@@ -1675,137 +1637,6 @@ body #create-sheet .reminder-status-message:empty {
   display: none;
 }
 
-body #view-reminders .reminders-top-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0.45rem;
-  padding: 0.15rem 0.15rem 0;
-  margin-bottom: 0 !important;
-}
-
-body #view-reminders .reminders-fast-capture,
-body #view-reminders .reminders-fast-add {
-  width: 100%;
-  min-width: 0;
-}
-
-body #view-reminders .reminders-fast-add {
-  display: grid;
-  gap: 0.42rem;
-}
-
-body #view-reminders .reminders-fast-add-button {
-  flex: 0 0 auto;
-  min-height: 2rem;
-  padding: 0.4rem 0.78rem;
-  border: 0;
-  border-radius: 0.72rem;
-  background: var(--accent-color, #0f766e);
-  color: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 750;
-  line-height: 1;
-  cursor: pointer;
-}
-
-body #view-reminders .reminders-fast-add-button:hover,
-body #view-reminders .reminders-fast-add-button:focus-visible {
-  background: color-mix(in srgb, var(--accent-color, #0f766e) 88%, #000000);
-  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 28%, transparent);
-  outline-offset: 2px;
-}
-
-body #view-reminders .reminders-fast-add-button:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-body #view-reminders .reminders-fast-add-options {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.28rem 0.45rem;
-  padding: 0 0.18rem;
-  color: var(--text-secondary, #64748b);
-  font-size: 0.7rem;
-  line-height: 1.3;
-}
-
-body #view-reminders .reminders-fast-add-options label {
-  font-weight: 750;
-  color: var(--text-main, #1e293b);
-}
-
-body #view-reminders .reminders-fast-add-options select {
-  max-width: min(12rem, 48vw);
-  min-height: 1.75rem;
-  padding: 0.2rem 1.55rem 0.2rem 0.52rem;
-  border: 1px solid color-mix(in srgb, var(--text-main, #1e293b) 12%, transparent);
-  border-radius: 999px;
-  background-color: color-mix(in srgb, var(--accent-color, #0f766e) 7%, #ffffff);
-  color: var(--text-main, #1e293b);
-  font: inherit;
-  font-weight: 700;
-}
-
-body #view-reminders #quickAddHelp {
-  flex: 1 1 13rem;
-}
-
-body #view-reminders .reminders-fast-add-status {
-  min-width: 2.7rem;
-  color: var(--accent-color, #0f766e);
-  font-weight: 750;
-  text-align: right;
-}
-
-body #view-reminders .reminders-quick-bar {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-  gap: 0.5rem;
-  min-height: 2.65rem;
-  padding: 0.45rem 0.8rem;
-  border: 1px solid rgba(30, 41, 59, 0.08);
-  border-radius: 1rem;
-  background: #f8fafc;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-body.app-shell #view-reminders .reminders-fast-add .reminders-quick-bar {
-  display: flex !important;
-}
-
-body #view-reminders .reminders-quick-bar:focus-within {
-  border-color: color-mix(in srgb, var(--accent-color) 36%, rgba(30, 41, 59, 0.08));
-  background: color-mix(in srgb, var(--accent-color) 8%, #f8fafc);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent-color) 24%, transparent),
-    0 4px 10px rgba(15, 23, 42, 0.08);
-}
-
-body #view-reminders .reminders-quick-bar #captureInput,
-body #view-reminders .reminders-quick-bar #reminderQuickAdd {
-  flex: 1;
-  min-width: 0;
-  padding: 0.15rem 0;
-  border: 0;
-  background: transparent;
-  font-size: 0.92rem;
-  line-height: 1.25;
-  outline: none;
-}
-
-body #view-reminders .reminders-quick-bar #captureInput:focus,
-body #view-reminders .reminders-quick-bar #captureInput:focus-visible,
-body #view-reminders .reminders-quick-bar #reminderQuickAdd:focus,
-body #view-reminders .reminders-quick-bar #reminderQuickAdd:focus-visible {
-  background: color-mix(in srgb, var(--accent-color) 7%, transparent);
-}
-
 body #view-reminders .reminder-tabs {
   display: inline-flex;
   align-items: center;
@@ -1835,17 +1666,6 @@ body #view-reminders .reminder-tab[aria-pressed="true"] {
   background: color-mix(in srgb, var(--accent-color) 92%, #000);
   color: #ffffff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-body #view-reminders .reminders-quick-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-body #view-reminders .reminders-quick-actions .icon-btn {
-  width: 2.15rem;
-  height: 2.15rem;
 }
 
 @media (max-width: 640px) {
@@ -2409,214 +2229,6 @@ body #view-reminders .reminders-screen-header #reminderSortToggle {
   font-size: 0.72rem !important;
 }
 
-body #view-reminders .reminders-fast-add {
-  gap: 0;
-}
-
-body #view-reminders .reminders-quick-bar {
-  position: relative;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  align-items: center;
-  min-height: 2.48rem;
-  gap: 0.22rem;
-  padding: 0.28rem 0.4rem;
-  border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 24%, var(--card-border, #e2e8f0));
-  border-radius: 0.84rem;
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 96%, var(--accent-color, #0f766e) 4%);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
-  overflow: visible;
-  white-space: normal;
-}
-
-body.app-shell #view-reminders .reminders-fast-add .reminders-quick-bar {
-  display: grid !important;
-}
-
-body #view-reminders .reminders-quick-bar:focus-within {
-  border-color: color-mix(in srgb, var(--accent-color, #0f766e) 38%, var(--card-border, #e2e8f0));
-  background: var(--surface-card, #ffffff);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
-body #view-reminders .reminders-quick-entry {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  min-height: 2rem;
-  gap: 0.38rem;
-  padding: 0.14rem 0.48rem;
-  border: 0;
-  border-radius: 0.64rem;
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 93%, var(--accent-color, #0f766e) 7%);
-  box-shadow: none;
-}
-
-body #view-reminders .reminders-quick-entry:focus-within {
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 89%, var(--accent-color, #0f766e) 11%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #0f766e) 28%, transparent);
-}
-
-body #view-reminders .reminders-quick-entry-cue {
-  flex: 0 0 auto;
-  color: var(--accent-color, #0f766e);
-  font-size: 1.08rem;
-  line-height: 1;
-}
-
-body #view-reminders .reminders-quick-entry #reminderQuickAdd {
-  width: 100%;
-  min-height: 1.45rem;
-  font-size: 0.86rem;
-}
-
-body #view-reminders .reminders-quick-entry #reminderQuickAdd:focus,
-body #view-reminders .reminders-quick-entry #reminderQuickAdd:focus-visible {
-  background: transparent;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-voice-button {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 2rem;
-  height: 2rem !important;
-  min-width: 2rem;
-  min-height: 2rem !important;
-  margin-left: 0.28rem;
-  padding: 0 !important;
-  border: 0;
-  border-radius: 0.68rem;
-  background: transparent;
-  color: var(--text-secondary, #64748b);
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: none;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-voice-button::before {
-  position: absolute;
-  top: 50%;
-  left: -0.3rem;
-  width: 1px;
-  height: 1.3rem;
-  background: color-mix(in srgb, var(--text-main, #1e293b) 12%, transparent);
-  content: '';
-  transform: translateY(-50%);
-}
-
-body #view-reminders .reminders-quick-bar .reminders-voice-button .material-symbols-rounded {
-  font-size: 1.08rem;
-  line-height: 1;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-voice-button:hover,
-body #view-reminders .reminders-quick-bar .reminders-voice-button:focus-visible,
-body #view-reminders .reminders-quick-bar .reminders-voice-button[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, transparent);
-  color: var(--accent-color, #0f766e);
-  outline: none;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-fast-add-button {
-  height: 2rem;
-  min-height: 2rem;
-  padding: 0.38rem 0.66rem;
-}
-
-body #view-reminders .reminders-options-button {
-  display: inline-grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  padding: 0;
-  border: 0;
-  border-radius: 0.68rem;
-  background: transparent;
-  color: var(--text-secondary, #64748b);
-  cursor: pointer;
-}
-
-body #view-reminders .reminders-options-button .material-symbols-rounded {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-body #view-reminders .reminders-options-button:hover,
-body #view-reminders .reminders-options-button:focus-visible,
-body #view-reminders .reminders-options-button[aria-expanded="true"] {
-  background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, transparent);
-  color: var(--accent-color, #0f766e);
-  outline: none;
-}
-
-body #view-reminders .reminders-options-button:focus-visible {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color, #0f766e) 24%, transparent);
-}
-
-body #view-reminders .reminders-fast-add-status {
-  min-width: 0;
-  min-height: 0;
-  padding-right: 0.28rem;
-  font-size: 0.68rem;
-  line-height: 1.2;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-fast-add-options {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  width: 100%;
-  min-width: 0;
-  margin-top: 0.08rem;
-  padding: 0.42rem 0 0.06rem;
-  border-top: 1px solid color-mix(in srgb, var(--text-main, #1e293b) 9%, transparent);
-}
-
-body #view-reminders .reminders-quick-bar .reminders-fast-add-options[hidden] {
-  display: none !important;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-fast-add-options select {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: none;
-}
-
-body #view-reminders .reminders-quick-bar .reminders-fast-add-options label,
-body #view-reminders .reminders-quick-bar .reminders-details-button {
-  white-space: nowrap;
-}
-
-body #view-reminders .reminders-details-button {
-  min-height: 1.75rem;
-  padding: 0.25rem 0.58rem;
-  border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 22%, transparent);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--accent-color, #0f766e);
-  font-family: inherit;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-
-html[data-theme="dark"] body #view-reminders .reminders-voice-button,
-html[data-theme="professional-dark"] body #view-reminders .reminders-voice-button,
-html[data-theme="dark"] body #view-reminders .reminders-options-button,
-html[data-theme="professional-dark"] body #view-reminders .reminders-options-button {
-  border-color: transparent;
-  background: transparent;
-  color: var(--text-main, #f9fafb);
-}
-
 body #view-reminders #reminderListSection {
   margin-top: 0;
 }
@@ -2626,22 +2238,6 @@ body #view-reminders #reminderListSection {
     gap: 0.2rem;
   }
 
-  body #view-reminders .reminders-quick-bar {
-    gap: 0.16rem;
-    padding-inline: 0.32rem;
-  }
-
-  body #view-reminders .reminders-quick-bar #reminderQuickAdd {
-    font-size: 0.8rem;
-  }
-
-  body #view-reminders .reminders-quick-bar .reminders-voice-button {
-    padding: 0 !important;
-  }
-
-  body #view-reminders .reminders-quick-bar .reminders-fast-add-options {
-    gap: 0.3rem;
-  }
 }
 
 /* School / Footy board. Reminder records remain the only card data source. */

@@ -38,26 +38,6 @@ let controller;
 beforeEach(async () => {
   jest.useFakeTimers({ now: Date.UTC(2024, 4, 15, 9, 0, 0) });
   localStorage.clear();
-  window.__quickVoiceStarts = 0;
-  window.SpeechRecognition = class SpeechRecognitionStub {
-    constructor() {
-      this.listeners = {};
-    }
-
-    addEventListener(type, handler) {
-      this.listeners[type] = handler;
-    }
-
-    start() {
-      window.__quickVoiceStarts += 1;
-      this.listeners.result?.({ results: [[{ transcript: 'Voice reminder' }]] });
-      this.listeners.end?.();
-    }
-
-    stop() {
-      this.listeners.end?.();
-    }
-  };
   document.body.innerHTML = `
     <div id="status"></div>
     <div id="remindersWrapper">
@@ -67,21 +47,6 @@ beforeEach(async () => {
     <input id="reminderText" />
     <input id="reminderDate" type="date" />
     <input id="reminderTime" type="time" />
-    <form id="quickAddForm">
-      <input id="reminderQuickAdd" />
-      <button id="quickAddOptionsToggle" type="button" aria-expanded="false" aria-controls="quickAddOptions">Options</button>
-      <div id="quickAddOptions" hidden>
-        <select id="quickAddCategory">
-          <option value="General">General</option>
-          <option value="School">School</option>
-        </select>
-        <button type="button" data-open-add-task>Full details</button>
-      </div>
-      <button id="quickAddSubmit" type="button">Add</button>
-      <button id="quickAddVoice" type="button">Voice</button>
-      <div id="quickAddParsingIndicator" hidden></div>
-      <div id="quickAddSuccessIndicator" hidden></div>
-    </form>
   `;
 
   const { initReminders } = loadRemindersModule();
@@ -102,38 +67,10 @@ afterEach(() => {
   jest.useRealTimers();
   localStorage.clear();
   document.body.innerHTML = '';
-  delete window.SpeechRecognition;
-  delete window.__quickVoiceStarts;
 });
 
-test('the visible compact Voice button fills the quick-add field', () => {
-  document.getElementById('quickAddVoice').click();
-
-  expect(window.__quickVoiceStarts).toBe(1);
-  expect(document.getElementById('reminderQuickAdd').value).toBe('Voice reminder');
-});
-
-test('compact reminder options open on demand and close after saving', async () => {
-  const toggle = document.getElementById('quickAddOptionsToggle');
-  const panel = document.getElementById('quickAddOptions');
-  const quickInput = document.getElementById('reminderQuickAdd');
-
-  toggle.click();
-  expect(toggle.getAttribute('aria-expanded')).toBe('true');
-  expect(panel.hidden).toBe(false);
-
-  quickInput.value = 'Bring team sheets';
-  await window.memoryCueQuickAddNow();
-
-  expect(toggle.getAttribute('aria-expanded')).toBe('false');
-  expect(panel.hidden).toBe(true);
-});
-
-test('quick add routes footy drill prefix to Footy – Drills category', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'footy drill: cone sprint ladders';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add routes footy drill prefix to Footy – Drills category', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'footy drill: cone sprint ladders' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -150,11 +87,8 @@ test('quick add routes footy drill prefix to Footy – Drills category', async (
   expect(Number.isFinite(memoryEntries[0].createdAt)).toBe(true);
 });
 
-test('quick add routes task prefix to Tasks category', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'TASK: mark lesson plans';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add routes task prefix to Tasks category', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'TASK: mark lesson plans' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -164,26 +98,21 @@ test('quick add routes task prefix to Tasks category', async () => {
   expect(Number.isFinite(items[0].updatedAt)).toBe(true);
 });
 
-test('quick add saves directly into the visible category choice', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  const quickCategory = document.getElementById('quickAddCategory');
-  quickCategory.value = 'School';
-  quickCategory.dispatchEvent(new Event('change', { bubbles: true }));
-  quickInput.value = 'Print excursion forms tomorrow 8am';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add accepts an explicit category', async () => {
+  await window.memoryCueQuickAddNow({
+    forceText: 'Print excursion forms tomorrow 8am',
+    category: 'School',
+  });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
   expect(items[0].category).toBe('School');
-  expect(JSON.parse(localStorage.getItem('mc:lastDefaults') || '{}').category).toBe('School');
 });
 
-test('quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'Reflection: Year 8 class responded better to shorter instructions';
-
-  const note = await window.memoryCueQuickAddNow();
+test('programmatic quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {
+  const note = await window.memoryCueQuickAddNow({
+    forceText: 'Reflection: Year 8 class responded better to shorter instructions',
+  });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(0);
@@ -230,22 +159,16 @@ test('inbox search parser falls back to keyword-only when no time pattern exists
 });
 
 
-test('quick add stores reminder suggestion when text contains time reference', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'Call parents tomorrow 1pm';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add stores reminder suggestion when text contains time reference', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'Call parents tomorrow 1pm' });
 
   const memoryEntries = JSON.parse(localStorage.getItem('memoryCueInbox') || '[]');
   expect(memoryEntries).toHaveLength(1);
   expect(memoryEntries[0].source).toBe('quick-add');
 });
 
-test('quick add parses natural language time into due date', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'Call parents tomorrow 1pm';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add parses natural language time into due date', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'Call parents tomorrow 1pm' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -259,11 +182,8 @@ test('quick add parses natural language time into due date', async () => {
   expect(item.due).toBe(expectedIso);
 });
 
-test('quick add parses explicit date and time into due date', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'Call parents Mon 20 May 4pm';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add parses explicit date and time into due date', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'Call parents Mon 20 May 4pm' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -278,11 +198,8 @@ test('quick add parses explicit date and time into due date', async () => {
   expect(item.due).toBe(expectedIso);
 });
 
-test('quick add parses compact time ranges into due date and cleans title', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'Archer Basketball 330-530';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add parses compact time ranges into due date and cleans title', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'Archer Basketball 330-530' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -297,11 +214,8 @@ test('quick add parses compact time ranges into due date and cleans title', asyn
   expect(item.due).toBe(expectedIso);
 });
 
-test('quick add with weekday range fills edit reminder date and time fields', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = '! Archer Basketball Sunday 330-530';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add with weekday range fills edit reminder date and time fields', async () => {
+  await window.memoryCueQuickAddNow({ forceText: '! Archer Basketball Sunday 330-530' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
@@ -316,11 +230,8 @@ test('quick add with weekday range fills edit reminder date and time fields', as
   expect(item.title).toBe('Archer Basketball');
 });
 
-test('quick add expands known teacher shorthand before saving reminder', async () => {
-  const quickInput = document.getElementById('reminderQuickAdd');
-  quickInput.value = 'next wednesday CC NR8 8:30';
-
-  await window.memoryCueQuickAddNow();
+test('programmatic quick add expands known teacher shorthand before saving reminder', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'next wednesday CC NR8 8:30' });
 
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);

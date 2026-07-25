@@ -178,16 +178,11 @@ async function main() {
       const meta = document.querySelector('.reminder-stream-row .reminder-stream-meta');
       const header = document.getElementById('reminders-slim-header');
       const menuButton = document.getElementById('overflowMenuBtn');
-      const reminderQuickCapture = document.querySelector('.reminders-fast-capture');
       const universalComposer = document.getElementById('thinkingBarContainer');
       const titleStyle = title ? getComputedStyle(title) : null;
       const metaStyle = meta ? getComputedStyle(meta) : null;
       return {
-        reminderQuickCaptureHidden: Boolean(
-          reminderQuickCapture?.hidden
-          && reminderQuickCapture.getAttribute('aria-hidden') === 'true'
-          && getComputedStyle(reminderQuickCapture).display === 'none'
-        ),
+        reminderQuickCaptureRemoved: !document.querySelector('.reminders-fast-capture'),
         universalComposerVisible: Boolean(
           universalComposer
           && getComputedStyle(universalComposer).display !== 'none'
@@ -200,7 +195,7 @@ async function main() {
       };
     });
     if (
-      !readabilityState.reminderQuickCaptureHidden
+      !readabilityState.reminderQuickCaptureRemoved
       || !readabilityState.universalComposerVisible
       || readabilityState.titleFontSize < 13
       || readabilityState.metaFontSize < 10
@@ -215,8 +210,8 @@ async function main() {
     if (visibleTitleCount !== 0) {
       throw new Error('Expected the space-consuming Reminders title card to be removed.');
     }
-    if (await page.locator('#quickAddForm:visible').count()) {
-      throw new Error('Expected the reminder-only quick-add bar to be hidden.');
+    if (await page.locator('#quickAddForm').count()) {
+      throw new Error('Expected the reminder-only quick-add bar to be removed.');
     }
     const universalCapturePlaceholder = await page.locator('#thinkingBarInput').getAttribute('placeholder');
     if (universalCapturePlaceholder !== 'Add a reminder, note, or ask…') {

@@ -99,49 +99,6 @@ Legacy shells remain for reference only.
       overflow: hidden;
     }
 
-    /* Single-row iOS-style reminders top bar */
-    .reminders-top-row {
-      display: flex;
-      align-items: center;
-      padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-      margin-bottom: 2px !important; /* tiny controlled gap below header */
-      gap: 0.5rem;
-      white-space: nowrap;
-      overflow: visible;
-      flex-wrap: nowrap;
-      position: relative;
-    }
-
-    .reminders-quick-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      flex: 1 1 auto;
-      min-width: 0;
-      padding: 0.45rem 0.7rem;
-      margin-bottom: 0;
-      background: color-mix(in srgb, #f8fafc 88%, #ffffff);
-      border: 1px solid color-mix(in srgb, #e2e8f0 65%, transparent);
-      border-radius: 999px;
-      box-shadow: 0 5px 14px rgba(30, 41, 59, 0.06);
-    }
-
-    .reminders-quick-bar input#captureInput,
-    .reminders-quick-bar input#reminderQuickAdd {
-      flex: 1 1 auto;
-      min-width: 0;
-      border: none;
-      background: transparent;
-      font-size: 0.9rem;
-      color: var(--text-main);
-      padding: 0.3rem 0.2rem;
-    }
-
-    .reminders-quick-bar input#captureInput::placeholder,
-    .reminders-quick-bar input#reminderQuickAdd::placeholder {
-      color: var(--text-muted);
-    }
-
     .reminder-tabs {
       display: inline-flex;
       align-items: center;
@@ -176,55 +133,6 @@ Legacy shells remain for reference only.
       background: color-mix(in srgb, var(--accent-color) 92%, #000);
       color: #ffffff;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    }
-
-    @media (max-width: 420px) {
-      .reminders-top-row {
-        overflow-x: auto;
-        overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-      }
-
-      .reminders-top-row::-webkit-scrollbar {
-        display: none;
-      }
-    }
-
-    .reminders-quick-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.18rem; /* tighter, cleaner spacing */
-    }
-
-    .icon-btn {
-      border: none;
-      background: transparent;
-      padding: 0.25rem; /* reduced from 0.35rem */
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .icon-btn svg {
-      stroke: currentColor;
-      fill: none;
-      opacity: 1;
-      width: 20px;
-      height: 20px;
-      transition: opacity 0.15s ease, transform 0.15s ease;
-    }
-
-    .icon-btn:hover svg,
-    .icon-btn:active svg {
-      opacity: 1;
-      transform: scale(1.04);
-    }
-
-    .icon-btn:active {
-      background-color: rgba(0, 0, 0, 0.04);
     }
 
     #thinkingBarContainer,
@@ -515,7 +423,6 @@ Legacy shells remain for reference only.
       transform: translateY(0);
     }
 
-    .reminders-quick-actions .icon-btn,
     .mobile-footer-nav button,
     .mobile-footer-nav .footer-button,
     .footer-nav button {
@@ -564,24 +471,11 @@ Legacy shells remain for reference only.
       grid-column: 1 / -1;
     }
     @media (max-width: 380px) {
-      .reminders-top-row {
-        gap: 0.35rem;
-        padding: 0.35rem 0.15rem 0;
-        margin-bottom: 2px !important;
-      }
-
-      .reminders-quick-bar {
-        padding: 0.38rem 0.6rem;
-      }
-
       .reminder-tab {
         padding: 0.18rem 0.55rem;
         font-size: 0.78rem;
       }
 
-      .reminders-quick-actions .icon-btn {
-        padding: 0.28rem;
-      }
     }
 
     .reminder-title-toggle {
@@ -2085,40 +1979,6 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       }
     }
 
-    /* iOS-style reminders top bar */
-    .reminders-top-row {
-      display: flex;
-      padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-      margin-bottom: 2px !important; /* tiny controlled gap below header */
-    }
-
-    .reminders-quick-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex: 1;
-      min-width: 0;
-      padding: 0.6rem 0.75rem;
-      border-radius: 999px;
-      background: #f8fafc;
-      border: 1px solid rgba(30, 41, 59, 0.08);
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.85),
-        0 6px 14px rgba(15, 23, 42, 0.05);
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .reminders-quick-bar #captureInput,
-    .reminders-quick-bar #reminderQuickAdd {
-      flex: 1;
-      min-width: 0;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 0.9rem;
-    }
-
     .reminder-tabs {
       display: inline-flex;
       align-items: center;
@@ -2153,59 +2013,6 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
     }
 
-    .reminders-quick-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .icon-btn {
-      border: none;
-      background: transparent;
-      padding: 0.35rem;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .icon-btn svg {
-      stroke: currentColor;
-      fill: none;
-      opacity: 1;
-      transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
-    }
-.reminders-top-row {
-  display: flex;
-  padding: 0.35rem 1rem 0rem; /* slightly tighter overall, 0 bottom padding */
-  margin-bottom: 2px !important; /* tiny controlled gap below header */
-}
-
-.reminders-quick-bar {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-  gap: 0.5rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 999px;
-  background: #f8fafc;
-  border: 1px solid rgba(30, 41, 59,0.08);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-#captureInput, #reminderQuickAdd {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  font-size: 0.9rem;
-  outline: none;
-}
-
 .reminder-tabs {
   display: inline-flex;
   align-items: center;
@@ -2236,23 +2043,6 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
   background: color-mix(in srgb, var(--accent-color) 92%, #000);
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.reminders-quick-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.icon-btn {
-  border: none;
-  background: transparent;
-  padding: 0.35rem;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
 }
 
     /* Global crisp, confident text */
@@ -2295,13 +2085,6 @@ body {
 .reminder-tab {
   color: #000 !important;
   font-weight: 600 !important;
-  letter-spacing: -0.01em;
-}
-
-/* Quick-add input */
-#captureInput, #reminderQuickAdd {
-  color: #000 !important;
-  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
@@ -2361,14 +2144,6 @@ body, main, section, div, p, span, li {
   font-weight: 600 !important;
   letter-spacing: -0.01em;
   font-size: 0.86rem;
-}
-
-/* 5) Quick reminder input in header */
-#captureInput, #reminderQuickAdd {
-  color: #000000 !important;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  font-size: 0.95rem;
 }
 
 /* 6) Note title – like iOS Notes heading */
@@ -2524,7 +2299,6 @@ body, main, section, div, p, span, li {
     .reminders-screen-header-actions > .btn,
     #view-reminders .reminders-screen-header-actions > button,
     #view-reminders #reminderSortToggle,
-    #view-reminders #quickAddVoice,
     #view-reminders .reminders-add-button {
       min-height: 1.75rem !important;
       height: 1.75rem !important;
@@ -5048,24 +4822,11 @@ body, main, section, div, p, span, li {
 
     /* Tighter header sizing for small mobile viewports */
     @media (max-width: 420px) {
-      .reminders-top-row {
-        padding: 0.25rem 0.1rem 0;
-        margin-bottom: 2px !important;
-      }
-
-      .reminders-quick-bar {
-        padding: 0.35rem 0.55rem;
-        gap: 0.35rem;
-      }
-
       .reminder-tab {
         padding: 0.22rem 0.6rem;
         font-size: 0.78rem;
       }
 
-      .reminders-quick-actions .icon-btn {
-        padding: 0.26rem;
-      }
     }
 
     /* Keep reminders content in a single vertical flow under the sticky header */
@@ -5266,66 +5027,6 @@ body, main, section, div, p, span, li {
             <h2 id="remindersViewTitle">Reminders</h2>
             <p id="mobileRemindersHeaderSubtitle">Your active cues for today.</p>
           </div>
-          <section class="reminders-fast-capture hidden" aria-labelledby="quickAddLabel" aria-hidden="true" hidden>
-            <form id="quickAddForm" class="reminders-fast-add" autocomplete="off">
-              <label id="quickAddLabel" class="sr-only" for="reminderQuickAdd">Quickly add a reminder</label>
-              <div class="reminders-quick-bar">
-                <div class="reminders-quick-entry">
-                  <span class="reminders-quick-entry-cue material-symbols-rounded" aria-hidden="true">edit_note</span>
-                  <input
-                    id="reminderQuickAdd"
-                    type="text"
-                    inputmode="text"
-                    aria-describedby="quickAddHelp quickAddStatus"
-                  />
-                </div>
-                <button
-                  type="button"
-                  id="quickAddVoice"
-                  class="reminders-voice-button"
-                  aria-label="Add reminder with voice"
-                >
-                  <span class="material-symbols-rounded" aria-hidden="true">mic</span>
-                  <span class="sr-only">Voice</span>
-                </button>
-                <button
-                  type="button"
-                  id="quickAddOptionsToggle"
-                  class="reminders-options-button"
-                  aria-label="Reminder options"
-                  aria-controls="quickAddOptions"
-                  aria-expanded="false"
-                  title="Reminder options"
-                >
-                  <span class="material-symbols-rounded" aria-hidden="true">tune</span>
-                </button>
-                <button id="quickAddSubmit" type="button" class="reminders-fast-add-button">Add</button>
-                <div id="quickAddOptions" class="reminders-fast-add-options" hidden>
-                  <label for="quickAddCategory">Save under</label>
-                  <select id="quickAddCategory" aria-label="Category for quick reminder">
-                    <option value="General">General</option>
-                    <option value="School">School</option>
-                    <option value="Footy">Footy</option>
-                    <option value="Home &amp; Personal">Home &amp; Personal</option>
-                    <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
-                  </select>
-                  <span id="quickAddHelp" class="sr-only">Choose where this reminder is grouped, or open the full form for more details.</span>
-                  <button
-                    type="button"
-                    class="reminders-details-button"
-                    data-open-add-task
-                    aria-label="Open full reminder details"
-                  >
-                    Full details
-                  </button>
-                </div>
-              </div>
-              <span id="quickAddStatus" class="reminders-fast-add-status" role="status" aria-live="polite">
-                <span id="quickAddParsingIndicator" hidden>Saving…</span>
-                <span id="quickAddSuccessIndicator" hidden>Saved</span>
-              </span>
-            </form>
-          </section>
           <section
             id="reminderListSection"
             class="w-full relative"

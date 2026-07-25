@@ -6,13 +6,6 @@
   const searchBtn = document.getElementById('btn-search');
   const drawerSyncStatus = document.getElementById('mcStatusText');
   const drawerSyncDot = document.getElementById('mcStatus');
-  const quickAddPanel = document.getElementById('quickAddBar');
-  const quickAddInputField = document.getElementById('reminderQuickAdd');
-  const quickAddSelector = '[data-open-quick-add]';
-  let activeQuickAddTrigger = null;
-  const isPersistentQuickAdd =
-    quickAddPanel instanceof HTMLElement && quickAddPanel.dataset.persistent === 'true';
-
   const toggleClass = (el, className, force) => {
     if (!el) return;
     if (typeof force === 'boolean') {
@@ -84,104 +77,6 @@
 
   scrollTopBtn?.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  const isQuickAddVisible = () =>
-    isPersistentQuickAdd || quickAddPanel?.dataset.visible === 'true';
-
-  const showQuickAddPanel = (trigger) => {
-    if (!(quickAddPanel instanceof HTMLElement)) {
-      return false;
-    }
-    if (isPersistentQuickAdd) {
-      if (quickAddInputField instanceof HTMLElement) {
-        window.requestAnimationFrame(() => {
-          try {
-            quickAddInputField.focus({ preventScroll: true });
-          } catch {
-            quickAddInputField.focus();
-          }
-        });
-      }
-      return true;
-    }
-    activeQuickAddTrigger = trigger instanceof HTMLElement ? trigger : null;
-    quickAddPanel.hidden = false;
-    quickAddPanel.dataset.visible = 'true';
-    quickAddPanel.setAttribute('aria-hidden', 'false');
-    activeQuickAddTrigger?.setAttribute('aria-expanded', 'true');
-    if (quickAddInputField instanceof HTMLElement) {
-      window.requestAnimationFrame(() => {
-        try {
-          quickAddInputField.focus({ preventScroll: true });
-        } catch {
-          quickAddInputField.focus();
-        }
-      });
-    }
-    return true;
-  };
-
-  const hideQuickAddPanel = () => {
-    if (!(quickAddPanel instanceof HTMLElement) || isPersistentQuickAdd) {
-      return false;
-    }
-    if (quickAddPanel.dataset.visible !== 'true') {
-      return false;
-    }
-    quickAddPanel.hidden = true;
-    quickAddPanel.dataset.visible = 'false';
-    quickAddPanel.setAttribute('aria-hidden', 'true');
-    if (
-      activeQuickAddTrigger instanceof HTMLElement &&
-      document.body.contains(activeQuickAddTrigger)
-    ) {
-      activeQuickAddTrigger.setAttribute('aria-expanded', 'false');
-      try {
-        activeQuickAddTrigger.focus({ preventScroll: true });
-      } catch {
-        activeQuickAddTrigger.focus();
-      }
-    }
-    activeQuickAddTrigger = null;
-    return true;
-  };
-
-  document.addEventListener(
-    'click',
-    (event) => {
-      if (!(quickAddPanel instanceof HTMLElement)) {
-        return;
-      }
-      const trigger =
-        event.target instanceof Element ? event.target.closest(quickAddSelector) : null;
-      if (!trigger) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      if (typeof event.stopImmediatePropagation === 'function') {
-        event.stopImmediatePropagation();
-      }
-      if (isPersistentQuickAdd) {
-        showQuickAddPanel(trigger);
-        return;
-      }
-      if (isQuickAddVisible()) {
-        hideQuickAddPanel();
-      } else {
-        showQuickAddPanel(trigger);
-      }
-    },
-    true,
-  );
-
-  document.addEventListener('reminder:quick-add:complete', hideQuickAddPanel);
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && isQuickAddVisible()) {
-      hideQuickAddPanel();
-    }
   });
 
   searchBtn?.addEventListener('click', () => {
@@ -389,7 +284,7 @@
       return;
     }
 
-    const quickAdd = document.getElementById('thinkingBarInput') || document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
+    const quickAdd = document.getElementById('thinkingBarInput') || document.getElementById('quickAdd');
     if (quickAdd && typeof quickAdd.focus === 'function') quickAdd.focus();
   };
 
@@ -474,7 +369,7 @@
         return;
       }
 
-      const quickAdd = document.getElementById('reminderQuickAdd') || document.getElementById('quickAdd');
+      const quickAdd = document.getElementById('thinkingBarInput') || document.getElementById('quickAdd');
       if (quickAdd && typeof quickAdd.focus === 'function') {
         quickAdd.focus();
       }
@@ -622,4 +517,3 @@
     }
   });
 })();
-

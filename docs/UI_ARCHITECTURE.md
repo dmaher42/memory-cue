@@ -43,5 +43,5 @@
 
 ## Naming conventions
 - Use `notes` (not `notebook`) in navigation and user-facing labels.
-- Use `captureInput` (not `universalInput`).
-- Use `reminderQuickAdd` (not `quickAddInput`).
+- Use `thinkingBarInput` for the sole freeform capture field.
+- Use `reminderText` only inside the structured reminder-creation sheet.
