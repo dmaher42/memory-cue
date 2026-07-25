@@ -146,9 +146,9 @@ When extending shell-level mobile UI, prefer these extracted `src/ui/*` modules 
 ### Legacy runtime
 The `legacy/*` and `memory/*` legacy runtime dirs have been removed from the repo. Do not recreate them.
 
-The remaining surface to treat as legacy unless explicitly doing cleanup work is the desktop-style `404.html` shell and its `js/main.js`, `js/daily-log-view.js`, and `js/router.js` dependencies. Source `index.html`, root `assistant.js`, and `state.js` are no longer present; production root HTML is derived from the mobile shell during the build.
+The desktop-style `404.html` shell and its exclusive scripts have been removed. `404.html` now exists only as a dependency-free hosting fallback that redirects invalid addresses to `/mobile`. Source `index.html`, root `assistant.js`, and `state.js` are also absent; production root HTML is derived from the mobile shell during the build.
 
-Do not build new features into legacy runtime files.
+Do not rebuild a second runtime inside `404.html`.
 
 ---
 
@@ -200,7 +200,7 @@ Live-code reality currently looks like this:
 - notebook shell UI now has an extracted home in `src/ui/mobileNotesShellUi.js`
 - notes remain mixed, with storage centered in `js/modules/notes-storage.js` and heavy UI/orchestration still in `mobile.js`
 - assistant backend/orchestration is still one of the most duplicated areas
-- active mobile navigation is centralized in `js/services/navigation-service-v2.js`; the separate hash-router path remains only in the legacy `404.html` shell
+- active mobile navigation is centralized in `js/services/navigation-service-v2.js`; the separate hash-router path has been removed
 - `mobile.js` is still the biggest structural hotspot, but notebook shell UI has been reduced further
 - Cloudflare Pages is the canonical hosting target
 
@@ -312,7 +312,7 @@ Assistant is one of the most duplicated parts of the codebase.
 Do not add another assistant endpoint or orchestration layer without first identifying the canonical path.
 
 ### Navigation
-Active mobile navigation is owned by `js/services/navigation-service-v2.js`, with `mobile.js` and other modules dispatching `app:navigate` events into it. The legacy `js/router.js` path is isolated to `404.html` and should not be extended.
+Active mobile navigation is owned by `js/services/navigation-service-v2.js`, with `mobile.js` and other modules dispatching `app:navigate` events into it. There is no second hash-router path; `404.html` only redirects invalid addresses to the mobile app.
 
 ### Mobile shell UI
 For low-risk shell controls and sync/status UI, prefer the extracted `src/ui/mobileShellUi.js`, `src/ui/mobileSyncControls.js`, and `src/ui/mobileNotesShellUi.js` modules instead of putting more shell-level notebook UI back into `mobile.js`.
@@ -367,7 +367,7 @@ Broad cleanup direction:
 4. align storage schema where needed
 5. remove Supabase residue — DONE (`supabase/` and `oauth/` removed)
 6. simplify assistant paths
-7. retire the separate legacy `404.html` navigation/runtime path; active mobile navigation is already converged
+7. retire the separate legacy `404.html` navigation/runtime path — DONE (minimal redirect retained for invalid addresses)
 8. remove stale hosting/deployment paths — Vercel `api/` dir removed; serverless code now lives in `functions/api/*`
 9. archive or delete legacy layers and stale docs — `legacy/*` and `memory/*` removed
 

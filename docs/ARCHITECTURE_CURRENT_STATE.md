@@ -4,7 +4,7 @@
 
 - **Mobile runtime (primary):** `mobile.html` loads `js/services/navigation-service-v2.js`, `mobile.js`, service-worker registration, and the mobile theme module. `mobile.js` imports the reminder and capture owners it needs.
 - **Production root:** source `index.html` is absent; the build copies the mobile shell to `dist/index.html`.
-- **Legacy shell runtime:** `404.html` remains a separate desktop-style shell loading `js/main.js`, `js/daily-log-view.js`, and the compatibility `js/router.js`.
+- **Invalid-address fallback:** `404.html` is a dependency-free redirect to `/mobile`; it is not an app runtime.
 - **Mobile navigation:** `js/services/navigation-service-v2.js` is the single loaded view-switching controller.
 - **Server endpoints (Cloudflare Pages Functions):** `functions/api/assistant-chat.ts`, `functions/api/parse-entry.js`, `functions/api/embed.ts`, and `functions/api/push-reminder-sync.js`. (The Vercel-era `api/assistant.ts`, `api/chat.ts`, `api/search.ts`, and `api/capture.js` endpoints have been removed.)
 
@@ -57,7 +57,7 @@ The Vercel-era `POST /api/assistant`, `POST /api/chat`, `POST /api/search`, and 
 - **Custom-event navigation:** mobile code dispatches `CustomEvent('app:navigate', { detail: { view }})` into `js/services/navigation-service-v2.js`.
 - **View toggles:** the navigation service manages the `capture`, `reminders`, and `notebooks` panels through `data-view`, `hidden`, and `aria-hidden`.
 - **Bottom nav:** `mobile.html` footer buttons use `data-nav-target` and are bound by the same navigation service.
-- **Legacy routing:** `js/router.js` is a compatibility no-op loaded only by `404.html`; it is not part of the active mobile navigation path.
+- **Routing cleanup:** the legacy hash router has been removed. Invalid addresses are handled by the static `404.html` redirect rather than a second navigation runtime.
 
 ## 6) Which files control each system
 

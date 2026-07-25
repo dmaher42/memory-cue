@@ -49,3 +49,4 @@ UI Layer
 ## Legacy runtime
 - The `legacy/` runtime dir has been removed from the repo.
 - `mobile.html` is the only active runtime entry point.
+- `404.html` is a dependency-free redirect to `/mobile`, not an application shell.

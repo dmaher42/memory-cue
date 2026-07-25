@@ -31,6 +31,4 @@ Primary custom events found:
 
 ## 4) Navigation system overlap summary
 
-Active mobile navigation is converged on the event-driven `js/services/navigation-service-v2.js` controller. The old `js/navigation.js` and duplicate unversioned navigation service have been removed.
-
-`js/router.js` remains isolated to the legacy `404.html` desktop shell. Retiring that shell and router is a separate cleanup task.
+Active navigation is converged on the event-driven `js/services/navigation-service-v2.js` controller. The old `js/navigation.js`, duplicate unversioned navigation service, and legacy hash router have been removed. `404.html` is now only a static redirect to `/mobile`.
