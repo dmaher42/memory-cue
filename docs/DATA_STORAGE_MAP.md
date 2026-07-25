@@ -5,12 +5,12 @@
 | Storage key | Data structure | Writers | Readers |
 |---|---|---|---|
 | `memoryCueState` | Object `{ schemaVersion, entries[], settings, ui }` | `state.js` (`save`, `addEntry`, updates) | `state.js`, root `assistant.js` (`loadEntriesFromState`) |
-| `memoryEntries` | Array of inbox/capture entries (sometimes wrapped in `{ entries }` by tolerant readers) | `mobile.js` (`createInboxItem`), `js/entries.js` (`writeEntries`), `js/reminders.js` helper paths | `mobile.js` recall/search helpers, `js/entries.js`, `js/reminders.js`, `js/modules/daily-log.js` |
-| `memoryCueNotes` | Array of note objects `{ id,title,body,bodyHtml,bodyText,updatedAt,... }` | `js/modules/notes-storage.js` (`saveAllNotes`), `mobile.js`, `js/reminders.js`, `js/entries.js`, `js/modules/ai-capture-save.js` | `js/modules/notes-storage.js` (`loadAllNotes`), `mobile.js`, `js/reminders.js`, `js/modules/daily-log.js`, inline `mobile.html` utility |
+| `memoryCueInbox` | Array of canonical Inbox/capture entries | `src/services/inboxService.js` through the capture-service wrapper and trusted reminder conversion helpers | Inbox service consumers, reminder recall, daily log, Firestore sync |
+| `memoryEntries` | Legacy Inbox array or `{ entries }` wrapper | Historical writers only | `src/services/inboxService.js` for one-time migration when `memoryCueInbox` is empty |
+| `memoryCueNotes` | Array of note objects `{ id,title,body,bodyHtml,bodyText,updatedAt,... }` | `js/modules/notes-storage.js` (`saveAllNotes`), `mobile.js`, `src/reminders/reminderController.js`, `js/modules/ai-capture-save.js` | `js/modules/notes-storage.js` (`loadAllNotes`), `mobile.js`, reminder recall, `js/modules/daily-log.js` |
 | `memoryCueFolders` | Array of folder objects `{ id,name,order }` | `js/modules/notes-storage.js`, `js/reminders.js` (reflection folder helper) | `js/modules/notes-storage.js`, `mobile.js`, `js/reminders.js` |
 | `memoryCue:offlineReminders` | Array of reminder/task objects (offline source of truth for reminders UI) | `js/reminders.js` (`persistOfflineReminders`) | `js/reminders.js` (`loadOfflineRemindersFromStorage`) |
 | `scheduledReminders` | Object map keyed by reminder id for notification scheduling metadata | `js/reminders.js` | `js/reminders.js`, `mobile.js` recall helper |
-| `reminderEntries` | Array / wrapper used by inline mobile category/inbox helper script | Inline script in `mobile.html` (`writeEntries`) | Same inline script in `mobile.html` |
 | `mc:lastDefaults` | Object for last used reminder defaults (category/priority) | `js/reminders.js` | `js/reminders.js` |
 | `syncUrl` | String URL for external sync endpoint | `js/reminders.js`, `mobile.js` settings | `js/reminders.js`, `mobile.js` |
 | `notesSyncDebug` | Flag string for notes sync debug mode | runtime/user-set value (checked in `mobile.js`) | `mobile.js` |
@@ -28,6 +28,7 @@
 ## Specific requested identifiers
 
 - `memoryCueState`: legacy shell state object (`state.js`).
-- `memoryEntries`: inbox/capture entries used in mobile and helper flows.
+- `memoryCueInbox`: canonical Inbox/capture store.
+- `memoryEntries`: legacy input migrated into `memoryCueInbox`; no active writers remain.
 - `memoryCueNotes`: main notes model used by notes-storage and multiple conversion paths.
 - `offlineReminders`: implemented as key `memoryCue:offlineReminders` in `js/reminders.js`.

@@ -13,7 +13,6 @@
 - Fixed `#thinkingBarInput` / `#thinkingBarForm` in `mobile.html`, used as the single freeform capture surface.
 - Non-visual `memoryCueQuickAddNow({ forceText })` seam used for Inbox-to-reminder conversion and regression coverage.
 - FAB "new reminder" action dispatching `cue:prepare`/`cue:open`.
-- Inbox quick-actions "Create Reminder" and "Convert to Note" in `js/entries.js`.
 - Smart capture path in `mobile.js` (`sendAssistantMessage` flow) that classifies text and routes to assistant/reminder/inbox.
 - (The Vercel-era server capture endpoint `api/capture.js` has been removed.)
 
@@ -24,7 +23,8 @@
 
 Observed keys across runtime files:
 - `memoryCueState`
-- `memoryEntries`
+- `memoryCueInbox` (canonical Inbox store)
+- `memoryEntries` (legacy Inbox migration input only)
 - `memoryCueNotes`
 - `memoryCueFolders`
 - `memoryCue:offlineReminders`
@@ -37,14 +37,12 @@ Observed keys across runtime files:
 - `dailyTasksByDate`
 - `memoryCue:plannerPlans`
 - `memoryCue:plannerTimetable`
-- `reminderEntries` (inline mobile script inbox/category utility path)
 
 ## 3) All reminder storage mechanisms
 
-- **Primary offline reminder store:** `memoryCue:offlineReminders` in `js/reminders.js`.
+- **Primary offline reminder store:** `memoryCue:offlineReminders` in `src/reminders/reminderController.js`, loaded through `js/reminders.js`.
 - **Scheduled notification mirror:** `scheduledReminders` in localStorage + service-worker syncing.
 - **Background reminder persistence:** IndexedDB in `service-worker-v3.js` (`memory cue` reminder object store), used for scheduled notifications.
-- **Inline mobile legacy/helper path:** `reminderEntries` in `mobile.html` inline script for category/inbox rendering.
 
 ## 4) All assistant endpoints
 
@@ -66,8 +64,8 @@ The Vercel-era `POST /api/assistant`, `POST /api/chat`, `POST /api/search`, and 
 
 ## 6) Which files control each system
 
-- **Capture logic:** `mobile.js`, `js/reminders.js`, `js/entries.js`, root `assistant.js` (server endpoint `functions/api/parse-entry.js`).
-- **Note storage:** `js/modules/notes-storage.js`, plus conversion helpers in `mobile.js`, `js/reminders.js`, `js/entries.js`.
+- **Capture logic:** `mobile.js`, `src/core/capturePipeline.js`, `src/services/inboxService.js`, `src/reminders/reminderController.js`, and root `assistant.js` for the legacy desktop shell (server endpoint `functions/api/parse-entry.js`).
+- **Note storage:** `js/modules/notes-storage.js`, plus conversion helpers in `mobile.js` and `src/reminders/reminderController.js`.
 - **Reminder storage:** `js/reminders.js` + `service-worker-v3.js`.
 - **Assistant calls/UI:** `js/assistant.js`, `mobile.js`, `js/reminders.js`, root `assistant.js`; server side `functions/api/assistant-chat.ts`.
-- **Navigation switching:** `mobile.html` inline nav script, `mobile.js`, `js/navigation.js`, `js/router.js`, and sections in `js/entries.js`.
+- **Navigation switching:** `mobile.html` inline nav script, `mobile.js`, `js/navigation.js`, and `js/router.js`.
