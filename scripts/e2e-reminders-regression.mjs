@@ -174,39 +174,39 @@ async function main() {
       throw new Error('Expected the header question-mark button to be removed.');
     }
     const readabilityState = await page.evaluate(() => {
-      const quickBar = document.querySelector('.reminders-quick-bar');
-      const entry = document.querySelector('.reminders-quick-entry');
       const title = document.querySelector('.reminder-stream-row .reminder-row-title');
       const meta = document.querySelector('.reminder-stream-row .reminder-stream-meta');
       const header = document.getElementById('reminders-slim-header');
       const menuButton = document.getElementById('overflowMenuBtn');
-      const voiceIcon = document.querySelector('#quickAddVoice .material-symbols-rounded');
-      const quickBarStyle = quickBar ? getComputedStyle(quickBar) : null;
-      const entryStyle = entry ? getComputedStyle(entry) : null;
+      const reminderQuickCapture = document.querySelector('.reminders-fast-capture');
+      const universalComposer = document.getElementById('thinkingBarContainer');
       const titleStyle = title ? getComputedStyle(title) : null;
       const metaStyle = meta ? getComputedStyle(meta) : null;
       return {
-        quickBarBorderWidth: quickBarStyle ? Number.parseFloat(quickBarStyle.borderTopWidth) : 0,
-        entryBorderWidth: entryStyle ? Number.parseFloat(entryStyle.borderTopWidth) : 0,
-        entryBackground: entryStyle?.backgroundColor || '',
+        reminderQuickCaptureHidden: Boolean(
+          reminderQuickCapture?.hidden
+          && reminderQuickCapture.getAttribute('aria-hidden') === 'true'
+          && getComputedStyle(reminderQuickCapture).display === 'none'
+        ),
+        universalComposerVisible: Boolean(
+          universalComposer
+          && getComputedStyle(universalComposer).display !== 'none'
+          && universalComposer.getBoundingClientRect().height > 0
+        ),
         titleFontSize: titleStyle ? Number.parseFloat(titleStyle.fontSize) : 0,
         metaFontSize: metaStyle ? Number.parseFloat(metaStyle.fontSize) : 0,
         headerHeight: header?.getBoundingClientRect().height || 0,
         menuButtonHeight: menuButton?.getBoundingClientRect().height || 0,
-        voiceIcon: voiceIcon?.textContent?.trim() || '',
       };
     });
     if (
-      readabilityState.quickBarBorderWidth < 1
-      || readabilityState.entryBorderWidth !== 0
-      || !readabilityState.entryBackground
-      || readabilityState.entryBackground === 'rgba(0, 0, 0, 0)'
+      !readabilityState.reminderQuickCaptureHidden
+      || !readabilityState.universalComposerVisible
       || readabilityState.titleFontSize < 13
       || readabilityState.metaFontSize < 10
       || readabilityState.headerHeight < 46
       || readabilityState.headerHeight > 50
       || readabilityState.menuButtonHeight > 37
-      || readabilityState.voiceIcon !== 'mic'
     ) {
       throw new Error(`Unexpected reminder readability styles: ${JSON.stringify(readabilityState)}`);
     }
@@ -215,26 +215,27 @@ async function main() {
     if (visibleTitleCount !== 0) {
       throw new Error('Expected the space-consuming Reminders title card to be removed.');
     }
-    const quickAddPlaceholder = await page.locator('#reminderQuickAdd').getAttribute('placeholder');
-    if (quickAddPlaceholder) {
-      throw new Error(`Expected an empty quick-add field, received placeholder: ${quickAddPlaceholder}`);
+    if (await page.locator('#quickAddForm:visible').count()) {
+      throw new Error('Expected the reminder-only quick-add bar to be hidden.');
+    }
+    const universalCapturePlaceholder = await page.locator('#thinkingBarInput').getAttribute('placeholder');
+    if (universalCapturePlaceholder !== 'Add a reminder, note, or ask…') {
+      throw new Error(`Unexpected universal capture placeholder: ${universalCapturePlaceholder}`);
     }
 
-    await page.click('#quickAddOptionsToggle');
-    if (await page.locator('#quickAddOptions').isHidden()) {
-      throw new Error('Expected reminder options to open from the compact options button.');
-    }
-    const quickAddOptionsScreenshotOutput = typeof process.env.PLAYWRIGHT_QUICK_ADD_SCREENSHOT_PATH === 'string'
-      ? process.env.PLAYWRIGHT_QUICK_ADD_SCREENSHOT_PATH.trim()
-      : '';
-    if (quickAddOptionsScreenshotOutput) {
-      const quickAddOptionsScreenshotPath = path.resolve(cwd, quickAddOptionsScreenshotOutput);
-      await fs.mkdir(path.dirname(quickAddOptionsScreenshotPath), { recursive: true });
-      await page.screenshot({ path: quickAddOptionsScreenshotPath, fullPage: true });
-    }
-    await page.selectOption('#quickAddCategory', 'School');
-    await page.fill('#reminderQuickAdd', 'Call Mum tomorrow at 6pm');
-    await page.click('#quickAddSubmit');
+    await page.fill('#thinkingBarInput', 'Remind me to Call Mum tomorrow at 6pm');
+    await page.click('#thinkingBarSubmit');
+    await page.waitForFunction((reminderStorageKey) => {
+      try {
+        const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
+        return reminders.some((reminder) => reminder?.title === 'Call Mum');
+      } catch {
+        return false;
+      }
+    }, REMINDER_STORAGE_KEY);
+
+    await page.locator('[data-reminder-column="other"] [data-title="Call Mum"] .reminder-stream-more').click();
+    await page.locator('.reminder-card-actions-menu [data-action="move-to-school"]').click();
     await page.waitForFunction((reminderStorageKey) => {
       try {
         const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
@@ -243,9 +244,6 @@ async function main() {
         return false;
       }
     }, REMINDER_STORAGE_KEY);
-    if (!(await page.locator('#quickAddOptions').isHidden())) {
-      throw new Error('Expected reminder options to close after saving.');
-    }
 
     const boardColumnLabels = await page.locator('.reminder-category-column-title').allTextContents();
     if (JSON.stringify(boardColumnLabels.map((label) => label.trim())) !== JSON.stringify(['School', 'Footy'])) {
@@ -338,10 +336,11 @@ async function main() {
       }
     });
 
-    await page.click('#quickAddOptionsToggle');
-    await page.selectOption('#quickAddCategory', 'Footy');
-    await page.fill('#reminderQuickAdd', 'Training tomorrow at 7pm');
-    await page.click('#quickAddSubmit');
+    await page.evaluate(() => window.memoryCueQuickAddNow({
+      forceText: 'Training tomorrow at 7pm',
+      category: 'Footy',
+      source: 'regression',
+    }));
     await page.waitForFunction((reminderStorageKey) => {
       try {
         const reminders = JSON.parse(localStorage.getItem(reminderStorageKey) || '[]');
@@ -576,7 +575,7 @@ async function main() {
       const title = typeof reminder?.title === 'string' ? reminder.title.trim().toLowerCase() : '';
       return title === 'get naplan';
     });
-    const visibleQuickAddReminder = persistedReminders.find((reminder) => (
+    const universalCaptureReminder = persistedReminders.find((reminder) => (
       reminder?.title === 'Call Mum'
     ));
 
@@ -584,8 +583,8 @@ async function main() {
       throw new Error(`Expected persisted reminder to include a due value, received: ${JSON.stringify(persistedReminders)}`);
     }
 
-    if (typeof visibleQuickAddReminder?.due !== 'string' || !visibleQuickAddReminder.due) {
-      throw new Error(`Expected the visible quick-add bar to save a dated reminder, received: ${JSON.stringify(persistedReminders)}`);
+    if (typeof universalCaptureReminder?.due !== 'string' || !universalCaptureReminder.due) {
+      throw new Error(`Expected the universal capture bar to save a dated reminder, received: ${JSON.stringify(persistedReminders)}`);
     }
 
     await page.locator('[data-title="Get Naplan"] [data-reminder-control="toggle"]').click();
@@ -698,7 +697,7 @@ async function main() {
       metaText,
       unscheduledTitle,
       persistedDue: persistedQuickAddReminder.due,
-      visibleQuickAddCategory: visibleQuickAddReminder.category,
+      universalCaptureCategory: universalCaptureReminder.category,
       boardColumnLabels,
       renamedSchoolLabel,
       reloadedSchoolLabel,

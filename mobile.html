@@ -5266,7 +5266,7 @@ body, main, section, div, p, span, li {
             <h2 id="remindersViewTitle">Reminders</h2>
             <p id="mobileRemindersHeaderSubtitle">Your active cues for today.</p>
           </div>
-          <section class="reminders-fast-capture" aria-labelledby="quickAddLabel">
+          <section class="reminders-fast-capture hidden" aria-labelledby="quickAddLabel" aria-hidden="true" hidden>
             <form id="quickAddForm" class="reminders-fast-add" autocomplete="off">
               <label id="quickAddLabel" class="sr-only" for="reminderQuickAdd">Quickly add a reminder</label>
               <div class="reminders-quick-bar">
@@ -5778,10 +5778,10 @@ body, main, section, div, p, span, li {
     </div>
 </main>
 
-  <section id="thinkingBarContainer" class="chat-composer" aria-label="Chat capture bar">
+  <section id="thinkingBarContainer" class="chat-composer" aria-label="AI reminder, note, and question capture">
     <form id="thinkingBarForm" class="capture-form">
-      <label for="thinkingBarInput" class="sr-only">Think or ask anything</label>
-      <textarea id="thinkingBarInput" class="capture-input" placeholder="Think or ask anything…" autocomplete="off" rows="1"></textarea>
+      <label for="thinkingBarInput" class="sr-only">Add a reminder, note, or ask anything</label>
+      <textarea id="thinkingBarInput" class="capture-input" placeholder="Add a reminder, note, or ask…" autocomplete="off" rows="1"></textarea>
       <button id="thinkingBarSubmit" type="submit" class="btn btn-primary capture-save-btn" aria-label="Send">➤</button>
     </form>
     <div id="thinkingBarStatus" class="hidden" aria-live="polite"></div>

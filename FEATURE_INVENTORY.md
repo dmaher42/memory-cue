@@ -2,13 +2,13 @@
 
 | Feature Area | Current Purpose | Main Entry Point / UI | Data / Storage Used | Keep / Merge / Remove | Notes |
 |---|---|---|---|---|---|
-| Quick Add | Fast capture of text into reminders/inbox-style processing. | `#smartInputBar` + `#quickAddForm` + `#universalInput` in `mobile.html`; wired in `mobile.js` / `js/reminders.js`. | Local UI state + reminder/note pipelines (Firestore/Firebase depending on destination). | Keep but simplify | Appears to overlap with Brain Dump, Assistant input, and reminder sheet creation paths. |
-| Inbox | Holding area for captured items before processing. | Inbox list/process actions in mobile inline scripts + dashboard/inbox grouping in modules. | Local note entries and inbox-tagged items; localStorage-backed note structures. | Merge into another feature | Feels close to Quick Add + Brain Dump + Assistant “save to inbox” behaviors. |
-| Brain Dump | Ultra-fast scratch capture into a lightweight queue. | `#brainDumpFab`, `#brainDumpModal`, `#brainDumpTextarea` in `mobile.html`. | `localStorage` key `brainDumpItems`. | Merge into another feature | Very similar capture intent to Quick Add and Inbox. |
+| Universal Capture | One visible AI-assisted input for reminders, notes, and questions. | Fixed `#thinkingBarContainer` / `#thinkingBarInput` in `mobile.html`; wired through `mobile.js` into the canonical capture pipeline. | Reminder, note, or Inbox storage selected by the canonical capture decision. | Keep as the single visible capture bar | The reminder-only `#quickAddForm` is hidden on the Reminders screen so it no longer competes with this universal input. Its internal seam remains available for non-visual integrations and regression coverage. |
+| Inbox | Holding area for captured items before processing. | Inbox list/process actions in mobile inline scripts + dashboard/inbox grouping in modules. | Local note entries and inbox-tagged items; localStorage-backed note structures. | Merge into another feature | Feels close to Universal Capture + Brain Dump + Assistant “save to inbox” behaviors. |
+| Brain Dump | Ultra-fast scratch capture into a lightweight queue. | `#brainDumpFab`, `#brainDumpModal`, `#brainDumpTextarea` in `mobile.html`. | `localStorage` key `brainDumpItems`. | Merge into another feature | Very similar capture intent to Universal Capture and Inbox. |
 | Notes / Notebook | Core writing/editing and long-form note management. | Notebook view (`data-view="notebook"`), editor fields, note list and sheet flows in `mobile.html` + `mobile.js`. | `localStorage` notes (`memoryCueNotes`, legacy keys), optional Firebase sync. | Keep as core | This appears to be a central product surface. |
 | Saved Notes Sheet | Overlay/sheet for browsing existing notes and folders. | Saved notes slide-in UI in `mobile.html` (saved-notes styles/sheet hooks) + handlers in `mobile.js`. | Same notes/folders storage as Notebook. | Keep but simplify | UX pattern overlaps with other sheets/modals (settings, reminder create, folder move). |
 | Reminders | Create/manage timed reminders with categories/priorities and notifications. | Reminders view + list + quick actions in `mobile.html`; logic in `js/reminders.js`. | Firestore/Firebase reminder data + offline fallback (`memoryCue:offlineReminders`) + service worker schedule state. | Keep as core | One of two major app pillars (with Notebook). |
-| Reminder Creation Sheet | Dedicated bottom-sheet flow for authoring reminders. | `#createReminderModal`, `#createReminderForm`, `#saveReminder` in `mobile.html`. | Writes into reminders data model handled by `js/reminders.js`. | Keep but simplify | Coexists with quick-add reminder creation and FAB-triggered flows. |
+| Reminder Creation Sheet | Dedicated bottom-sheet flow for authoring reminders. | `#createReminderModal`, `#createReminderForm`, `#saveReminder` in `mobile.html`. | Writes into reminders data model handled by `js/reminders.js`. | Keep but simplify | Coexists with universal capture and FAB-triggered flows. |
 | Folders | Organize notes into user-defined buckets. | Folder sidebar/chips + move/rename/delete dialogs in notebook/saved-notes surfaces. | `localStorage` key `memoryCueFolders` (+ note `folderId` references), Firebase sync via notes payload. | Keep but simplify | Strongly tied to Notebook IA; avoid duplicate folder pickers. |
 | Categories | Classify reminders (and possibly memory items) by topic/type. | Reminder category input (`#category` + `#categorySuggestions`) and seeded category logic in `js/reminders.js`. | Reminder fields + seeded in-code categories. | Keep but simplify | Potential taxonomy drift vs folder concepts and assistant memory “type/tags”. |
 | Assistant | Conversational capture/retrieval helper and reflection tools. | Assistant view (`#assistantView`, `#assistantForm`, `#assistantInput`) in `mobile.html` + `mobile.js`/`js/assistant.js`. | Client context from notes/reminders; server endpoints for assistant/search/parse. | Keep but simplify | Useful differentiator, but input overlaps with other capture entry points. |
@@ -21,7 +21,7 @@
 
 ## Suspected Overlaps
 
-- Multiple ways to capture a new thought: Quick Add, Brain Dump modal, Assistant input, Reminder creation sheet, and FAB shortcuts.
+- Brain Dump, the reminder creation sheet, and FAB shortcuts still overlap with parts of the universal capture flow, but the duplicate reminder-only text bar is no longer visible.
 - Overlapping note/reminder/inbox flows: items can enter via inbox-like capture, notes, reminders, and assistant-save behaviors.
 - Multiple overlay/sheet patterns: saved notes sheet, reminder sheet, settings modal, move-folder sheet, note options sheet.
 - Possible duplicate storage concepts: folders vs categories vs assistant tags/types.
@@ -30,7 +30,7 @@
 
 ## Recommended Product Status
 
-- **Quick Add:** Keep but simplify.
+- **Universal Capture:** Keep as the single visible reminder/note/question input.
 - **Inbox:** Merge into another feature.
 - **Brain Dump:** Merge into another feature.
 - **Notes / Notebook:** Keep as core.
