@@ -1503,6 +1503,10 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined'
       ? document.getElementById('quickAddVoice') || document.getElementById('voiceBtn')
       : null;
+  const quickOptionsToggle =
+    typeof document !== 'undefined' ? document.getElementById('quickAddOptionsToggle') : null;
+  const quickOptionsPanel =
+    typeof document !== 'undefined' ? document.getElementById('quickAddOptions') : null;
   const quickAddParsingIndicator =
     typeof document !== 'undefined' ? document.getElementById('quickAddParsingIndicator') : null;
   const quickAddSuccessIndicator =
@@ -1513,6 +1517,31 @@ export async function initReminders(sel = {}) {
   let activeMode = null;
   let isQuickAddSubmitting = false;
   let stopQuickAddVoiceListening = null;
+
+  const setQuickOptionsOpen = (shouldOpen) => {
+    if (!(quickOptionsToggle instanceof HTMLElement) || !(quickOptionsPanel instanceof HTMLElement)) {
+      return;
+    }
+    quickOptionsToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    quickOptionsPanel.hidden = !shouldOpen;
+  };
+
+  quickOptionsToggle?.addEventListener('click', () => {
+    setQuickOptionsOpen(quickOptionsToggle.getAttribute('aria-expanded') !== 'true');
+  });
+
+  quickForm?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || quickOptionsToggle?.getAttribute('aria-expanded') !== 'true') {
+      return;
+    }
+    event.preventDefault();
+    setQuickOptionsOpen(false);
+    quickOptionsToggle.focus();
+  });
+
+  quickForm?.querySelector('[data-open-add-task]')?.addEventListener('click', () => {
+    setQuickOptionsOpen(false);
+  });
   const NOTES_STORAGE_KEY = 'memoryCueNotes';
   const FOLDERS_STORAGE_KEY = 'memoryCueFolders';
   const REFLECTION_FOLDER_NAME = 'Lesson – Reflections';
@@ -2623,6 +2652,7 @@ export async function initReminders(sel = {}) {
       }
 
       if (entry && typeof document !== 'undefined') {
+        setQuickOptionsOpen(false);
         if (quickInput instanceof HTMLInputElement) {
           quickInput.value = '';
           try {

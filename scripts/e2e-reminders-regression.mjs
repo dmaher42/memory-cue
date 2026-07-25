@@ -170,7 +170,27 @@ async function main() {
       return panel && !panel.classList.contains('hidden');
     });
 
-    await page.click('.reminders-fast-add-more > summary');
+    const visibleTitleCount = await page.locator('.reminders-screen-title:visible').count();
+    if (visibleTitleCount !== 0) {
+      throw new Error('Expected the space-consuming Reminders title card to be removed.');
+    }
+    const quickAddPlaceholder = await page.locator('#reminderQuickAdd').getAttribute('placeholder');
+    if (quickAddPlaceholder) {
+      throw new Error(`Expected an empty quick-add field, received placeholder: ${quickAddPlaceholder}`);
+    }
+
+    await page.click('#quickAddOptionsToggle');
+    if (await page.locator('#quickAddOptions').isHidden()) {
+      throw new Error('Expected reminder options to open from the compact options button.');
+    }
+    const quickAddOptionsScreenshotOutput = typeof process.env.PLAYWRIGHT_QUICK_ADD_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_QUICK_ADD_SCREENSHOT_PATH.trim()
+      : '';
+    if (quickAddOptionsScreenshotOutput) {
+      const quickAddOptionsScreenshotPath = path.resolve(cwd, quickAddOptionsScreenshotOutput);
+      await fs.mkdir(path.dirname(quickAddOptionsScreenshotPath), { recursive: true });
+      await page.screenshot({ path: quickAddOptionsScreenshotPath, fullPage: true });
+    }
     await page.selectOption('#quickAddCategory', 'School');
     await page.fill('#reminderQuickAdd', 'Call Mum tomorrow at 6pm');
     await page.click('#quickAddSubmit');
@@ -182,6 +202,9 @@ async function main() {
         return false;
       }
     }, REMINDER_STORAGE_KEY);
+    if (!(await page.locator('#quickAddOptions').isHidden())) {
+      throw new Error('Expected reminder options to close after saving.');
+    }
 
     const boardColumnLabels = await page.locator('.reminder-category-column-title').allTextContents();
     if (JSON.stringify(boardColumnLabels.map((label) => label.trim())) !== JSON.stringify(['School', 'Footy'])) {
@@ -274,6 +297,7 @@ async function main() {
       }
     });
 
+    await page.click('#quickAddOptionsToggle');
     await page.selectOption('#quickAddCategory', 'Footy');
     await page.fill('#reminderQuickAdd', 'Training tomorrow at 7pm');
     await page.click('#quickAddSubmit');

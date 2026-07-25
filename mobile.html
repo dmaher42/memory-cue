@@ -5249,13 +5249,11 @@ body, main, section, div, p, span, li {
       <div class="reminders-mobile-flow reminders-content-shell">
         <div id="inboxSearchResults"></div>
 
-        <section id="remindersListMobile">
-          <header class="reminders-screen-header" aria-label="Reminders overview">
-            <div class="reminders-screen-header-copy">
-              <h2 class="reminders-screen-title">Reminders</h2>
-              <p id="mobileRemindersHeaderSubtitle" class="reminders-screen-subtitle">Your active cues for today.</p>
-            </div>
-          </header>
+        <section id="remindersListMobile" aria-labelledby="remindersViewTitle">
+          <div class="sr-only">
+            <h2 id="remindersViewTitle">Reminders</h2>
+            <p id="mobileRemindersHeaderSubtitle">Your active cues for today.</p>
+          </div>
           <section class="reminders-fast-capture" aria-labelledby="quickAddLabel">
             <form id="quickAddForm" class="reminders-fast-add" autocomplete="off">
               <label id="quickAddLabel" class="sr-only" for="reminderQuickAdd">Quickly add a reminder</label>
@@ -5264,7 +5262,6 @@ body, main, section, div, p, span, li {
                   id="reminderQuickAdd"
                   type="text"
                   inputmode="text"
-                  placeholder="What and when? e.g. Call Mum tomorrow at 6"
                   aria-describedby="quickAddHelp quickAddStatus"
                 />
                 <button
@@ -5275,15 +5272,19 @@ body, main, section, div, p, span, li {
                 >
                   Voice
                 </button>
+                <button
+                  type="button"
+                  id="quickAddOptionsToggle"
+                  class="reminders-options-button"
+                  aria-label="Reminder options"
+                  aria-controls="quickAddOptions"
+                  aria-expanded="false"
+                  title="Reminder options"
+                >
+                  <span class="material-symbols-rounded" aria-hidden="true">tune</span>
+                </button>
                 <button id="quickAddSubmit" type="button" class="reminders-fast-add-button">Add</button>
-              </div>
-              <span id="quickAddStatus" class="reminders-fast-add-status" role="status" aria-live="polite">
-                <span id="quickAddParsingIndicator" hidden>Saving…</span>
-                <span id="quickAddSuccessIndicator" hidden>Saved</span>
-              </span>
-              <details class="reminders-fast-add-more">
-                <summary>More options</summary>
-                <div class="reminders-fast-add-options">
+                <div id="quickAddOptions" class="reminders-fast-add-options" hidden>
                   <label for="quickAddCategory">Save under</label>
                   <select id="quickAddCategory" aria-label="Category for quick reminder">
                     <option value="General">General</option>
@@ -5292,7 +5293,7 @@ body, main, section, div, p, span, li {
                     <option value="Home &amp; Personal">Home &amp; Personal</option>
                     <option value="Wellbeing &amp; Support">Wellbeing &amp; Support</option>
                   </select>
-                  <span id="quickAddHelp">Choose where this reminder is grouped, or open the full form for more details.</span>
+                  <span id="quickAddHelp" class="sr-only">Choose where this reminder is grouped, or open the full form for more details.</span>
                   <button
                     type="button"
                     class="reminders-details-button"
@@ -5302,7 +5303,11 @@ body, main, section, div, p, span, li {
                     Full details
                   </button>
                 </div>
-              </details>
+              </div>
+              <span id="quickAddStatus" class="reminders-fast-add-status" role="status" aria-live="polite">
+                <span id="quickAddParsingIndicator" hidden>Saving…</span>
+                <span id="quickAddSuccessIndicator" hidden>Saved</span>
+              </span>
             </form>
           </section>
           <section

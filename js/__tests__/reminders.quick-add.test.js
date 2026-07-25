@@ -69,10 +69,14 @@ beforeEach(async () => {
     <input id="reminderTime" type="time" />
     <form id="quickAddForm">
       <input id="reminderQuickAdd" />
-      <select id="quickAddCategory">
-        <option value="General">General</option>
-        <option value="School">School</option>
-      </select>
+      <button id="quickAddOptionsToggle" type="button" aria-expanded="false" aria-controls="quickAddOptions">Options</button>
+      <div id="quickAddOptions" hidden>
+        <select id="quickAddCategory">
+          <option value="General">General</option>
+          <option value="School">School</option>
+        </select>
+        <button type="button" data-open-add-task>Full details</button>
+      </div>
       <button id="quickAddSubmit" type="button">Add</button>
       <button id="quickAddVoice" type="button">Voice</button>
       <div id="quickAddParsingIndicator" hidden></div>
@@ -107,6 +111,22 @@ test('the visible compact Voice button fills the quick-add field', () => {
 
   expect(window.__quickVoiceStarts).toBe(1);
   expect(document.getElementById('reminderQuickAdd').value).toBe('Voice reminder');
+});
+
+test('compact reminder options open on demand and close after saving', async () => {
+  const toggle = document.getElementById('quickAddOptionsToggle');
+  const panel = document.getElementById('quickAddOptions');
+  const quickInput = document.getElementById('reminderQuickAdd');
+
+  toggle.click();
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(panel.hidden).toBe(false);
+
+  quickInput.value = 'Bring team sheets';
+  await window.memoryCueQuickAddNow();
+
+  expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  expect(panel.hidden).toBe(true);
 });
 
 test('quick add routes footy drill prefix to Footy – Drills category', async () => {
