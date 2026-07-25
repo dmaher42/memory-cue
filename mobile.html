@@ -5175,7 +5175,6 @@ body, main, section, div, p, span, li {
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
       <h1 class="header-title title">Memory Cue</h1>
-      <button id="assistantHelpBtn" type="button" class="icon-button control-icon-button" aria-label="How do I use this?">?</button>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
@@ -5258,12 +5257,15 @@ body, main, section, div, p, span, li {
             <form id="quickAddForm" class="reminders-fast-add" autocomplete="off">
               <label id="quickAddLabel" class="sr-only" for="reminderQuickAdd">Quickly add a reminder</label>
               <div class="reminders-quick-bar">
-                <input
-                  id="reminderQuickAdd"
-                  type="text"
-                  inputmode="text"
-                  aria-describedby="quickAddHelp quickAddStatus"
-                />
+                <div class="reminders-quick-entry">
+                  <span class="reminders-quick-entry-cue material-symbols-rounded" aria-hidden="true">edit_note</span>
+                  <input
+                    id="reminderQuickAdd"
+                    type="text"
+                    inputmode="text"
+                    aria-describedby="quickAddHelp quickAddStatus"
+                  />
+                </div>
                 <button
                   type="button"
                   id="quickAddVoice"

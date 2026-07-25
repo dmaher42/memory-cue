@@ -170,6 +170,33 @@ async function main() {
       return panel && !panel.classList.contains('hidden');
     });
 
+    if (await page.locator('#assistantHelpBtn').count()) {
+      throw new Error('Expected the header question-mark button to be removed.');
+    }
+    const readabilityState = await page.evaluate(() => {
+      const entry = document.querySelector('.reminders-quick-entry');
+      const title = document.querySelector('.reminder-stream-row .reminder-row-title');
+      const meta = document.querySelector('.reminder-stream-row .reminder-stream-meta');
+      const entryStyle = entry ? getComputedStyle(entry) : null;
+      const titleStyle = title ? getComputedStyle(title) : null;
+      const metaStyle = meta ? getComputedStyle(meta) : null;
+      return {
+        entryBorderWidth: entryStyle ? Number.parseFloat(entryStyle.borderTopWidth) : 0,
+        entryBackground: entryStyle?.backgroundColor || '',
+        titleFontSize: titleStyle ? Number.parseFloat(titleStyle.fontSize) : 0,
+        metaFontSize: metaStyle ? Number.parseFloat(metaStyle.fontSize) : 0,
+      };
+    });
+    if (
+      readabilityState.entryBorderWidth < 1
+      || !readabilityState.entryBackground
+      || readabilityState.entryBackground === 'rgba(0, 0, 0, 0)'
+      || readabilityState.titleFontSize < 13
+      || readabilityState.metaFontSize < 10
+    ) {
+      throw new Error(`Unexpected reminder readability styles: ${JSON.stringify(readabilityState)}`);
+    }
+
     const visibleTitleCount = await page.locator('.reminders-screen-title:visible').count();
     if (visibleTitleCount !== 0) {
       throw new Error('Expected the space-consuming Reminders title card to be removed.');
