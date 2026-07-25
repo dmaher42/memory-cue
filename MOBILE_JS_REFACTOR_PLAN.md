@@ -169,20 +169,16 @@ The goal of this plan is to split responsibilities into focused modules **withou
 - Modal wiring now spread through notes/settings/reminder sections.
 - Shared dialog utility functions used by multiple areas.
 
-### `js/storage.js`
+### Existing persistence owners (do not recreate `js/storage.js`)
 
-**Owns**
-- Local persistence wrappers (read/write, parse guards, key migration/normalization).
-- Feature-facing storage adapters for notes/reminders/settings.
-- Safe fallback behavior when storage data is malformed.
+The old `js/storage.js` was an unloaded legacy notebook script and has been removed. Persistence work must extend the existing domain owners instead:
 
-**Does not own**
-- Rendering or direct DOM updates.
-- Sync network requests.
+- Inbox: `src/services/inboxService.js`
+- Notes and folders: `js/modules/notes-storage.js`
+- Reminders: `src/reminders/reminderController.js` and `src/repositories/reminderRepository.js`
+- Remote sync: `src/services/firestoreSyncService.js` and `js/modules/notes-sync.js`
 
-**Examples to move**
-- localStorage key scanning/parsing and normalization helpers.
-- Settings persistence helpers for sync URL and related flags.
+Keep rendering and direct DOM updates out of persistence modules.
 
 ### `js/sync.js`
 
@@ -193,7 +189,7 @@ The goal of this plan is to split responsibilities into focused modules **withou
 
 **Does not own**
 - Feature rendering internals.
-- Generic local storage utilities (except via `storage.js`).
+- Generic local storage utilities owned by the established feature persistence modules.
 
 **Examples to move**
 - Firebase auth + note sync bridge code.
@@ -217,7 +213,7 @@ The goal of this plan is to split responsibilities into focused modules **withou
 4. Extract notes and folder/editor logic into `js/notes.js`.
 5. Extract assistant/thinking bar UI logic into `js/assistant-ui.js`.
 6. Extract shared modal helpers into `js/modals.js`.
-7. Extract local persistence and sync orchestration into `js/storage.js` and `js/sync.js`.
+7. Continue persistence and sync extraction through the existing domain owners listed above; do not recreate `js/storage.js`.
 8. Re-test after each move, verifying no behavior changes before continuing.
 
 ## Definition of done for this planning phase

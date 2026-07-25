@@ -128,7 +128,7 @@ Key examples:
 - `js/services/capture-service.js` → wrapper over `src/core/capturePipeline.js` and `src/services/inboxService.js`
 - `js/reminders.js` → wrapper over `src/reminders/reminderController.js`
 
-`js/entries.js` and its `src/ui/quickCapture.js`, `src/ui/reminderUI.js`, and `src/ui/chatUI.js` dependencies are retained compatibility source only. They are not loaded by the mobile shell and are not built as a production entry bundle.
+The unloaded `js/storage.js`, `js/ui.js`, and `js/entries.js` files and the orphaned entry UI modules that only supported `js/entries.js` have been removed. Do not recreate those parallel paths; extend the active owners below.
 
 The old inbox screen/UI layer has been retired from the main mobile experience.
 Inbox still exists as a processing/storage concept through `src/services/inboxService.js`, but the visible workflow is now notes + reminders first.
@@ -195,7 +195,7 @@ Live-code reality currently looks like this:
 - capture is mostly canonical through `js/services/capture-service.js` → `src/core/capturePipeline.js`
 - inbox is mostly canonical through `src/services/inboxService.js`
 - reminders are mostly canonical through `js/reminders.js` → `src/reminders/reminderController.js`
-- visible capture and reminder UI is owned by `mobile.html`, `mobile.js`, and `src/reminders/reminderController.js`; the old `js/entries.js` path is inactive
+- visible capture and reminder UI is owned by `mobile.html`, `mobile.js`, and `src/reminders/reminderController.js`; the old entries wrapper and its orphaned UI modules have been removed
 - shell-level mobile UI now has an extracted home in `src/ui/mobileShellUi.js`
 - mobile sync controls now have an extracted home in `src/ui/mobileSyncControls.js`
 - notebook shell UI now has an extracted home in `src/ui/mobileNotesShellUi.js`
