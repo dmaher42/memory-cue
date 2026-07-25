@@ -212,6 +212,10 @@ test('mobile reminders render School and Footy as two board columns without hidi
     <div id="wrapper"><ul id="list"></ul></div>
     <div id="status"></div>
     <div id="syncStatus"></div>
+    <button id="completedRemindersMenuBtn" class="hidden" hidden aria-hidden="true">
+      Completed reminders
+      <span id="completedRemindersMenuCount">0</span>
+    </button>
   `;
 
   const controller = await initReminders({
@@ -296,11 +300,20 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelectorAll('.reminder-stream-more')).toHaveLength(5);
   expect(document.querySelector('[aria-label^="Delete reminder"]')).toBeNull();
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-category').textContent).toBe('Footy – Drills');
+  expect(document.querySelector('.reminder-completed-section')).toBeNull();
+  expect(document.getElementById('completedRemindersMenuBtn').hidden).toBe(false);
+  expect(document.getElementById('completedRemindersMenuCount').textContent).toBe('1');
+
+  expect(window.setMobileRemindersFilter('completed')).toBe(true);
   expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');
   expect(document.querySelector('[data-action="clear-completed-reminders"]').textContent).toBe('Clear done');
+  expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
 
   document.querySelector('.reminder-completed-section-toggle').click();
-  expect(document.querySelector('[data-id="completed"]')).not.toBeNull();
+  expect(document.querySelector('.reminder-completed-section')).toBeNull();
+  expect(document.querySelector('[data-id="completed"]')).toBeNull();
+
+  window.setMobileRemindersFilter('completed');
 
   const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
   document.querySelector('[data-action="clear-completed-reminders"]').click();
@@ -311,6 +324,7 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(confirmSpy).toHaveBeenLastCalledWith('Permanently delete 1 completed reminder? This cannot be undone.');
   expect(controller.__testing.getItems().some((item) => item.done)).toBe(false);
   expect(document.querySelector('.reminder-completed-section')).toBeNull();
+  expect(document.getElementById('completedRemindersMenuBtn').hidden).toBe(true);
   confirmSpy.mockRestore();
 });
 
@@ -516,6 +530,8 @@ test('legacy Today list items migrate once into canonical reminders before the o
 
   expect(document.querySelector('[data-reminder-column="school"] [data-title="Return School Form"] .reminder-stream-due').textContent).toBe('Today');
   expect(document.querySelector('[data-reminder-column="other"] [data-title="Check Passport"] .reminder-stream-due').textContent).toBe('Tomorrow');
+  expect(document.querySelector('.reminder-completed-section')).toBeNull();
+  expect(window.setMobileRemindersFilter('completed')).toBe(true);
   expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');
 
   localStorage.setItem('dailyTasksByDate', JSON.stringify(legacyPayload));

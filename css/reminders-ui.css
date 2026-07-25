@@ -2318,6 +2318,28 @@ body #view-reminders .reminder-stream-row.reminder-row-completed .reminder-row-t
   opacity: 0.62;
 }
 
+.overflow-menu-reminder-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  padding: 0 0.38rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 13%, #ffffff);
+  color: var(--accent-color, #0f766e);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+#completedRemindersMenuBtn::after {
+  content: none;
+}
+
+#completedRemindersMenuBtn > span:first-child {
+  white-space: nowrap;
+}
+
 body #view-reminders #reminderList > .reminder-stream-row {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent) !important;

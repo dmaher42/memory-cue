@@ -352,6 +352,10 @@ export const initHeaderOverflowMenu = () => {
           document.querySelector('[data-reminders-tab="completed"]') ||
           document.querySelector('[data-reminders-filter="completed"]');
         runMenuAction(() => {
+          const remindersNav = document.getElementById('mobile-footer-reminders');
+          if (remindersNav instanceof HTMLElement) {
+            remindersNav.click();
+          }
           if (completedTab instanceof HTMLElement) {
             completedTab.click();
             focusElement(completedTab);

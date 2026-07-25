@@ -1074,6 +1074,10 @@ export async function initReminders(sel = {}) {
   const variant = sel.variant || 'mobile';
   const autoWireAuthButtons =
     typeof sel.autoWireAuthButtons === 'boolean' ? sel.autoWireAuthButtons : variant !== 'desktop';
+  const completedRemindersMenuBtn =
+    typeof document !== 'undefined' ? document.getElementById('completedRemindersMenuBtn') : null;
+  const completedRemindersMenuCount =
+    typeof document !== 'undefined' ? document.getElementById('completedRemindersMenuCount') : null;
 
   // Mobile reminders filter state and cache
   let mobileRemindersCache = [];
@@ -1084,6 +1088,60 @@ export async function initReminders(sel = {}) {
   });
   let reminderSortMode = REMINDER_SORT_OPTIONS.created;
   let completedReminderSectionExpanded = false;
+
+  function syncCompletedRemindersMenu(count = 0) {
+    const completedCount = Math.max(0, Number(count) || 0);
+    const shouldHide = completedCount === 0;
+
+    if (completedRemindersMenuCount instanceof HTMLElement) {
+      completedRemindersMenuCount.textContent = String(completedCount);
+    }
+    if (completedRemindersMenuBtn instanceof HTMLElement) {
+      completedRemindersMenuBtn.hidden = shouldHide;
+      completedRemindersMenuBtn.classList.toggle('hidden', shouldHide);
+      completedRemindersMenuBtn.setAttribute('aria-hidden', shouldHide ? 'true' : 'false');
+      completedRemindersMenuBtn.setAttribute(
+        'aria-label',
+        `View ${completedCount} completed ${completedCount === 1 ? 'reminder' : 'reminders'}`,
+      );
+    }
+    if (shouldHide) {
+      completedReminderSectionExpanded = false;
+    }
+  }
+
+  function showCompletedReminders() {
+    const completedCount = items.filter((item) => item?.done === true).length;
+    if (!completedCount) {
+      syncCompletedRemindersMenu(0);
+      return false;
+    }
+
+    completedReminderSectionExpanded = true;
+    render();
+
+    const focusCompletedSection = () => {
+      const toggle = document.querySelector('.reminder-completed-section-toggle');
+      if (!(toggle instanceof HTMLElement)) {
+        return;
+      }
+      if (typeof toggle.scrollIntoView === 'function') {
+        toggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      try {
+        toggle.focus({ preventScroll: true });
+      } catch {
+        toggle.focus();
+      }
+    };
+
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(focusCompletedSection);
+    } else {
+      focusCompletedSection();
+    }
+    return true;
+  }
 
   function sortReminderRows(rows = []) {
     const sorted = Array.isArray(rows) ? rows.slice() : [];
@@ -7158,6 +7216,7 @@ export async function initReminders(sel = {}) {
     let rows = sortReminderRows(items);
     const activeRows = rows.filter((row) => !row?.done);
     const completedRows = rows.filter((row) => row?.done);
+    syncCompletedRemindersMenu(completedRows.length);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
@@ -7755,13 +7814,25 @@ export async function initReminders(sel = {}) {
       });
     }
 
-    if (completedRows.length) {
+    const shouldRenderCompletedSection = completedRows.length
+      && (variant !== 'mobile' || completedReminderSectionExpanded);
+    if (shouldRenderCompletedSection) {
       appendCompletedReminderSectionHeading(frag, {
         listIsSemantic,
         count: completedRows.length,
         expanded: completedReminderSectionExpanded,
         onToggle: () => {
           completedReminderSectionExpanded = !completedReminderSectionExpanded;
+          if (variant === 'mobile' && !completedReminderSectionExpanded) {
+            const menuButton = document.getElementById('overflowMenuBtn');
+            if (menuButton instanceof HTMLElement) {
+              try {
+                menuButton.focus({ preventScroll: true });
+              } catch {
+                menuButton.focus();
+              }
+            }
+          }
           render();
         },
         onClear: clearCompletedReminders,
@@ -8113,8 +8184,9 @@ export async function initReminders(sel = {}) {
   scheduleEmbeddingBackfill();
 
   if (variant === 'mobile') {
-    // Filtering is now handled by the assistant; keep a no-op for legacy callers.
-    window.setMobileRemindersFilter = () => false;
+    window.setMobileRemindersFilter = (filter) => (
+      filter === 'completed' ? showCompletedReminders() : false
+    );
   }
 
 

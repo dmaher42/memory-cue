@@ -575,6 +575,25 @@ async function main() {
     }
 
     await page.locator('[data-title="Get Naplan"] [data-reminder-control="toggle"]').click();
+    await page.waitForFunction(() => {
+      const menuButton = document.getElementById('completedRemindersMenuBtn');
+      const count = document.getElementById('completedRemindersMenuCount');
+      return menuButton && !menuButton.hidden && count?.textContent?.trim() === '1';
+    });
+    if (await page.locator('.reminder-completed-section').count()) {
+      throw new Error('Expected completed reminders to remain hidden from the active board.');
+    }
+
+    await page.locator('#overflowMenuBtn').click();
+    const doneMenuScreenshotOutput = typeof process.env.PLAYWRIGHT_DONE_MENU_SCREENSHOT_PATH === 'string'
+      ? process.env.PLAYWRIGHT_DONE_MENU_SCREENSHOT_PATH.trim()
+      : '';
+    if (doneMenuScreenshotOutput) {
+      const doneMenuScreenshotPath = path.resolve(cwd, doneMenuScreenshotOutput);
+      await fs.mkdir(path.dirname(doneMenuScreenshotPath), { recursive: true });
+      await page.screenshot({ path: doneMenuScreenshotPath, fullPage: true });
+    }
+    await page.locator('#completedRemindersMenuBtn').click();
     await page.locator('[data-action="clear-completed-reminders"]').waitFor({ state: 'visible' });
     const clearedDoneCount = Number(
       (await page.locator('.reminder-completed-section-count').textContent())?.trim(),
@@ -603,6 +622,9 @@ async function main() {
     }, REMINDER_STORAGE_KEY);
     if (await page.locator('[data-action="clear-completed-reminders"]').count()) {
       throw new Error('Expected the completed-reminder section to disappear after clearing');
+    }
+    if (!(await page.locator('#completedRemindersMenuBtn').isHidden())) {
+      throw new Error('Expected the completed-reminder menu item to hide when no completed reminders remain');
     }
 
     const inboxEntries = await page.evaluate(() => {
