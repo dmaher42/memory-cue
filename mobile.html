@@ -2447,9 +2447,9 @@ body, main, section, div, p, span, li {
     /* New Header Styles */
     .mobile-header,
     .app-header {
-      height: 52px;
-      min-height: 52px;
-      max-height: 52px;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2534,8 +2534,8 @@ body, main, section, div, p, span, li {
     }
 
     .app-header button {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
     }
 
     .menu {
@@ -5018,10 +5018,10 @@ body, main, section, div, p, span, li {
       top: 0;
       z-index: 30;
       width: 100%;
-      height: 56px;
-      min-height: 56px;
-      max-height: 56px;
-      padding: 0 16px;
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
+      padding: 0 12px;
       background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
@@ -5032,10 +5032,12 @@ body, main, section, div, p, span, li {
     }
 
     #reminders-slim-header .control-icon-button {
+      width: 36px;
+      height: 36px;
       border: 1px solid var(--mobile-header-button-border);
       background: var(--mobile-header-button-bg);
       color: var(--mobile-header-button-color);
-      box-shadow: 0 12px 24px rgba(13, 148, 136, 0.14);
+      box-shadow: none;
     }
 
     #reminders-slim-header .control-icon-button:hover,
@@ -5082,7 +5084,7 @@ body, main, section, div, p, span, li {
     /* Responsive adjustments for narrow screens */
     @media (max-width: 380px) {
       #reminders-slim-header {
-        padding: 0 16px;
+        padding: 0 12px;
       }
 
       #reminders-slim-header .header-actions {
@@ -5283,7 +5285,8 @@ body, main, section, div, p, span, li {
                   class="reminders-voice-button"
                   aria-label="Add reminder with voice"
                 >
-                  Voice
+                  <span class="material-symbols-rounded" aria-hidden="true">mic</span>
+                  <span class="sr-only">Voice</span>
                 </button>
                 <button
                   type="button"

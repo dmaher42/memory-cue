@@ -174,25 +174,39 @@ async function main() {
       throw new Error('Expected the header question-mark button to be removed.');
     }
     const readabilityState = await page.evaluate(() => {
+      const quickBar = document.querySelector('.reminders-quick-bar');
       const entry = document.querySelector('.reminders-quick-entry');
       const title = document.querySelector('.reminder-stream-row .reminder-row-title');
       const meta = document.querySelector('.reminder-stream-row .reminder-stream-meta');
+      const header = document.getElementById('reminders-slim-header');
+      const menuButton = document.getElementById('overflowMenuBtn');
+      const voiceIcon = document.querySelector('#quickAddVoice .material-symbols-rounded');
+      const quickBarStyle = quickBar ? getComputedStyle(quickBar) : null;
       const entryStyle = entry ? getComputedStyle(entry) : null;
       const titleStyle = title ? getComputedStyle(title) : null;
       const metaStyle = meta ? getComputedStyle(meta) : null;
       return {
+        quickBarBorderWidth: quickBarStyle ? Number.parseFloat(quickBarStyle.borderTopWidth) : 0,
         entryBorderWidth: entryStyle ? Number.parseFloat(entryStyle.borderTopWidth) : 0,
         entryBackground: entryStyle?.backgroundColor || '',
         titleFontSize: titleStyle ? Number.parseFloat(titleStyle.fontSize) : 0,
         metaFontSize: metaStyle ? Number.parseFloat(metaStyle.fontSize) : 0,
+        headerHeight: header?.getBoundingClientRect().height || 0,
+        menuButtonHeight: menuButton?.getBoundingClientRect().height || 0,
+        voiceIcon: voiceIcon?.textContent?.trim() || '',
       };
     });
     if (
-      readabilityState.entryBorderWidth < 1
+      readabilityState.quickBarBorderWidth < 1
+      || readabilityState.entryBorderWidth !== 0
       || !readabilityState.entryBackground
       || readabilityState.entryBackground === 'rgba(0, 0, 0, 0)'
       || readabilityState.titleFontSize < 13
       || readabilityState.metaFontSize < 10
+      || readabilityState.headerHeight < 46
+      || readabilityState.headerHeight > 50
+      || readabilityState.menuButtonHeight > 37
+      || readabilityState.voiceIcon !== 'mic'
     ) {
       throw new Error(`Unexpected reminder readability styles: ${JSON.stringify(readabilityState)}`);
     }
