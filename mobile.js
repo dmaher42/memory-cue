@@ -2839,13 +2839,10 @@ const initMobileNotes = () => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'notes-overview-item';
+      button.dataset.noteId = note.id;
       const folder = getFolderNameById(note?.folderId || 'unsorted') || 'Unsorted';
-      const tags = Array.isArray(note?.tags) && note.tags.length ? note.tags.join(', ') : '';
       const timestamp = formatNoteTimestamp(note?.createdAt || note?.updatedAt);
       const safeTitle = note?.title || 'Untitled note';
-      const tagsMarkup = tags
-        ? `<div class="notes-overview-item-tags">Tags: ${escapeHtml(tags)}</div>`
-        : '';
       button.innerHTML = `
         <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
         <div class="notes-overview-item-meta">
@@ -2853,7 +2850,6 @@ const initMobileNotes = () => {
           <span class="notes-overview-item-meta-dot" aria-hidden="true">\u2022</span>
           <span>${timestamp}</span>
         </div>
-        ${tagsMarkup}
       `;
       button.addEventListener('click', () => {
         setEditorValues(note);
@@ -2866,6 +2862,7 @@ const initMobileNotes = () => {
       });
       notesOverviewList.appendChild(button);
     });
+    updateListSelection();
   };
 
   const getNoteCountsByFolder = (allNotesArray = [], folders = []) => {
@@ -3130,10 +3127,10 @@ const initMobileNotes = () => {
   };
 
   const updateListSelection = () => {
-    if (!listElement) {
+    if (!listElement && !(notesOverviewList instanceof HTMLElement)) {
       return;
     }
-    const buttons = listElement.querySelectorAll('[data-role="open-note"][data-note-id]');
+    const buttons = listElement?.querySelectorAll('[data-role="open-note"][data-note-id]') || [];
     buttons.forEach((button) => {
       if (!(button instanceof HTMLElement)) {
         return;
@@ -3157,6 +3154,18 @@ const initMobileNotes = () => {
         parentItem.classList.toggle('selected', isActive);
       }
     });
+
+    if (notesOverviewList instanceof HTMLElement) {
+      const overviewItems = notesOverviewList.querySelectorAll('.notes-overview-item[data-note-id]');
+      overviewItems.forEach((item) => {
+        if (!(item instanceof HTMLElement)) {
+          return;
+        }
+        const isActive = item.dataset.noteId === currentNoteId;
+        item.classList.toggle('is-active', isActive);
+        item.setAttribute('aria-current', isActive ? 'true' : 'false');
+      });
+    }
   };
 
   const formatNoteTimestamp = (timestamp) => {

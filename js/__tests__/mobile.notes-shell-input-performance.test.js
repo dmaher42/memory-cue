@@ -110,3 +110,45 @@ test('defers note sections bar rendering while typing in the editor', () => {
   expect(sectionsBar.textContent).toContain('Lesson Plan');
   expect(innerTextRead).not.toHaveBeenCalled();
 });
+
+test('labels the compact overview as Saved notes and returns to the editor', () => {
+  document.body.innerHTML = `
+    <section id="view-notebook">
+      <section id="notesOverviewPanel">
+        <h2>Notes</h2>
+        <div id="notesOverviewList"></div>
+      </section>
+      <div id="noteEditorSheet"></div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const noteEditorSheet = document.getElementById('noteEditorSheet');
+  const list = document.getElementById('notesOverviewList');
+
+  const { applyNotesMode } = initMobileNotesShellUi({
+    noteEditorSheet,
+    notesOverviewPanel,
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+  });
+
+  const heading = notesOverviewPanel.querySelector('h2');
+  const toggle = notesOverviewPanel.querySelector('[data-notes-overview-toggle]');
+  expect(heading.textContent).toBe('Notes');
+  expect(toggle.textContent).toBe('Saved notes');
+  expect(list.hidden).toBe(true);
+
+  applyNotesMode('overview');
+  expect(heading.textContent).toBe('Saved notes');
+  expect(toggle.textContent).toBe('Back');
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(list.hidden).toBe(false);
+  expect(noteEditorSheet.classList.contains('hidden')).toBe(true);
+
+  toggle.click();
+  expect(heading.textContent).toBe('Notes');
+  expect(toggle.textContent).toBe('Saved notes');
+  expect(list.hidden).toBe(true);
+  expect(noteEditorSheet.classList.contains('hidden')).toBe(false);
+});

@@ -77,76 +77,55 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewList {
-    gap: 0.5rem;
+    gap: 0.36rem;
   }
 
   #view-notebook #notesOverviewList[hidden] {
     display: none !important;
   }
 
-  #view-notebook #notesOverviewList .note-item-mobile {
+  #view-notebook #notesOverviewList .notes-overview-item {
+    gap: 0.2rem;
+    padding: 0.62rem 0.72rem;
     margin: 0;
-  }
-
-  #view-notebook #notesOverviewList .note-list-item {
-    gap: 0.22rem;
-    padding: 0.82rem 0.95rem;
-    margin: 0;
-    border-radius: 0.95rem;
+    border-radius: 0.5rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
     box-shadow: none;
   }
 
-  #view-notebook #notesOverviewList .note-list-item:hover,
-  #view-notebook #notesOverviewList .note-list-item:focus-within {
+  #view-notebook #notesOverviewList .notes-overview-item:hover,
+  #view-notebook #notesOverviewList .notes-overview-item:focus-visible {
     background: color-mix(in srgb, #ffffff 91%, #f8fafc 9%);
     border-color: color-mix(in srgb, var(--accent-color, #1e293b) 18%, transparent);
+    outline: none;
     box-shadow: none;
     transform: none;
   }
 
-  #view-notebook #notesOverviewList .note-card-main {
-    gap: 0.18rem;
+  #view-notebook #notesOverviewList .notes-overview-item.is-active {
+    border-color: color-mix(in srgb, var(--accent-color, #1e293b) 32%, var(--card-border, #e2e8f0));
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 6%, #ffffff 94%);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent-color, #1e293b) 72%, transparent);
   }
 
-  #view-notebook #notesOverviewList .note-card-header {
-    gap: 0.45rem;
-  }
-
-  #view-notebook #notesOverviewList .note-card-title {
-    font-size: 0.92rem;
-    line-height: 1.28;
+  #view-notebook #notesOverviewList .notes-overview-item-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+    line-height: 1.24;
     font-weight: 650;
+    letter-spacing: 0;
   }
 
-  #view-notebook #notesOverviewList .note-card-meta {
-    gap: 0.32rem;
+  #view-notebook #notesOverviewList .notes-overview-item-meta {
+    gap: 0.28rem;
     margin-top: 0;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+    line-height: 1.2;
     color: color-mix(in srgb, var(--text-main, #1e293b) 72%, #7c8798 28%);
-  }
-
-  #view-notebook #notesOverviewList .note-card-folder {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    border-radius: 0;
-    font-size: 0.78rem;
-    color: inherit;
-  }
-
-  #view-notebook #notesOverviewList .note-card-folder::before {
-    display: none;
-  }
-
-  #view-notebook #notesOverviewList .note-card-action {
-    width: 28px;
-    height: 28px;
-    padding: 0.18rem;
-    margin-left: 0.15rem;
-    border-radius: 999px;
-    box-shadow: none;
   }
 
   #view-notebook [data-active-lesson-card] {
@@ -1389,13 +1368,14 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const renderNotesOverviewToggle = () => {
-    const { toggleEl } = ensureNotesOverviewHeader();
+    const { toggleEl, titleEl } = ensureNotesOverviewHeader();
     const listEl = notesOverviewPanel?.querySelector('#notesOverviewList');
-    if (!(toggleEl instanceof HTMLButtonElement) || !(listEl instanceof HTMLElement)) {
+    if (!(toggleEl instanceof HTMLButtonElement) || !(titleEl instanceof HTMLElement) || !(listEl instanceof HTMLElement)) {
       return;
     }
     notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
+    titleEl.textContent = notesMode === 'overview' ? 'Saved notes' : 'Notes';
     toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Saved notes';
     toggleEl.setAttribute('aria-expanded', notesMode === 'overview' ? 'true' : 'false');
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
