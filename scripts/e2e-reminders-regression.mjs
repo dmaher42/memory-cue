@@ -140,6 +140,17 @@ async function main() {
       captureDue.setDate(captureDue.getDate() + 1);
       captureDue.setHours(8, 30, 0, 0);
       localStorage.setItem('memoryCueInbox', JSON.stringify([]));
+      localStorage.setItem('memoryCueNotes', JSON.stringify([{
+        id: 'capture-layout-note',
+        title: 'Excursion permission form checklist',
+        body: 'Confirm forms, medical details, and emergency contacts.',
+        bodyHtml: 'Confirm forms, medical details, and emergency contacts.',
+        bodyText: 'Confirm forms, medical details, and emergency contacts.',
+        folderId: 'school',
+        metadata: { source: 'chat' },
+        createdAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
+        updatedAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
+      }]));
       localStorage.setItem(reminderStorageKey, JSON.stringify([
         {
           id: 'seed-unscheduled-title',
@@ -335,6 +346,75 @@ async function main() {
       || undoneCaptureState.actionCount !== 0
     ) {
       throw new Error(`Unexpected capture undo state: ${JSON.stringify(undoneCaptureState)}`);
+    }
+
+    await page.evaluate(() => {
+      localStorage.setItem('memoryCueChatHistory', JSON.stringify([
+        {
+          id: 'capture-note-user',
+          role: 'user',
+          content: 'Save a note with my excursion permission form checklist',
+          timestamp: Date.now() - 1000,
+        },
+        {
+          id: 'capture-note-result',
+          role: 'assistant',
+          content: 'Saved note.',
+          timestamp: Date.now(),
+        },
+      ]));
+      document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
+    });
+    await page.waitForSelector('[data-capture-action="open-note"]');
+    await page.waitForSelector('[data-capture-action="undo-note"]');
+    const capturedNoteState = await page.evaluate(() => ({
+      title: document.querySelector('.capture-result-title')?.textContent || '',
+      detail: document.querySelector('.capture-result-detail')?.textContent || '',
+      metadata: document.querySelector('.capture-result-meta')?.textContent || '',
+      metadataLabel: document.querySelector('.capture-result-meta')?.getAttribute('aria-label') || '',
+      openAction: document.querySelector('[data-capture-action="open-note"]')?.textContent || '',
+      undoAction: document.querySelector('[data-capture-action="undo-note"]')?.textContent || '',
+      hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }));
+    if (
+      capturedNoteState.title !== 'Saved to notes'
+      || capturedNoteState.detail !== 'Excursion permission form checklist'
+      || capturedNoteState.metadata !== 'School'
+      || capturedNoteState.metadataLabel !== 'Note details: School'
+      || capturedNoteState.openAction !== 'Open note'
+      || capturedNoteState.undoAction !== 'Undo'
+      || capturedNoteState.hasHorizontalOverflow
+    ) {
+      throw new Error(`Unexpected captured note state: ${JSON.stringify(capturedNoteState)}`);
+    }
+
+    await page.click('[data-capture-action="open-note"]');
+    await page.waitForFunction(() => {
+      const notesView = document.getElementById('view-notebook');
+      const title = document.getElementById('noteTitleMobile');
+      return notesView && !notesView.classList.contains('hidden') && title?.value === 'Excursion permission form checklist';
+    });
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
+    });
+    await page.waitForFunction(() => !document.getElementById('view-capture')?.classList.contains('hidden'));
+    await page.click('[data-capture-action="undo-note"]');
+    await page.waitForFunction(() => document.querySelector('.capture-result-title')?.textContent === 'Note removed');
+    const undoneNoteState = await page.evaluate(() => {
+      const notes = JSON.parse(localStorage.getItem('memoryCueNotes') || '[]');
+      const chatHistory = JSON.parse(localStorage.getItem('memoryCueChatHistory') || '[]');
+      return {
+        noteStillExists: notes.some((item) => item?.id === 'capture-layout-note'),
+        resultContent: chatHistory.find((item) => item?.id === 'capture-note-result')?.content || '',
+        actionCount: document.querySelectorAll('.capture-result-action').length,
+      };
+    });
+    if (
+      undoneNoteState.noteStillExists
+      || undoneNoteState.resultContent !== 'Note creation undone: Excursion permission form checklist.'
+      || undoneNoteState.actionCount !== 0
+    ) {
+      throw new Error(`Unexpected captured note undo state: ${JSON.stringify(undoneNoteState)}`);
     }
     await page.evaluate(() => {
       localStorage.removeItem('memoryCueChatHistory');

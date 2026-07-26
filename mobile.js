@@ -29,6 +29,30 @@ import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
 
 let reminderControllerApi = null;
 
+const removeSavedNoteById = async (noteId) => {
+  const normalizedId = typeof noteId === 'string' ? noteId.trim() : '';
+  if (!normalizedId) {
+    return false;
+  }
+
+  const existingNotes = loadAllNotes();
+  if (!Array.isArray(existingNotes) || !existingNotes.some((note) => note?.id === normalizedId)) {
+    return false;
+  }
+
+  const saved = saveAllNotes(existingNotes.filter((note) => note?.id !== normalizedId));
+  if (!saved) {
+    return false;
+  }
+
+  try {
+    await deleteNote(normalizedId);
+  } catch (error) {
+    console.warn('[notes-sync] Failed to delete note from Firebase.', error);
+  }
+  return true;
+};
+
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
     initMobileShellUi();
@@ -233,6 +257,43 @@ function initAssistant() {
       }
     };
 
+    const findMatchingCaptureNote = (messageTimestamp, noteTitle = '') => {
+      const messageDate = toValidDate(messageTimestamp);
+      if (!messageDate) {
+        return null;
+      }
+
+      const notes = loadAllNotes();
+      if (!Array.isArray(notes)) {
+        return null;
+      }
+
+      const normalizedTitle = noteTitle.trim().toLowerCase();
+      return notes
+        .map((note) => {
+          const createdDate = toValidDate(note?.createdAt);
+          const title = typeof note?.title === 'string' ? note.title.trim() : '';
+          const timeDifference = createdDate
+            ? Math.abs(messageDate.getTime() - createdDate.getTime())
+            : Number.POSITIVE_INFINITY;
+          const titleMatches = Boolean(normalizedTitle && title.toLowerCase() === normalizedTitle);
+          const source = typeof note?.metadata?.source === 'string'
+            ? note.metadata.source.trim().toLowerCase()
+            : '';
+          const isCaptureSource = source === 'chat' || source === 'capture';
+          return { note, timeDifference, titleMatches, isCaptureSource };
+        })
+        .filter(({ timeDifference, titleMatches, isCaptureSource }) => (
+          timeDifference <= 120000 && (isCaptureSource || titleMatches)
+        ))
+        .sort((left, right) => {
+          if (left.titleMatches !== right.titleMatches) {
+            return left.titleMatches ? -1 : 1;
+          }
+          return left.timeDifference - right.timeDifference;
+        })[0]?.note || null;
+    };
+
     const getCaptureResultModel = (content, messageTimestamp = null) => {
       const { mainText, relatedItems } = splitRelatedMemoryText(content);
       const normalized = mainText.toLowerCase();
@@ -287,16 +348,34 @@ function initAssistant() {
         };
       }
 
+      if (normalized.startsWith('note creation undone')) {
+        return {
+          tone: 'undone',
+          eyebrow: 'Note',
+          title: 'Note removed',
+          detail: mainText.replace(/^note creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          relatedItems: [],
+        };
+      }
+
       if (
         normalized.startsWith('saved note')
         || normalized.startsWith('saved to notebook')
         || normalized.startsWith('saved to notes')
       ) {
+        const notebookMatch = mainText.match(/^saved to notebook\s*\(([^)]+)\)/i);
+        const matchingNote = findMatchingCaptureNote(messageTimestamp);
+        const storedTitle = typeof matchingNote?.title === 'string' ? matchingNote.title.trim() : '';
+        const notebookName = matchingNote?.folderId
+          ? getFolderNameById(matchingNote.folderId)
+          : notebookMatch?.[1]?.trim() || '';
         return {
           tone: 'note',
           eyebrow: 'Note',
           title: 'Saved to notes',
-          detail: mainText,
+          detail: storedTitle,
+          metadata: notebookName ? [notebookName] : [],
+          noteId: typeof matchingNote?.id === 'string' ? matchingNote.id : '',
           relatedItems,
         };
       }
@@ -334,7 +413,7 @@ function initAssistant() {
       if (model.tone === 'note') return 'Saved to notes.';
       if (model.tone === 'review') return 'Saved for later review.';
       if (model.tone === 'clarify') return 'Needs a time.';
-      if (model.tone === 'undone') return 'Reminder removed.';
+      if (model.tone === 'undone') return `${model.eyebrow} removed.`;
       return model.title;
     };
 
@@ -366,7 +445,7 @@ function initAssistant() {
         if (Array.isArray(model.metadata) && model.metadata.length) {
           const metadata = document.createElement('div');
           metadata.className = 'capture-result-meta';
-          metadata.setAttribute('aria-label', `Reminder details: ${model.metadata.join(', ')}`);
+          metadata.setAttribute('aria-label', `${model.eyebrow} details: ${model.metadata.join(', ')}`);
 
           model.metadata.forEach((metadataText) => {
             const item = document.createElement('span');
@@ -389,19 +468,29 @@ function initAssistant() {
         row.appendChild(context);
       }
 
-      if (model.reminderId) {
+      const capturedItemType = model.reminderId ? 'reminder' : model.noteId ? 'note' : '';
+      const capturedItemId = model.reminderId || model.noteId || '';
+      if (capturedItemType && capturedItemId) {
         const actions = document.createElement('div');
         actions.className = 'capture-result-actions';
 
         const openButton = document.createElement('button');
         openButton.type = 'button';
         openButton.className = 'capture-result-action capture-result-action--open';
-        openButton.dataset.captureAction = 'open-reminder';
-        openButton.textContent = 'Open reminder';
+        openButton.dataset.captureAction = `open-${capturedItemType}`;
+        openButton.textContent = `Open ${capturedItemType}`;
         openButton.addEventListener('click', () => {
-          const opened = reminderControllerApi?.openReminderById?.(model.reminderId);
+          const savedNotes = capturedItemType === 'note' ? loadAllNotes() : [];
+          const opened = capturedItemType === 'reminder'
+            ? reminderControllerApi?.openReminderById?.(capturedItemId)
+            : Array.isArray(savedNotes) && savedNotes.some((note) => note?.id === capturedItemId);
+          if (opened && capturedItemType === 'note') {
+            document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+              detail: { noteId: capturedItemId },
+            }));
+          }
           if (!opened) {
-            setThinkingBarStatus('Reminder is no longer available.');
+            setThinkingBarStatus(`${capturedItemType === 'reminder' ? 'Reminder' : 'Note'} is no longer available.`);
           }
         });
         actions.appendChild(openButton);
@@ -414,7 +503,7 @@ function initAssistant() {
           const undoButton = document.createElement('button');
           undoButton.type = 'button';
           undoButton.className = 'capture-result-action capture-result-action--undo';
-          undoButton.dataset.captureAction = 'undo-reminder';
+          undoButton.dataset.captureAction = `undo-${capturedItemType}`;
           undoButton.textContent = 'Undo';
           const undoExpiryTimer = window.setTimeout(() => {
             undoButton.remove();
@@ -423,22 +512,25 @@ function initAssistant() {
             window.clearTimeout(undoExpiryTimer);
             undoButton.disabled = true;
             undoButton.textContent = 'Undoing...';
-            const removed = await reminderControllerApi?.undoCapturedReminder?.(model.reminderId);
+            const removed = capturedItemType === 'reminder'
+              ? await reminderControllerApi?.undoCapturedReminder?.(capturedItemId)
+              : await removeSavedNoteById(capturedItemId);
             if (!removed) {
               undoButton.disabled = false;
               undoButton.textContent = 'Undo';
-              setThinkingBarStatus('Could not undo that reminder.');
+              setThinkingBarStatus(`Could not undo that ${capturedItemType}.`);
               return;
             }
 
-            const reminderTitle = typeof model.detail === 'string' && model.detail.trim()
+            const capturedTitle = typeof model.detail === 'string' && model.detail.trim()
               ? model.detail.trim()
-              : 'Reminder';
+              : (capturedItemType === 'reminder' ? 'Reminder' : 'Note');
+            const itemLabel = capturedItemType === 'reminder' ? 'Reminder' : 'Note';
             updateMessage(messageId, {
-              content: `Reminder creation undone: ${reminderTitle}.`,
+              content: `${itemLabel} creation undone: ${capturedTitle}.`,
               quickActions: [],
             });
-            setThinkingBarStatus('Reminder removed.');
+            setThinkingBarStatus(`${itemLabel} removed.`);
           });
           actions.appendChild(undoButton);
         }
@@ -2915,7 +3007,7 @@ const initMobileNotes = () => {
       hideSavedNotesSheet();
     }
 
-    document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+    window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
   };
 
   const renderDashboardPanel = () => {
@@ -3216,25 +3308,11 @@ const initMobileNotes = () => {
     }, NOTEBOOK_LIST_TRANSITION_MS);
   };
 
-  const handleDeleteNote = (noteId) => {
-    if (!noteId) {
-      return;
+  const handleDeleteNote = async (noteId) => {
+    const removed = await removeSavedNoteById(noteId);
+    if (!removed) {
+      return false;
     }
-
-    const existingNotes = loadAllNotes();
-    if (!Array.isArray(existingNotes)) {
-      return;
-    }
-
-    const filteredNotes = existingNotes.filter((note) => note.id !== noteId);
-    if (filteredNotes.length === existingNotes.length) {
-      return;
-    }
-
-    saveAllNotes(filteredNotes);
-    deleteNote(noteId).catch((error) => {
-      console.warn('[notes-sync] Failed to delete note from Firebase.', error);
-    });
     updateStoredSnapshot();
 
     if (currentNoteId === noteId) {
@@ -3243,6 +3321,7 @@ const initMobileNotes = () => {
     }
 
     refreshFromStorage({ preserveDraft: false });
+    return true;
   };
 
   let activeNoteCardMenu = null;
