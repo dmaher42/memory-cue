@@ -283,7 +283,7 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelector('[data-id="school-second"]').style.getPropertyValue('--reminder-category-color')).toBe('#dc2626');
 
   expect(document.querySelector('[data-reminder-column="other"] [data-id="older-category"]')).not.toBeNull();
-  expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to School or Footy/i);
+  expect(document.querySelector('.reminder-other-cards-help')).toBeNull();
 
   document.querySelector('[data-id="older-category"] .reminder-stream-more').click();
   const otherCategoryColorInput = document.querySelector('.reminder-card-actions-menu [data-action="change-category-colour"] input[type="color"]');
@@ -380,7 +380,7 @@ test('mobile board column headings can be renamed and persist without changing r
   expect(document.querySelector('[data-reminder-column="school"] .reminder-category-column-title').textContent).toBe('Work');
   expect(document.querySelector('[data-reminder-column="school"] .reminder-category-add-card').getAttribute('aria-label')).toBe('Add a Work reminder card');
   expect(document.querySelector('[data-reminder-column="school"] [data-action="change-column-colour"]').getAttribute('aria-label')).toBe('Change Work column colour');
-  expect(document.querySelector('.reminder-other-cards-help').textContent).toMatch(/Move these to Work or Footy/i);
+  expect(document.querySelector('.reminder-other-cards-help')).toBeNull();
   expect(JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels'))).toEqual({ school: 'Work' });
   expect(controller.__testing.getItems().find((item) => item.id === 'school-card').category).toBe('School');
 

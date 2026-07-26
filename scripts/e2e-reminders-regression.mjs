@@ -583,14 +583,12 @@ async function main() {
         return {};
       }
     });
-    const otherReminderHelp = (
-      await page.locator('.reminder-other-cards-help').textContent()
-    )?.trim();
+    const otherReminderHelpCount = await page.locator('.reminder-other-cards-help').count();
     if (renamedSchoolLabel !== 'Work' || persistedBoardLabels.school !== 'Work') {
       throw new Error(`Expected renamed School column to persist as Work, received: ${JSON.stringify({ renamedSchoolLabel, persistedBoardLabels })}`);
     }
-    if (!/Move these to Work or Footy/i.test(otherReminderHelp || '')) {
-      throw new Error(`Expected Other reminder help to use the renamed column, received: ${otherReminderHelp}`);
+    if (otherReminderHelpCount !== 0) {
+      throw new Error(`Expected Other reminders to render without help text, found ${otherReminderHelpCount} helper elements.`);
     }
 
     await page.locator('[data-reminder-column="school"] [data-action="change-column-colour"]').evaluate((input) => {

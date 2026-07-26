@@ -2561,13 +2561,6 @@ body #view-reminders .reminder-other-cards-heading {
   padding: 0 0.1rem 0.42rem;
 }
 
-body #view-reminders .reminder-other-cards-help {
-  color: var(--text-secondary, #64748b);
-  font-size: 0.62rem;
-  line-height: 1.2;
-  text-align: right;
-}
-
 body .quick-actions-menu.reminder-card-actions-menu {
   max-height: min(70vh, 34rem);
   overflow-y: auto;

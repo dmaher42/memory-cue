@@ -7389,10 +7389,7 @@ export async function initReminders(sel = {}) {
         const label = document.createElement('h3');
         label.className = 'reminder-other-cards-title';
         label.textContent = 'Other reminders';
-        const help = document.createElement('span');
-        help.className = 'reminder-other-cards-help';
-        help.textContent = `Move these to ${boardLabels.get('school')} or ${boardLabels.get('footy')} from the card menu.`;
-        heading.append(label, help);
+        heading.appendChild(label);
 
         const sectionItems = document.createElement('ul');
         sectionItems.className = 'reminder-other-cards-items';
