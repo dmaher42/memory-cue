@@ -149,4 +149,24 @@ describe('reminder deletion undo', () => {
     expect(statusEl.dataset.statusKind).toBeUndefined();
     expect(statusEl.dataset.undoToken).toBeUndefined();
   });
+
+  test('removes a newly captured reminder without offering a second undo prompt', async () => {
+    const now = Date.now();
+    controller.__testing.setItems([{
+      id: 'rem-capture-undo',
+      title: 'Capture undo candidate',
+      priority: 'Medium',
+      category: 'School',
+      source: 'capture',
+      done: false,
+      createdAt: now,
+      updatedAt: now,
+    }]);
+    expect(controller.__testing.getItems()[0].source).toBe('capture');
+
+    await expect(controller.undoCapturedReminder('rem-capture-undo')).resolves.toBe(true);
+    expect(controller.__testing.getItems()).toHaveLength(0);
+    expect(document.getElementById('status').dataset.statusKind).toBeUndefined();
+    await expect(controller.undoCapturedReminder('missing-reminder')).resolves.toBe(false);
+  });
 });

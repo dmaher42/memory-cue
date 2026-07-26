@@ -1,4 +1,5 @@
 const REMINDER_RECURRENCE_VALUES = new Set(['daily', 'weekly', 'monthly']);
+const REMINDER_SOURCE_VALUES = new Set(['capture', 'manual', 'inbox', 'system']);
 const REMINDER_KEYWORD_STOP_WORDS = new Set([
   'a', 'an', 'and', 'are', 'at', 'be', 'for', 'from', 'have', 'idea', 'ideas', 'in', 'is', 'it', 'lesson', 'meeting', 'my', 'of', 'on', 'or', 'reminder', 'reminders', 'shopping', 'that', 'the', 'this', 'to', 'with', 'write', 'wrote'
 ]);
@@ -55,6 +56,17 @@ export function normalizeRecurrence(value) {
   return REMINDER_RECURRENCE_VALUES.has(normalized) ? normalized : null;
 }
 
+function normalizeReminderSource(value) {
+  if (typeof value !== 'string') {
+    return 'manual';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (['quick-add', 'quick_add', 'quick capture', 'quick_capture'].includes(normalized)) {
+    return 'manual';
+  }
+  return REMINDER_SOURCE_VALUES.has(normalized) ? normalized : 'manual';
+}
+
 export function normalizeIsoString(value) {
   if (typeof value !== 'string' || !value.trim()) {
     return null;
@@ -101,6 +113,7 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
     due,
     priority: source.priority || 'Medium',
     category: normalizeCategory(source.category),
+    source: normalizeReminderSource(source.source ?? source.metadata?.source),
     done: typeof source.done === 'boolean'
       ? source.done
       : Boolean(source.completed || source.isDone || source.status === 'done'),

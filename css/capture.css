@@ -349,6 +349,52 @@
   white-space: nowrap;
 }
 
+#chatConversationContainer .capture-result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.12rem;
+}
+
+#chatConversationContainer .capture-result-action {
+  min-height: 2rem;
+  padding: 0.34rem 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--card-border, #d1d5db) 78%, transparent);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: color-mix(in srgb, var(--text-main, #1f2937) 76%, var(--text-muted, #6b7280) 24%);
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+#chatConversationContainer .capture-result-action--open {
+  border-color: color-mix(in srgb, #0f766e 38%, transparent);
+  background: color-mix(in srgb, #0f766e 9%, #ffffff 91%);
+  color: #0f6b64;
+}
+
+#chatConversationContainer .capture-result-action:hover {
+  border-color: color-mix(in srgb, var(--text-main, #1f2937) 42%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated, #f8fafc) 82%, #ffffff 18%);
+}
+
+#chatConversationContainer .capture-result-action:focus-visible {
+  outline: 2px solid var(--accent-color, #1e293b);
+  outline-offset: 2px;
+}
+
+#chatConversationContainer .capture-result-action:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+#chatConversationContainer .chat-message--capture-undone {
+  border-left-color: #64748b !important;
+}
+
 #chatConversationContainer .capture-result-related {
   min-width: 0;
   margin-top: 0.14rem;

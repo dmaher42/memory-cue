@@ -57,7 +57,7 @@ describe('mobile capture result rendering', () => {
   });
 
   test('shows confirmed reminder metadata and keeps related memories collapsed', () => {
-    const messageTimestamp = Date.now();
+    const messageTimestamp = Date.now() - 11000;
     const due = new Date();
     due.setDate(due.getDate() + 1);
     due.setHours(8, 30, 0, 0);
@@ -94,6 +94,50 @@ describe('mobile capture result rendering', () => {
     expect(related?.querySelector('summary')?.textContent).toBe('Related memories (2)');
     expect(Array.from(related?.querySelectorAll('li') || []).map((item) => item.textContent))
       .toEqual(['Curriculum map', 'Prior lesson notes']);
+    expect(document.querySelector('[data-capture-action="open-reminder"]')).not.toBeNull();
+    expect(document.querySelector('[data-capture-action="undo-reminder"]')).toBeNull();
+  });
+
+  test('opens or undoes the newly captured reminder through the canonical controller', async () => {
+    const messageTimestamp = Date.now();
+    const openReminderById = jest.fn(() => true);
+    const undoCapturedReminder = jest.fn().mockResolvedValue(true);
+    const updateMessage = jest.fn(() => ({}));
+    localStorage.setItem('memoryCue:offlineReminders', JSON.stringify([{
+      id: 'capture-action-reminder',
+      title: 'Send the excursion forms',
+      category: 'School',
+      source: 'capture',
+      createdAt: messageTimestamp - 100,
+    }]));
+    window.__mobileMocks.getMessages = () => [{
+      id: 'capture-action-message',
+      role: 'assistant',
+      content: 'Reminder created.',
+      timestamp: messageTimestamp,
+    }];
+    window.__mobileMocks.initReminders = jest.fn().mockResolvedValue({
+      openReminderById,
+      undoCapturedReminder,
+    });
+    window.__mobileMocks.updateMessage = updateMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    document.querySelector('[data-capture-action="open-reminder"]')?.click();
+    expect(openReminderById).toHaveBeenCalledWith('capture-action-reminder');
+
+    document.querySelector('[data-capture-action="undo-reminder"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(undoCapturedReminder).toHaveBeenCalledWith('capture-action-reminder');
+    expect(updateMessage).toHaveBeenCalledWith('capture-action-message', {
+      content: 'Reminder creation undone: Send the excursion forms.',
+      quickActions: [],
+    });
   });
 
   test('keeps one Capture heading and renders the empty state without nested card chrome', () => {

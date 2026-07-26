@@ -136,6 +136,9 @@ async function main() {
       MockDate.parse = NativeDate.parse;
       globalThis.Date = MockDate;
       globalThis.toast = () => {};
+      const captureDue = new NativeDate(fixedNow);
+      captureDue.setDate(captureDue.getDate() + 1);
+      captureDue.setHours(8, 30, 0, 0);
       localStorage.setItem('memoryCueInbox', JSON.stringify([]));
       localStorage.setItem(reminderStorageKey, JSON.stringify([
         {
@@ -146,6 +149,15 @@ async function main() {
           done: false,
           createdAt: fixedNow.getTime() - 60000,
           updatedAt: fixedNow.getTime() - 60000,
+        },
+        {
+          id: 'capture-layout-reminder',
+          title: 'Email the complete Year 8 geography lesson plan to everyone involved',
+          category: 'School',
+          source: 'capture',
+          due: captureDue.toISOString(),
+          createdAt: fixedNow.getTime() - 100,
+          updatedAt: fixedNow.getTime() - 100,
         },
       ]));
     }, { reminderStorageKey: REMINDER_STORAGE_KEY });
@@ -190,20 +202,6 @@ async function main() {
     }
 
     await page.evaluate(() => {
-      const reminders = JSON.parse(localStorage.getItem('memoryCue:offlineReminders') || '[]');
-      const due = new Date();
-      due.setDate(due.getDate() + 1);
-      due.setHours(8, 30, 0, 0);
-      reminders.push({
-        id: 'capture-layout-reminder',
-        title: 'Email the complete Year 8 geography lesson plan to everyone involved',
-        category: 'School',
-        source: 'capture',
-        due: due.toISOString(),
-        createdAt: Date.now() - 100,
-        updatedAt: Date.now() - 100,
-      });
-      localStorage.setItem('memoryCue:offlineReminders', JSON.stringify(reminders));
       localStorage.setItem('memoryCueChatHistory', JSON.stringify([
         {
           id: 'capture-layout-user',
@@ -238,6 +236,8 @@ async function main() {
       const timestamp = document.querySelector('.capture-result-time');
       const related = document.querySelector('.capture-result-related');
       const relatedSummary = document.querySelector('.capture-result-related-summary');
+      const openAction = document.querySelector('[data-capture-action="open-reminder"]');
+      const undoAction = document.querySelector('[data-capture-action="undo-reminder"]');
       return {
         conversationWidth: conversation?.getBoundingClientRect().width || 0,
         userWidth: userMessage?.getBoundingClientRect().width || 0,
@@ -250,6 +250,8 @@ async function main() {
         timestampText: timestamp?.textContent || '',
         relatedSummaryText: relatedSummary?.textContent || '',
         relatedOpen: related?.open ?? true,
+        openActionText: openAction?.textContent || '',
+        undoActionText: undoAction?.textContent || '',
         hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       };
     });
@@ -265,10 +267,19 @@ async function main() {
       || captureConversationLayout.timestampText !== 'Just now'
       || captureConversationLayout.relatedSummaryText !== 'Related memories (2)'
       || captureConversationLayout.relatedOpen
+      || captureConversationLayout.openActionText !== 'Open reminder'
+      || captureConversationLayout.undoActionText !== 'Undo'
       || captureConversationLayout.hasHorizontalOverflow
     ) {
       throw new Error(`Unexpected capture conversation layout: ${JSON.stringify(captureConversationLayout)}`);
     }
+    await page.click('[data-capture-action="open-reminder"]');
+    await page.waitForFunction(() => {
+      const sheet = document.getElementById('create-sheet');
+      const title = document.getElementById('reminderText');
+      return sheet && !sheet.classList.contains('hidden') && title?.value === 'Email the complete Year 8 geography lesson plan to everyone involved';
+    });
+    await page.click('#closeCreateSheet');
     await page.click('.capture-result-related-summary');
     const expandedRelatedState = await page.evaluate(() => ({
       open: document.querySelector('.capture-result-related')?.open ?? false,
@@ -307,6 +318,24 @@ async function main() {
       throw new Error(`Capture result is obscured at 320px: ${JSON.stringify(narrowCaptureState)}`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.click('[data-capture-action="undo-reminder"]');
+    await page.waitForFunction(() => document.querySelector('.capture-result-title')?.textContent === 'Reminder removed');
+    const undoneCaptureState = await page.evaluate(() => {
+      const reminders = JSON.parse(localStorage.getItem('memoryCue:offlineReminders') || '[]');
+      const chatHistory = JSON.parse(localStorage.getItem('memoryCueChatHistory') || '[]');
+      return {
+        reminderStillExists: reminders.some((item) => item?.id === 'capture-layout-reminder'),
+        resultContent: chatHistory.find((item) => item?.id === 'capture-layout-result')?.content || '',
+        actionCount: document.querySelectorAll('.capture-result-action').length,
+      };
+    });
+    if (
+      undoneCaptureState.reminderStillExists
+      || undoneCaptureState.resultContent !== 'Reminder creation undone: Email the complete Year 8 geography lesson plan to everyone involved.'
+      || undoneCaptureState.actionCount !== 0
+    ) {
+      throw new Error(`Unexpected capture undo state: ${JSON.stringify(undoneCaptureState)}`);
+    }
     await page.evaluate(() => {
       localStorage.removeItem('memoryCueChatHistory');
       document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));

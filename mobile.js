@@ -17,7 +17,7 @@ import { getRecallItems } from './js/services/recall-service.js';
 import { getInboxEntries } from './js/services/capture-service.js?v=20260323a';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
-import { clearMessages, getMessages } from './src/chat/messageStore.js';
+import { clearMessages, getMessages, updateMessage } from './src/chat/messageStore.js';
 import { deleteNote, subscribeToInboxChanges, subscribeToChatHistoryChanges } from './src/services/firestoreSyncService.js';
 import { createChatComposer } from './src/components/ChatComposer.js';
 import { initMobileShellUi } from './src/ui/mobileShellUi.js';
@@ -26,6 +26,8 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
+
+let reminderControllerApi = null;
 
 const runMobileShellUiInit = () => {
   if (typeof initMobileShellUi === 'function') {
@@ -89,6 +91,7 @@ function initAssistant() {
     let lastRecallNotificationKey = '';
     let isAssistantSending = false;
     const MAX_VISIBLE_CAPTURE_MESSAGES = 12;
+    const CAPTURE_UNDO_WINDOW_MS = 10000;
     if (!isTextEntryElement(thinkingBarInput)) {
       return;
     }
@@ -269,7 +272,18 @@ function initAssistant() {
           title: 'Saved as reminder',
           detail: reminderDetail || storedTitle,
           metadata,
+          reminderId: typeof matchingReminder?.id === 'string' ? matchingReminder.id : '',
           relatedItems,
+        };
+      }
+
+      if (normalized.startsWith('reminder creation undone')) {
+        return {
+          tone: 'undone',
+          eyebrow: 'Reminder',
+          title: 'Reminder removed',
+          detail: mainText.replace(/^reminder creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          relatedItems: [],
         };
       }
 
@@ -320,10 +334,11 @@ function initAssistant() {
       if (model.tone === 'note') return 'Saved to notes.';
       if (model.tone === 'review') return 'Saved for later review.';
       if (model.tone === 'clarify') return 'Needs a time.';
+      if (model.tone === 'undone') return 'Reminder removed.';
       return model.title;
     };
 
-    const renderCaptureResultMessage = (row, model, messageTimestamp = null) => {
+    const renderCaptureResultMessage = (row, model, messageTimestamp = null, messageId = '') => {
       row.classList.add('chat-message--capture-result', `chat-message--capture-${model.tone}`);
 
       const eyebrow = document.createElement('span');
@@ -374,6 +389,63 @@ function initAssistant() {
         row.appendChild(context);
       }
 
+      if (model.reminderId) {
+        const actions = document.createElement('div');
+        actions.className = 'capture-result-actions';
+
+        const openButton = document.createElement('button');
+        openButton.type = 'button';
+        openButton.className = 'capture-result-action capture-result-action--open';
+        openButton.dataset.captureAction = 'open-reminder';
+        openButton.textContent = 'Open reminder';
+        openButton.addEventListener('click', () => {
+          const opened = reminderControllerApi?.openReminderById?.(model.reminderId);
+          if (!opened) {
+            setThinkingBarStatus('Reminder is no longer available.');
+          }
+        });
+        actions.appendChild(openButton);
+
+        const messageDate = toValidDate(messageTimestamp);
+        const undoRemainingMs = messageDate
+          ? CAPTURE_UNDO_WINDOW_MS - Math.max(0, Date.now() - messageDate.getTime())
+          : 0;
+        if (undoRemainingMs > 0 && messageId) {
+          const undoButton = document.createElement('button');
+          undoButton.type = 'button';
+          undoButton.className = 'capture-result-action capture-result-action--undo';
+          undoButton.dataset.captureAction = 'undo-reminder';
+          undoButton.textContent = 'Undo';
+          const undoExpiryTimer = window.setTimeout(() => {
+            undoButton.remove();
+          }, undoRemainingMs);
+          undoButton.addEventListener('click', async () => {
+            window.clearTimeout(undoExpiryTimer);
+            undoButton.disabled = true;
+            undoButton.textContent = 'Undoing...';
+            const removed = await reminderControllerApi?.undoCapturedReminder?.(model.reminderId);
+            if (!removed) {
+              undoButton.disabled = false;
+              undoButton.textContent = 'Undo';
+              setThinkingBarStatus('Could not undo that reminder.');
+              return;
+            }
+
+            const reminderTitle = typeof model.detail === 'string' && model.detail.trim()
+              ? model.detail.trim()
+              : 'Reminder';
+            updateMessage(messageId, {
+              content: `Reminder creation undone: ${reminderTitle}.`,
+              quickActions: [],
+            });
+            setThinkingBarStatus('Reminder removed.');
+          });
+          actions.appendChild(undoButton);
+        }
+
+        row.appendChild(actions);
+      }
+
       if (Array.isArray(model.relatedItems) && model.relatedItems.length) {
         const related = document.createElement('details');
         related.className = 'capture-result-related';
@@ -399,7 +471,7 @@ function initAssistant() {
       }
     };
 
-    const appendConversationMessage = (role, content, quickActions = [], messageTimestamp = null) => {
+    const appendConversationMessage = (role, content, quickActions = [], messageTimestamp = null, messageId = '') => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
       }
@@ -415,7 +487,7 @@ function initAssistant() {
         row.classList.add('chat-message--status');
       }
       if (captureResultModel) {
-        renderCaptureResultMessage(row, captureResultModel, messageTimestamp);
+        renderCaptureResultMessage(row, captureResultModel, messageTimestamp, messageId);
       } else {
         row.textContent = content;
       }
@@ -608,6 +680,7 @@ function initAssistant() {
           content,
           message?.quickActions,
           message?.timestamp,
+          message?.id,
         );
       });
     };
@@ -1672,7 +1745,8 @@ const bootstrapReminders = () => {
     dateFeedbackSel: '#dateFeedback',
     voiceBtnSel: '#startVoiceCaptureGlobal',
   })
-    .then(() => {
+    .then((controllerApi) => {
+      reminderControllerApi = controllerApi;
       // Wire Firebase auth + notes sync for mobile
       wireMobileNotesFirebaseAuth();
     })

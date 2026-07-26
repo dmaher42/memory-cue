@@ -55,6 +55,43 @@ export const addMessage = (message) => {
 
 export const getMessages = () => readMessages();
 
+export const updateMessage = (messageId, updates = {}) => {
+  const normalizedId = typeof messageId === 'string' ? messageId.trim() : '';
+  if (!normalizedId || !updates || typeof updates !== 'object') {
+    return null;
+  }
+
+  const messages = readMessages();
+  let updatedMessage = null;
+  const nextMessages = messages.map((message) => {
+    if (!message || message.id !== normalizedId) {
+      return message;
+    }
+
+    updatedMessage = {
+      ...message,
+      ...updates,
+      id: message.id,
+      role: message.role,
+      createdAt: new Date().toISOString(),
+      updatedAt: Date.now(),
+      pendingSync: true,
+    };
+    return updatedMessage;
+  });
+
+  if (!updatedMessage) {
+    return null;
+  }
+
+  writeMessages(nextMessages);
+  dispatchChatUpdated(nextMessages);
+  appendChatMessage(updatedMessage, updatedMessage.conversationId || 'default').catch((error) => {
+    console.warn('[chat/messageStore] Failed to sync updated chat message', error);
+  });
+  return updatedMessage;
+};
+
 export const replaceMessages = (messages = []) => {
   const nextMessages = Array.isArray(messages)
     ? messages.filter((message) => message && typeof message === 'object')

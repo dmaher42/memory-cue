@@ -31,6 +31,7 @@ const ENABLE_CHAT_INTERFACE = window.__mobileMocks?.ENABLE_CHAT_INTERFACE ?? tru
 const handleChatMessage = window.__mobileMocks?.handleChatMessage || (async () => ({ reply: '' }));
 const clearMessages = window.__mobileMocks?.clearMessages || (() => {});
 const getMessages = window.__mobileMocks?.getMessages || (() => []);
+const updateMessage = window.__mobileMocks?.updateMessage || (() => null);
 const deleteNote = window.__mobileMocks?.deleteNote || (async () => {});
 const subscribeToInboxChanges = window.__mobileMocks?.subscribeToInboxChanges || (async () => null);
 const subscribeToChatHistoryChanges = window.__mobileMocks?.subscribeToChatHistoryChanges || (async () => null);

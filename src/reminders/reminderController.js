@@ -5250,7 +5250,7 @@ export async function initReminders(sel = {}) {
     });
     toast('Reminder restored');
   }
-  async function removeItem(id){
+  async function removeItem(id, { offerUndo = true } = {}){
     const scrollPosition = captureReminderScrollPosition();
     const index = items.findIndex(x=>x.id===id);
     const removed = index >= 0 ? items.splice(index,1)[0] : null;
@@ -5279,7 +5279,7 @@ export async function initReminders(sel = {}) {
     cancelReminder(id);
     const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
     emitActivity({ action: 'deleted', label: activityLabel });
-    if(removed && statusEl){
+    if(removed && statusEl && offerUndo){
       clearUndoDeleteState();
       const tokenId = `undo-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       deleteUndoState = {
@@ -5296,6 +5296,24 @@ export async function initReminders(sel = {}) {
     } else if(removed) {
       clearUndoDeleteState();
     }
+    return Boolean(removed);
+  }
+
+  function openReminderById(id) {
+    const reminder = items.find((entry) => entry?.id === id);
+    if (!reminder) {
+      return false;
+    }
+    openEditReminderSheet(reminder);
+    return true;
+  }
+
+  async function undoCapturedReminder(id) {
+    if (!items.some((entry) => entry?.id === id)) {
+      return false;
+    }
+    await removeItem(id, { offerUndo: false });
+    return !items.some((entry) => entry?.id === id);
   }
 
   async function clearCompletedReminders(){
@@ -7777,8 +7795,10 @@ export async function initReminders(sel = {}) {
 
   activeReminderControllerApi = {
     createReminderFromPayload,
+    openReminderById,
     render,
     setupReminderFirestoreSync,
+    undoCapturedReminder,
   };
 
   return {
@@ -7789,6 +7809,8 @@ export async function initReminders(sel = {}) {
     addNoteToReminder,
     buildRagContext,
     askAssistant,
+    openReminderById,
+    undoCapturedReminder,
     __testing: {
       setItems(listItems = []) {
         items = normalizeReminderList(listItems);

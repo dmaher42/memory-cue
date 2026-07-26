@@ -84,6 +84,7 @@ function createReminderMocks(overrides = {}) {
       due: typeof reminder.due === 'string' ? reminder.due : '',
       priority: typeof reminder.priority === 'string' && reminder.priority.trim() ? reminder.priority : 'Medium',
       category: normalizeCategory(reminder.category),
+      source: typeof reminder.source === 'string' && reminder.source.trim() ? reminder.source.trim() : 'manual',
       done,
       completed: done,
       createdAt,
