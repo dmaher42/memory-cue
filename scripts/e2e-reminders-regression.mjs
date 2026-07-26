@@ -218,7 +218,11 @@ async function main() {
       throw new Error(`Unexpected universal capture placeholder: ${universalCapturePlaceholder}`);
     }
 
-    await page.fill('#thinkingBarInput', 'Remind me to Call Mum tomorrow at 6pm');
+    await page.fill('#thinkingBarInput', 'Remind me to Call Mum tomorrow at 6pm\n\n\n\n\n\n');
+    const expandedCaptureHeight = await page.locator('#thinkingBarInput').evaluate((input) => input.getBoundingClientRect().height);
+    if (expandedCaptureHeight < 80) {
+      throw new Error(`Expected the multi-line capture field to expand before submit, received ${expandedCaptureHeight}px.`);
+    }
     await page.click('#thinkingBarSubmit');
     await page.waitForFunction((reminderStorageKey) => {
       try {
@@ -228,6 +232,14 @@ async function main() {
         return false;
       }
     }, REMINDER_STORAGE_KEY);
+
+    const clearedCaptureState = await page.locator('#thinkingBarInput').evaluate((input) => ({
+      value: input.value,
+      height: input.getBoundingClientRect().height,
+    }));
+    if (clearedCaptureState.value !== '' || clearedCaptureState.height > 60) {
+      throw new Error(`Expected the capture field to clear and collapse after submit: ${JSON.stringify(clearedCaptureState)}`);
+    }
 
     await page.locator('[data-reminder-column="other"] [data-title="Call Mum"] .reminder-stream-more').click();
     await page.locator('.reminder-card-actions-menu [data-action="move-to-school"]').click();

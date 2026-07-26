@@ -1,0 +1,42 @@
+/** @jest-environment jsdom */
+
+const { loadMobileModule } = require('./helpers/load-mobile-module');
+
+describe('mobile capture result rendering', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <main id="main">
+        <section id="chatConversationContainer"></section>
+      </main>
+      <section id="thinkingBarContainer">
+        <form id="thinkingBarForm">
+          <textarea id="thinkingBarInput"></textarea>
+          <button id="thinkingBarSubmit" type="submit">Send</button>
+        </form>
+        <div id="thinkingBarStatus" class="hidden"></div>
+      </section>
+    `;
+
+    window.__mobileMocks = {
+      getMessages: () => [{
+        role: 'assistant',
+        content: 'Reminder created for tomorrow at 8:30 am: Prepare the complete lesson sequence.',
+      }],
+      createChatComposer: () => ({ autoResize: jest.fn() }),
+      initAuth: jest.fn().mockResolvedValue({ auth: null, unsubscribe: () => {} }),
+    };
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    delete window.__mobileMocks;
+  });
+
+  test('keeps a time colon out of the displayed reminder title', () => {
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Saved as reminder');
+    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
+  });
+});

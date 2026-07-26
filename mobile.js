@@ -72,6 +72,7 @@ function initAssistant() {
       }
       return Boolean(value && (value.tagName === 'INPUT' || value.tagName === 'TEXTAREA'));
     };
+    const thinkingBarContainer = document.getElementById('thinkingBarContainer');
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarForm = document.getElementById('thinkingBarForm');
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
@@ -119,11 +120,21 @@ function initAssistant() {
       }
 
       if (normalized.startsWith('reminder created')) {
+        const reminderSummary = mainText.replace(/^reminder created\s*/i, '').trim();
+        let reminderDetail = reminderSummary.replace(/^:\s*/, '');
+        if (/^for\s+/i.test(reminderSummary)) {
+          const scheduledSummary = reminderSummary.replace(/^for\s+/i, '');
+          const titleSeparatorIndex = scheduledSummary.indexOf(': ');
+          reminderDetail = titleSeparatorIndex >= 0
+            ? scheduledSummary.slice(titleSeparatorIndex + 2)
+            : '';
+        }
+
         return {
           tone: 'reminder',
           eyebrow: 'Reminder',
           title: 'Saved as reminder',
-          detail: mainText.replace(/^reminder created(?:\s+for\s+[^:]+)?:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          detail: reminderDetail.replace(/[.\s]+$/g, '').trim(),
           relatedItems,
         };
       }
@@ -446,6 +457,23 @@ function initAssistant() {
         thinkingBarStatus.textContent = '';
         thinkingBarStatus.classList.add('hidden');
       }
+    };
+
+    const revealLatestCaptureMessage = () => {
+      const appContent = document.getElementById('main');
+      const latestMessage = chatConversationContainer?.lastElementChild;
+      if (!(appContent instanceof HTMLElement) || !(latestMessage instanceof HTMLElement)) {
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        const composerTop = thinkingBarContainer?.getBoundingClientRect().top ?? window.innerHeight;
+        const messageBottom = latestMessage.getBoundingClientRect().bottom;
+        const overlap = messageBottom - composerTop + 12;
+        if (overlap > 0) {
+          appContent.scrollTop += overlap;
+        }
+      });
     };
 
     const readRemindersForRecall = () => {
@@ -795,7 +823,9 @@ function initAssistant() {
         setThinkingBarStatus(getCompactCaptureStatus(replyMessage));
 
         thinkingBarInput.value = '';
+        thinkingBarComposer?.autoResize();
         thinkingBarInput.focus();
+        revealLatestCaptureMessage();
       } catch (error) {
         console.error('[capture] failed to process smart capture', error);
         appendAssistantMessage("Sorry, I couldn't process that capture.", 'assistant-message assistant-message--error');
@@ -804,7 +834,7 @@ function initAssistant() {
       }
     };
 
-    createChatComposer({
+    const thinkingBarComposer = createChatComposer({
       form: thinkingBarForm,
       textarea: thinkingBarInput,
       button: thinkingBarSubmit,
