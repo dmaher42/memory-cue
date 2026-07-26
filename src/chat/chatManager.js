@@ -21,13 +21,53 @@ const generateMessageId = () => {
   return `chat-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 };
 
-const createMessage = (role, content, quickActions = []) => ({
-  id: generateMessageId(),
-  role,
-  content,
-  quickActions,
-  timestamp: Date.now(),
-});
+const normalizeRelatedMemoryReferences = (memories = []) => {
+  if (!Array.isArray(memories)) {
+    return [];
+  }
+
+  const seenNoteIds = new Set();
+  return memories.reduce((references, memory) => {
+    if (references.length >= 3) {
+      return references;
+    }
+
+    const noteId = typeof memory?.noteId === 'string' ? memory.noteId.trim() : '';
+    if (!noteId || seenNoteIds.has(noteId)) {
+      return references;
+    }
+
+    const title = typeof memory?.title === 'string' ? memory.title.trim() : '';
+    const noteTitle = typeof memory?.noteTitle === 'string' ? memory.noteTitle.trim() : '';
+    const preview = typeof memory?.preview === 'string' ? memory.preview.trim() : '';
+    const storedLabel = typeof memory?.label === 'string' ? memory.label.trim() : '';
+    const label = storedLabel || (
+      title && noteTitle && title.toLowerCase() !== noteTitle.toLowerCase()
+        ? `${title} (${noteTitle})`
+        : title || noteTitle || 'Related note'
+    );
+
+    seenNoteIds.add(noteId);
+    references.push({
+      noteId,
+      label,
+      ...(preview ? { preview } : {}),
+    });
+    return references;
+  }, []);
+};
+
+const createMessage = (role, content, quickActions = [], relatedMemories = []) => {
+  const relatedMemoryReferences = normalizeRelatedMemoryReferences(relatedMemories);
+  return {
+    id: generateMessageId(),
+    role,
+    content,
+    quickActions,
+    timestamp: Date.now(),
+    ...(relatedMemoryReferences.length ? { relatedMemories: relatedMemoryReferences } : {}),
+  };
+};
 
 const normalizeRouteResult = (result) => {
   if (typeof result === 'string') {
@@ -355,18 +395,20 @@ export const handleChatMessage = async (text, dependencies = {}) => {
 
   const response = normalizeRouteResult(routeResult);
   
-  // Add related memories context
+  // Keep note IDs beside the readable fallback text so the UI can open exact matches.
   try {
     const related = findRelatedMemories(message);
-    if (Array.isArray(related) && related.length > 0) {
-      const relatedList = related.map((item) => `• ${item.title} (${item.noteTitle})`).join('\n');
+    const relatedMemories = normalizeRelatedMemoryReferences(related);
+    if (relatedMemories.length > 0) {
+      response.relatedMemories = relatedMemories;
+      const relatedList = relatedMemories.map((item) => `- ${item.label}`).join('\n');
       response.message += `\n\nRelated from your memory:\n${relatedList}`;
     }
   } catch (error) {
     console.warn('[chat-manager] Failed to fetch related memories', error);
   }
 
-  addMessage(createMessage('assistant', response.message, response.quickActions));
+  addMessage(createMessage('assistant', response.message, response.quickActions, response.relatedMemories));
   return response;
 };
 

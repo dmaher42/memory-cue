@@ -470,3 +470,29 @@
   background: color-mix(in srgb, var(--text-muted, #6b7280) 72%, transparent);
   content: '';
 }
+
+#chatConversationContainer .capture-result-related-link {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.12rem 0.18rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--accent-color, #1e293b);
+  font: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+#chatConversationContainer .capture-result-related-link:hover {
+  background: color-mix(in srgb, var(--accent-color, #1e293b) 7%, transparent);
+}
+
+#chatConversationContainer .capture-result-related-link:focus-visible {
+  outline: 2px solid var(--accent-color, #1e293b);
+  outline-offset: 2px;
+}

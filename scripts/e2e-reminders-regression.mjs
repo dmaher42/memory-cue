@@ -140,17 +140,39 @@ async function main() {
       captureDue.setDate(captureDue.getDate() + 1);
       captureDue.setHours(8, 30, 0, 0);
       localStorage.setItem('memoryCueInbox', JSON.stringify([]));
-      localStorage.setItem('memoryCueNotes', JSON.stringify([{
-        id: 'capture-layout-note',
-        title: 'Excursion permission form checklist',
-        body: 'Confirm forms, medical details, and emergency contacts.',
-        bodyHtml: 'Confirm forms, medical details, and emergency contacts.',
-        bodyText: 'Confirm forms, medical details, and emergency contacts.',
-        folderId: 'school',
-        metadata: { source: 'chat' },
-        createdAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
-        updatedAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
-      }]));
+      localStorage.setItem('memoryCueNotes', JSON.stringify([
+        {
+          id: 'capture-layout-note',
+          title: 'Excursion permission form checklist',
+          body: 'Confirm forms, medical details, and emergency contacts.',
+          bodyHtml: 'Confirm forms, medical details, and emergency contacts.',
+          bodyText: 'Confirm forms, medical details, and emergency contacts.',
+          folderId: 'school',
+          metadata: { source: 'chat' },
+          createdAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
+          updatedAt: new NativeDate(fixedNow.getTime() - 100).toISOString(),
+        },
+        {
+          id: 'related-curriculum-map',
+          title: 'Year 8 geography curriculum map',
+          body: 'Sequence the landforms unit and achievement standards.',
+          bodyHtml: 'Sequence the landforms unit and achievement standards.',
+          bodyText: 'Sequence the landforms unit and achievement standards.',
+          folderId: 'school',
+          createdAt: new NativeDate(fixedNow.getTime() - 600000).toISOString(),
+          updatedAt: new NativeDate(fixedNow.getTime() - 600000).toISOString(),
+        },
+        {
+          id: 'related-lesson-notes',
+          title: 'Previous lesson sequence notes',
+          body: 'Source analysis prompts and the exit ticket.',
+          bodyHtml: 'Source analysis prompts and the exit ticket.',
+          bodyText: 'Source analysis prompts and the exit ticket.',
+          folderId: 'school',
+          createdAt: new NativeDate(fixedNow.getTime() - 900000).toISOString(),
+          updatedAt: new NativeDate(fixedNow.getTime() - 900000).toISOString(),
+        },
+      ]));
       localStorage.setItem(reminderStorageKey, JSON.stringify([
         {
           id: 'seed-unscheduled-title',
@@ -230,6 +252,10 @@ async function main() {
             '- Year 8 geography curriculum map',
             '- Previous lesson sequence notes',
           ].join('\n'),
+          relatedMemories: [
+            { noteId: 'related-curriculum-map', label: 'Year 8 geography curriculum map' },
+            { noteId: 'related-lesson-notes', label: 'Previous lesson sequence notes' },
+          ],
           timestamp: Date.now(),
         },
       ]));
@@ -295,15 +321,30 @@ async function main() {
     const expandedRelatedState = await page.evaluate(() => ({
       open: document.querySelector('.capture-result-related')?.open ?? false,
       itemCount: document.querySelectorAll('.capture-result-related-item').length,
+      linkLabels: Array.from(document.querySelectorAll('.capture-result-related-link'))
+        .map((item) => item.textContent?.trim() || ''),
       hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     }));
     if (
       !expandedRelatedState.open
       || expandedRelatedState.itemCount !== 2
+      || expandedRelatedState.linkLabels.join('|') !== 'Year 8 geography curriculum map|Previous lesson sequence notes'
       || expandedRelatedState.hasHorizontalOverflow
     ) {
       throw new Error(`Unexpected expanded related-memory state: ${JSON.stringify(expandedRelatedState)}`);
     }
+    await page.click('[data-related-note-id="related-curriculum-map"]');
+    await page.waitForFunction(() => {
+      const notesView = document.getElementById('view-notebook');
+      const title = document.getElementById('noteTitleMobile');
+      return notesView
+        && !notesView.classList.contains('hidden')
+        && title?.value === 'Year 8 geography curriculum map';
+    });
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
+    });
+    await page.waitForFunction(() => !document.getElementById('view-capture')?.classList.contains('hidden'));
     await page.setViewportSize({ width: 320, height: 568 });
     await page.evaluate(() => {
       document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));

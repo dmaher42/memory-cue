@@ -54,9 +54,10 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
     expect(document.querySelector('.capture-result-meta')?.textContent).toBe('Tomorrow, 8:30 am');
     expect(document.querySelector('.capture-result-time')?.textContent).toBe('Just now');
+    expect(document.querySelectorAll('.capture-result-related-link')).toHaveLength(0);
   });
 
-  test('shows confirmed reminder metadata and keeps related memories collapsed', () => {
+  test('shows confirmed reminder metadata and opens a linked related memory', () => {
     const messageTimestamp = Date.now() - 11000;
     const due = new Date();
     due.setDate(due.getDate() + 1);
@@ -78,8 +79,18 @@ describe('mobile capture result rendering', () => {
         '- Curriculum map',
         '- Prior lesson notes',
       ].join('\n'),
+      relatedMemories: [
+        { noteId: 'curriculum-map', label: 'Curriculum map' },
+        { noteId: 'prior-lesson-notes', label: 'Prior lesson notes' },
+      ],
       timestamp: messageTimestamp,
     }];
+    window.__mobileMocks.loadAllNotes = () => [
+      { id: 'curriculum-map', title: 'Curriculum map' },
+      { id: 'prior-lesson-notes', title: 'Prior lesson notes' },
+    ];
+    const openedNote = jest.fn();
+    document.addEventListener('thinkingBar:openNote', openedNote, { once: true });
 
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
@@ -94,6 +105,13 @@ describe('mobile capture result rendering', () => {
     expect(related?.querySelector('summary')?.textContent).toBe('Related memories (2)');
     expect(Array.from(related?.querySelectorAll('li') || []).map((item) => item.textContent))
       .toEqual(['Curriculum map', 'Prior lesson notes']);
+    const relatedLinks = Array.from(related?.querySelectorAll('.capture-result-related-link') || []);
+    expect(relatedLinks.map((item) => item.textContent)).toEqual(['Curriculum map', 'Prior lesson notes']);
+    expect(relatedLinks[0]?.getAttribute('aria-label')).toBe('Open related note: Curriculum map');
+    relatedLinks[0]?.click();
+    expect(openedNote).toHaveBeenCalledWith(expect.objectContaining({
+      detail: { noteId: 'curriculum-map' },
+    }));
     expect(document.querySelector('[data-capture-action="open-reminder"]')).not.toBeNull();
     expect(document.querySelector('[data-capture-action="undo-reminder"]')).toBeNull();
   });

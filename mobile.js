@@ -139,6 +139,30 @@ function initAssistant() {
       };
     };
 
+    const normalizeRelatedMemoryItems = (textItems = [], relatedMemories = []) => {
+      const structuredItems = Array.isArray(relatedMemories)
+        ? relatedMemories
+          .map((memory) => {
+            const noteId = typeof memory?.noteId === 'string' ? memory.noteId.trim() : '';
+            const label = typeof memory?.label === 'string' ? memory.label.trim() : '';
+            return noteId && label ? { noteId, label } : null;
+          })
+          .filter(Boolean)
+          .slice(0, 3)
+        : [];
+
+      if (structuredItems.length) {
+        return structuredItems;
+      }
+
+      return (Array.isArray(textItems) ? textItems : [])
+        .map((label) => (typeof label === 'string' && label.trim()
+          ? { noteId: '', label: label.trim() }
+          : null))
+        .filter(Boolean)
+        .slice(0, 3);
+    };
+
     const toValidDate = (value) => {
       if (value == null || value === '') {
         return null;
@@ -294,8 +318,9 @@ function initAssistant() {
         })[0]?.note || null;
     };
 
-    const getCaptureResultModel = (content, messageTimestamp = null) => {
-      const { mainText, relatedItems } = splitRelatedMemoryText(content);
+    const getCaptureResultModel = (content, messageTimestamp = null, relatedMemories = []) => {
+      const { mainText, relatedItems: textRelatedItems } = splitRelatedMemoryText(content);
+      const relatedItems = normalizeRelatedMemoryItems(textRelatedItems, relatedMemories);
       const normalized = mainText.toLowerCase();
       if (!normalized) {
         return null;
@@ -550,10 +575,39 @@ function initAssistant() {
         const relatedList = document.createElement('ul');
         relatedList.className = 'capture-result-related-list';
 
-        model.relatedItems.forEach((itemText) => {
+        model.relatedItems.forEach((relatedMemory) => {
           const item = document.createElement('li');
           item.className = 'capture-result-related-item';
-          item.textContent = itemText;
+
+          const label = typeof relatedMemory?.label === 'string' ? relatedMemory.label.trim() : '';
+          const noteId = typeof relatedMemory?.noteId === 'string' ? relatedMemory.noteId.trim() : '';
+          if (!label) {
+            return;
+          }
+
+          if (noteId) {
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'capture-result-related-link';
+            link.dataset.relatedNoteId = noteId;
+            link.textContent = label;
+            link.setAttribute('aria-label', `Open related note: ${label}`);
+            link.addEventListener('click', () => {
+              const notes = loadAllNotes();
+              const noteExists = Array.isArray(notes) && notes.some((note) => note?.id === noteId);
+              if (!noteExists) {
+                setThinkingBarStatus('Related note is no longer available.');
+                return;
+              }
+
+              document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+                detail: { noteId },
+              }));
+            });
+            item.appendChild(link);
+          } else {
+            item.textContent = label;
+          }
           relatedList.appendChild(item);
         });
 
@@ -563,7 +617,14 @@ function initAssistant() {
       }
     };
 
-    const appendConversationMessage = (role, content, quickActions = [], messageTimestamp = null, messageId = '') => {
+    const appendConversationMessage = (
+      role,
+      content,
+      quickActions = [],
+      messageTimestamp = null,
+      messageId = '',
+      relatedMemories = [],
+    ) => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
       }
@@ -571,7 +632,9 @@ function initAssistant() {
       const row = document.createElement('div');
       row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
       const normalizedContent = typeof content === 'string' ? content.trim().toLowerCase() : '';
-      const captureResultModel = role !== 'user' ? getCaptureResultModel(content, messageTimestamp) : null;
+      const captureResultModel = role !== 'user'
+        ? getCaptureResultModel(content, messageTimestamp, relatedMemories)
+        : null;
       if (
         role !== 'user' &&
         (normalizedContent === 'reminder created.' || normalizedContent === 'reminder created')
@@ -773,6 +836,7 @@ function initAssistant() {
           message?.quickActions,
           message?.timestamp,
           message?.id,
+          message?.relatedMemories,
         );
       });
     };
