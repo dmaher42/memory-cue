@@ -2650,6 +2650,7 @@ const initMobileNotes = () => {
   let currentTeacherView = 'plan';
   // Assigned from initMobileNotesEditorUi() below; flushes a pending autosave before a note switch.
   let flushNoteAutoSave = () => {};
+  let resizeNoteTitleInput = () => {};
   let currentNoteIsNew = false;
   let currentNoteHasChanged = false;
   let allNotes = [];
@@ -2912,6 +2913,7 @@ const initMobileNotes = () => {
       currentNoteHasChanged = false;
       currentNoteId = null;
       titleInput.value = '';
+      resizeNoteTitleInput();
       setEditorContent('');
       setEditorReadOnlyState(false);
       delete titleInput.dataset.noteOriginalTitle;
@@ -2936,6 +2938,7 @@ const initMobileNotes = () => {
       ? (preferredHtml ?? cueFallbackBody) || ''
       : (preferredHtml ?? fallbackBody) || '';
     titleInput.value = isNew ? '' : nextTitle;
+    resizeNoteTitleInput();
     setEditorContent(isNew ? '' : nextBody);
     setEditorReadOnlyState(currentTeacherView === 'cue');
     titleInput.dataset.noteOriginalTitle = isNew ? '' : nextTitle;
@@ -4014,6 +4017,7 @@ const initMobileNotes = () => {
     openNoteEditorForNewNote,
     startNewNoteFromUI,
     flushAutoSave: editorFlushAutoSave,
+    resizeTitleInput: editorResizeTitleInput,
   } = initMobileNotesEditorUi({
     saveButton,
     titleInput,
@@ -4059,6 +4063,9 @@ const initMobileNotes = () => {
 
   if (typeof editorFlushAutoSave === 'function') {
     flushNoteAutoSave = editorFlushAutoSave;
+  }
+  if (typeof editorResizeTitleInput === 'function') {
+    resizeNoteTitleInput = editorResizeTitleInput;
   }
 
   updateToolbarState();

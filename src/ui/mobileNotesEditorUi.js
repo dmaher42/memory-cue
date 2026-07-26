@@ -41,6 +41,30 @@ export const initMobileNotesEditorUi = (options = {}) => {
     handleFormattingShortcuts = () => {},
   } = options;
 
+  const resizeTitleInput = () => {
+    if (!(titleInput instanceof HTMLElement) || titleInput.tagName !== 'TEXTAREA') {
+      return;
+    }
+
+    const styles = typeof window !== 'undefined' && typeof window.getComputedStyle === 'function'
+      ? window.getComputedStyle(titleInput)
+      : null;
+    const readPixels = (value) => Number.parseFloat(value) || 0;
+    const fontSize = readPixels(styles?.fontSize) || 15;
+    const lineHeight = readPixels(styles?.lineHeight) || fontSize * 1.25;
+    const frameHeight = readPixels(styles?.paddingTop)
+      + readPixels(styles?.paddingBottom)
+      + readPixels(styles?.borderTopWidth)
+      + readPixels(styles?.borderBottomWidth);
+    const minimumHeight = lineHeight + frameHeight;
+    const maximumHeight = (lineHeight * 2) + frameHeight;
+
+    titleInput.style.height = 'auto';
+    const measuredHeight = Number(titleInput.scrollHeight) || minimumHeight;
+    titleInput.style.height = `${Math.ceil(Math.max(minimumHeight, Math.min(measuredHeight, maximumHeight)))}px`;
+    titleInput.style.overflowY = measuredHeight > maximumHeight + 0.5 ? 'auto' : 'hidden';
+  };
+
   const openNoteEditorForNewNote = (note) => {
     if (!note) return;
     const nextFolderId =
@@ -244,7 +268,17 @@ export const initMobileNotesEditorUi = (options = {}) => {
   };
 
   try {
-    titleInput?.addEventListener('input', handleNoteEditorInput);
+    titleInput?.addEventListener('input', () => {
+      resizeTitleInput();
+      handleNoteEditorInput();
+    });
+    titleInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+      event.preventDefault();
+      scratchNotesEditorElement?.focus();
+    });
   } catch {
     /* ignore */
   }
@@ -264,6 +298,20 @@ export const initMobileNotesEditorUi = (options = {}) => {
   }
 
   if (typeof window !== 'undefined') {
+    const scheduleTitleResize = () => {
+      if (typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(resizeTitleInput);
+        return;
+      }
+      setTimeout(resizeTitleInput, 0);
+    };
+    window.addEventListener('resize', scheduleTitleResize);
+    window.addEventListener('memorycue:navigation:changed', (event) => {
+      if (event?.detail?.view === 'notebooks') {
+        scheduleTitleResize();
+      }
+    });
+
     const persistBeforeSuspension = () => {
       flushAutoSave();
     };
@@ -280,5 +328,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
     openNoteEditorForNewNote,
     startNewNoteFromUI,
     flushAutoSave,
+    resizeTitleInput,
   };
 };

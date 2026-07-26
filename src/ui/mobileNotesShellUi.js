@@ -25,17 +25,17 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewPanel {
-    padding: 0.42rem 0.58rem;
-    margin: 0.24rem 0.7rem 0.22rem;
-    border-radius: 0.9rem;
+    padding: 0.32rem 0.52rem;
+    margin: 0.16rem 0.7rem 0.12rem;
+    border-radius: 0.78rem;
     background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
     box-shadow: none;
   }
 
   #view-notebook #notesOverviewPanel > h2 {
     margin: 0;
-    font-size: 0.92rem;
-    letter-spacing: 0.01em;
+    font-size: 0.9rem;
+    letter-spacing: 0;
   }
 
   #view-notebook .notes-overview-heading {
@@ -50,8 +50,8 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
-    padding: 0.38rem 0.58rem;
-    margin-bottom: 0.12rem;
+    padding: 0.3rem 0.52rem;
+    margin-bottom: 0.08rem;
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewList {
@@ -64,8 +64,8 @@ const NOTEBOOK_POLISH_CSS = `
     justify-content: center;
     flex: 0 0 auto;
     min-width: 5.4rem;
-    min-height: 26px;
-    padding: 0.22rem 0.66rem;
+    min-height: 24px;
+    padding: 0.18rem 0.62rem;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
@@ -158,14 +158,39 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .scratch-notes-header-block {
-    gap: 0.1rem;
-    padding: 0.46rem 0.72rem 0.22rem;
+    gap: 0.08rem;
+    padding: 0.28rem 0.68rem 0.16rem;
     background: color-mix(in srgb, #ffffff 95%, #eef2f6 5%);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
   }
 
   .mobile-panel--notes .note-editor-actions-row {
-    gap: 0.14rem;
+    gap: 0.12rem;
+  }
+
+  .mobile-panel--notes #noteTitleMobile.note-title-editor {
+    display: block;
+    width: 100%;
+    min-height: 2.05rem;
+    max-height: 3.25rem;
+    padding: 0.34rem 0.72rem;
+    border-radius: 0.78rem;
+    box-sizing: border-box;
+    field-sizing: content;
+    resize: none;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    color: var(--text-main, #1e293b);
+    font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: pre-wrap;
+  }
+
+  .mobile-panel--notes #noteTitleMobile.note-title-editor::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-panel--notes .note-sections-bar {
@@ -210,10 +235,10 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .note-editor-toolbar {
-    margin-top: 0.04rem;
-    gap: 0.32rem;
-    padding-top: 0.22rem;
-    padding-bottom: 0.18rem;
+    margin-top: 0;
+    gap: 0.24rem;
+    padding-top: 0.12rem;
+    padding-bottom: 0.1rem;
     overflow: visible;
   }
 
@@ -245,11 +270,11 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook .note-inline-action {
-    min-height: 32px;
-    padding: 0.42rem 0.78rem;
-    font-size: 0.78rem;
+    min-height: 28px;
+    padding: 0.3rem 0.66rem;
+    font-size: 0.74rem;
     background: color-mix(in srgb, #ffffff 96%, #f8fafc 4%);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    box-shadow: none;
   }
 
   .mobile-panel--notes [data-teacher-mode-editor-bar] > div {

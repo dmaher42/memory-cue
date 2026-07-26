@@ -125,6 +125,50 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
   expect(notes[0].bodyText).toBe('Body-only journal thought');
 });
 
+test('long note titles grow to two lines and Enter moves focus to the note body', () => {
+  document.body.innerHTML = `
+    <textarea id="noteTitleMobile" style="font-size: 16px; line-height: 20px; padding: 4px; border: 1px solid;"></textarea>
+    <div id="notebook-editor-body" contenteditable="true" tabindex="-1"></div>
+    <button id="noteSaveMobile" type="button">Save</button>
+  `;
+  const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
+  const titleInput = document.getElementById('noteTitleMobile');
+  const editor = document.getElementById('notebook-editor-body');
+  let measuredHeight = 80;
+  Object.defineProperty(titleInput, 'scrollHeight', {
+    configurable: true,
+    get: () => measuredHeight,
+  });
+
+  const { resizeTitleInput } = initMobileNotesEditorUi({
+    saveButton: document.getElementById('noteSaveMobile'),
+    titleInput,
+    scratchNotesEditorElement: editor,
+  });
+
+  resizeTitleInput();
+  expect(titleInput.style.height).toBe('50px');
+  expect(titleInput.style.overflowY).toBe('auto');
+
+  measuredHeight = 28;
+  titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+  expect(titleInput.style.height).toBe('30px');
+  expect(titleInput.style.overflowY).toBe('hidden');
+
+  measuredHeight = 80;
+  window.dispatchEvent(new CustomEvent('memorycue:navigation:changed', {
+    detail: { view: 'notebooks' },
+  }));
+  jest.runOnlyPendingTimers();
+  expect(titleInput.style.height).toBe('50px');
+  expect(titleInput.style.overflowY).toBe('auto');
+
+  const enterEvent = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+  titleInput.dispatchEvent(enterEvent);
+  expect(enterEvent.defaultPrevented).toBe(true);
+  expect(document.activeElement).toBe(editor);
+});
+
 test('autosave persists without running the full manual save refresh path', () => {
   const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
   const titleInput = document.getElementById('noteTitleMobile');

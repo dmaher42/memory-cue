@@ -760,7 +760,7 @@ body[data-active-view="notebooks"] #view-notebook .card-body {
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
   }
 
-  .mobile-panel--notes .scratch-notes-header-block input#noteTitleMobile {
+  .mobile-panel--notes .scratch-notes-header-block #noteTitleMobile {
     padding: 0.56rem 0.86rem;
   }
 
@@ -5002,13 +5002,14 @@ body, main, section, div, p, span, li {
             <div class="note-editor-card">
             <div class="scratch-notes-header-block space-y-1 mb-1">
               <div class="flex items-center justify-between gap-3">
-                <input
+                <textarea
                   id="noteTitleMobile"
-                  type="text"
-                  class="note-title input input-sm w-full bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[color-mix(in_srgb,var(--accent-color,_#1e293b)_65%,#ffffff_35%)]"
+                  rows="1"
+                  class="note-title note-title-editor w-full bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[color-mix(in_srgb,var(--accent-color,_#1e293b)_65%,#ffffff_35%)]"
                   placeholder="Note title"
+                  aria-label="Note title"
                   autocomplete="off"
-                />
+                ></textarea>
               </div>
               <div class="note-editor-actions-row">
                 <button
