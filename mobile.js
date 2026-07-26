@@ -612,6 +612,11 @@ function initAssistant() {
         });
 
         related.appendChild(relatedList);
+        related.addEventListener('toggle', () => {
+          if (related.open) {
+            revealLatestCaptureMessage();
+          }
+        });
 
         row.appendChild(related);
       }

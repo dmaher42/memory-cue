@@ -350,11 +350,14 @@ async function main() {
       document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
     });
     await page.waitForTimeout(100);
+    await page.click('.capture-result-related-summary');
+    await page.waitForTimeout(100);
     const narrowCaptureState = await page.evaluate(() => {
       const result = document.querySelector('.chat-message--capture-result')?.getBoundingClientRect();
       const composer = document.getElementById('thinkingBarContainer')?.getBoundingClientRect();
       const appContent = document.getElementById('main');
       return {
+        relatedOpen: document.querySelector('.capture-result-related')?.open ?? false,
         resultBottom: result?.bottom || 0,
         composerTop: composer?.top || 0,
         mainScrollTop: appContent?.scrollTop || 0,
@@ -364,7 +367,8 @@ async function main() {
       };
     });
     if (
-      narrowCaptureState.resultBottom > narrowCaptureState.composerTop
+      !narrowCaptureState.relatedOpen
+      || narrowCaptureState.resultBottom > narrowCaptureState.composerTop
       || narrowCaptureState.hasHorizontalOverflow
     ) {
       throw new Error(`Capture result is obscured at 320px: ${JSON.stringify(narrowCaptureState)}`);
