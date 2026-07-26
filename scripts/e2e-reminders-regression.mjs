@@ -164,6 +164,81 @@ async function main() {
         return false;
       }
     }, REMINDER_STORAGE_KEY);
+
+    const captureHomeLayout = await page.evaluate(() => {
+      const captureView = document.getElementById('view-capture');
+      const conversation = document.getElementById('chatConversationContainer');
+      const home = document.querySelector('.capture-home-shell');
+      const captureLabels = Array.from(captureView?.querySelectorAll('h2, p') || [])
+        .filter((element) => element.textContent?.trim() === 'Capture');
+      const homeStyle = home ? getComputedStyle(home) : null;
+      return {
+        headingCount: captureLabels.length,
+        conversationWidth: conversation?.getBoundingClientRect().width || 0,
+        viewportWidth: window.innerWidth,
+        homeHasBorder: homeStyle ? Number.parseFloat(homeStyle.borderTopWidth) > 0 : true,
+        homeHasShadow: homeStyle ? homeStyle.boxShadow !== 'none' : true,
+      };
+    });
+    if (
+      captureHomeLayout.headingCount !== 1
+      || captureHomeLayout.conversationWidth < captureHomeLayout.viewportWidth * 0.88
+      || captureHomeLayout.homeHasBorder
+      || captureHomeLayout.homeHasShadow
+    ) {
+      throw new Error(`Unexpected capture home layout: ${JSON.stringify(captureHomeLayout)}`);
+    }
+
+    await page.evaluate(() => {
+      localStorage.setItem('memoryCueChatHistory', JSON.stringify([
+        {
+          id: 'capture-layout-user',
+          role: 'user',
+          content: 'Remind me tomorrow at 8:30 am to email the complete Year 8 geography lesson plan to everyone involved',
+          timestamp: Date.now() - 1000,
+        },
+        {
+          id: 'capture-layout-result',
+          role: 'assistant',
+          content: 'Reminder created for tomorrow at 8:30 am: Email the complete Year 8 geography lesson plan to everyone involved',
+          timestamp: Date.now(),
+        },
+      ]));
+      document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
+    });
+    await page.waitForSelector('.chat-message--capture-result');
+    const captureConversationLayout = await page.evaluate(() => {
+      const conversation = document.getElementById('chatConversationContainer');
+      const userMessage = document.querySelector('.chat-message--user');
+      const resultMessage = document.querySelector('.chat-message--capture-result');
+      const eyebrow = document.querySelector('.capture-result-eyebrow');
+      const title = document.querySelector('.capture-result-title');
+      const detail = document.querySelector('.capture-result-detail');
+      return {
+        conversationWidth: conversation?.getBoundingClientRect().width || 0,
+        userWidth: userMessage?.getBoundingClientRect().width || 0,
+        resultWidth: resultMessage?.getBoundingClientRect().width || 0,
+        eyebrowFontSize: eyebrow ? Number.parseFloat(getComputedStyle(eyebrow).fontSize) : 0,
+        titleFontSize: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
+        detailFontSize: detail ? Number.parseFloat(getComputedStyle(detail).fontSize) : 0,
+        hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    if (
+      captureConversationLayout.userWidth < captureConversationLayout.conversationWidth * 0.85
+      || captureConversationLayout.resultWidth < captureConversationLayout.conversationWidth * 0.85
+      || captureConversationLayout.eyebrowFontSize < 12
+      || captureConversationLayout.titleFontSize < 16
+      || captureConversationLayout.detailFontSize < 14
+      || captureConversationLayout.hasHorizontalOverflow
+    ) {
+      throw new Error(`Unexpected capture conversation layout: ${JSON.stringify(captureConversationLayout)}`);
+    }
+    await page.evaluate(() => {
+      localStorage.removeItem('memoryCueChatHistory');
+      document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
+    });
+
     await page.click('#mobile-footer-reminders');
     await page.waitForFunction(() => {
       const panel = document.getElementById('view-reminders');

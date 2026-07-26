@@ -312,17 +312,8 @@ function initAssistant() {
       chatConversationContainer.innerHTML = '';
 
       const shell = document.createElement('div');
-      shell.className = 'capture-home-shell w-full rounded-2xl border border-base-300 bg-base-100/95 p-4 shadow-sm';
+      shell.className = 'capture-home-shell w-full';
       shell.style.alignSelf = 'stretch';
-
-      const heading = document.createElement('div');
-      heading.className = 'grid gap-1';
-
-      const title = document.createElement('p');
-      title.className = 'text-base font-semibold text-base-content';
-      title.textContent = 'Capture';
-
-      heading.append(title);
 
       const statsRow = document.createElement('div');
       statsRow.className = 'flex flex-wrap gap-2';
@@ -338,7 +329,7 @@ function initAssistant() {
       });
 
       const actionsRow = document.createElement('div');
-      actionsRow.className = 'flex flex-wrap gap-2';
+      actionsRow.className = 'capture-home-actions';
 
       const notebooksButton = document.createElement('button');
       notebooksButton.type = 'button';
@@ -410,7 +401,7 @@ function initAssistant() {
       }
 
       recentSection.appendChild(recentList);
-      shell.append(heading, statsRow, actionsRow, recentSection);
+      shell.append(statsRow, actionsRow, recentSection);
       chatConversationContainer.appendChild(shell);
     };
 
