@@ -4,6 +4,7 @@ const { loadMobileModule } = require('./helpers/load-mobile-module');
 
 describe('mobile capture result rendering', () => {
   beforeEach(() => {
+    localStorage.clear();
     document.body.innerHTML = `
       <main id="main">
         <section id="view-capture">
@@ -20,10 +21,18 @@ describe('mobile capture result rendering', () => {
       </section>
     `;
 
+    const messageTimestamp = Date.now();
     window.__mobileMocks = {
       getMessages: () => [{
         role: 'assistant',
-        content: 'Reminder created for tomorrow at 8:30 am: Prepare the complete lesson sequence.',
+        content: [
+          'Reminder created for tomorrow at 8:30 am: Prepare the complete lesson sequence.',
+          '',
+          'Related from your memory:',
+          '- Curriculum map',
+          '- Prior lesson notes',
+        ].join('\n'),
+        timestamp: messageTimestamp,
       }],
       createChatComposer: () => ({ autoResize: jest.fn() }),
       initAuth: jest.fn().mockResolvedValue({ auth: null, unsubscribe: () => {} }),
@@ -31,6 +40,7 @@ describe('mobile capture result rendering', () => {
   });
 
   afterEach(() => {
+    localStorage.clear();
     document.body.innerHTML = '';
     delete document.body.dataset.memoryCueAssistantInit;
     delete window.__mobileMocks;
@@ -42,6 +52,48 @@ describe('mobile capture result rendering', () => {
 
     expect(document.querySelector('.capture-result-title')?.textContent).toBe('Saved as reminder');
     expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
+    expect(document.querySelector('.capture-result-meta')?.textContent).toBe('Tomorrow, 8:30 am');
+    expect(document.querySelector('.capture-result-time')?.textContent).toBe('Just now');
+  });
+
+  test('shows confirmed reminder metadata and keeps related memories collapsed', () => {
+    const messageTimestamp = Date.now();
+    const due = new Date();
+    due.setDate(due.getDate() + 1);
+    due.setHours(8, 30, 0, 0);
+    localStorage.setItem('memoryCue:offlineReminders', JSON.stringify([{
+      id: 'capture-reminder',
+      title: 'Prepare the complete lesson sequence',
+      due: due.toISOString(),
+      category: 'School',
+      source: 'capture',
+      createdAt: messageTimestamp - 100,
+    }]));
+    window.__mobileMocks.getMessages = () => [{
+      role: 'assistant',
+      content: [
+        'Reminder created.',
+        '',
+        'Related from your memory:',
+        '- Curriculum map',
+        '- Prior lesson notes',
+      ].join('\n'),
+      timestamp: messageTimestamp,
+    }];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
+    expect(Array.from(document.querySelectorAll('.capture-result-meta-item')).map((item) => item.textContent))
+      .toEqual(['Tomorrow, 8:30 am', 'School']);
+    expect(document.querySelector('.capture-result-meta')?.getAttribute('aria-label'))
+      .toBe('Reminder details: Tomorrow, 8:30 am, School');
+    const related = document.querySelector('.capture-result-related');
+    expect(related?.open).toBe(false);
+    expect(related?.querySelector('summary')?.textContent).toBe('Related memories (2)');
+    expect(Array.from(related?.querySelectorAll('li') || []).map((item) => item.textContent))
+      .toEqual(['Curriculum map', 'Prior lesson notes']);
   });
 
   test('keeps one Capture heading and renders the empty state without nested card chrome', () => {

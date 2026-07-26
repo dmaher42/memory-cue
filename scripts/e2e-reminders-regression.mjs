@@ -190,6 +190,20 @@ async function main() {
     }
 
     await page.evaluate(() => {
+      const reminders = JSON.parse(localStorage.getItem('memoryCue:offlineReminders') || '[]');
+      const due = new Date();
+      due.setDate(due.getDate() + 1);
+      due.setHours(8, 30, 0, 0);
+      reminders.push({
+        id: 'capture-layout-reminder',
+        title: 'Email the complete Year 8 geography lesson plan to everyone involved',
+        category: 'School',
+        source: 'capture',
+        due: due.toISOString(),
+        createdAt: Date.now() - 100,
+        updatedAt: Date.now() - 100,
+      });
+      localStorage.setItem('memoryCue:offlineReminders', JSON.stringify(reminders));
       localStorage.setItem('memoryCueChatHistory', JSON.stringify([
         {
           id: 'capture-layout-user',
@@ -200,7 +214,13 @@ async function main() {
         {
           id: 'capture-layout-result',
           role: 'assistant',
-          content: 'Reminder created for tomorrow at 8:30 am: Email the complete Year 8 geography lesson plan to everyone involved',
+          content: [
+            'Reminder created.',
+            '',
+            'Related from your memory:',
+            '- Year 8 geography curriculum map',
+            '- Previous lesson sequence notes',
+          ].join('\n'),
           timestamp: Date.now(),
         },
       ]));
@@ -214,6 +234,10 @@ async function main() {
       const eyebrow = document.querySelector('.capture-result-eyebrow');
       const title = document.querySelector('.capture-result-title');
       const detail = document.querySelector('.capture-result-detail');
+      const metadata = document.querySelector('.capture-result-meta');
+      const timestamp = document.querySelector('.capture-result-time');
+      const related = document.querySelector('.capture-result-related');
+      const relatedSummary = document.querySelector('.capture-result-related-summary');
       return {
         conversationWidth: conversation?.getBoundingClientRect().width || 0,
         userWidth: userMessage?.getBoundingClientRect().width || 0,
@@ -221,6 +245,11 @@ async function main() {
         eyebrowFontSize: eyebrow ? Number.parseFloat(getComputedStyle(eyebrow).fontSize) : 0,
         titleFontSize: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
         detailFontSize: detail ? Number.parseFloat(getComputedStyle(detail).fontSize) : 0,
+        detailText: detail?.textContent || '',
+        metadataText: metadata?.textContent || '',
+        timestampText: timestamp?.textContent || '',
+        relatedSummaryText: relatedSummary?.textContent || '',
+        relatedOpen: related?.open ?? true,
         hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       };
     });
@@ -230,10 +259,54 @@ async function main() {
       || captureConversationLayout.eyebrowFontSize < 12
       || captureConversationLayout.titleFontSize < 16
       || captureConversationLayout.detailFontSize < 14
+      || captureConversationLayout.detailText !== 'Email the complete Year 8 geography lesson plan to everyone involved'
+      || !captureConversationLayout.metadataText.includes('Tomorrow, 8:30 am')
+      || !captureConversationLayout.metadataText.includes('School')
+      || captureConversationLayout.timestampText !== 'Just now'
+      || captureConversationLayout.relatedSummaryText !== 'Related memories (2)'
+      || captureConversationLayout.relatedOpen
       || captureConversationLayout.hasHorizontalOverflow
     ) {
       throw new Error(`Unexpected capture conversation layout: ${JSON.stringify(captureConversationLayout)}`);
     }
+    await page.click('.capture-result-related-summary');
+    const expandedRelatedState = await page.evaluate(() => ({
+      open: document.querySelector('.capture-result-related')?.open ?? false,
+      itemCount: document.querySelectorAll('.capture-result-related-item').length,
+      hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }));
+    if (
+      !expandedRelatedState.open
+      || expandedRelatedState.itemCount !== 2
+      || expandedRelatedState.hasHorizontalOverflow
+    ) {
+      throw new Error(`Unexpected expanded related-memory state: ${JSON.stringify(expandedRelatedState)}`);
+    }
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.evaluate(() => {
+      document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
+    });
+    await page.waitForTimeout(100);
+    const narrowCaptureState = await page.evaluate(() => {
+      const result = document.querySelector('.chat-message--capture-result')?.getBoundingClientRect();
+      const composer = document.getElementById('thinkingBarContainer')?.getBoundingClientRect();
+      const appContent = document.getElementById('main');
+      return {
+        resultBottom: result?.bottom || 0,
+        composerTop: composer?.top || 0,
+        mainScrollTop: appContent?.scrollTop || 0,
+        mainScrollHeight: appContent?.scrollHeight || 0,
+        mainClientHeight: appContent?.clientHeight || 0,
+        hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    if (
+      narrowCaptureState.resultBottom > narrowCaptureState.composerTop
+      || narrowCaptureState.hasHorizontalOverflow
+    ) {
+      throw new Error(`Capture result is obscured at 320px: ${JSON.stringify(narrowCaptureState)}`);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => {
       localStorage.removeItem('memoryCueChatHistory');
       document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));

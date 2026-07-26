@@ -112,7 +112,125 @@ function initAssistant() {
       };
     };
 
-    const getCaptureResultModel = (content) => {
+    const toValidDate = (value) => {
+      if (value == null || value === '') {
+        return null;
+      }
+
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const formatClockTime = (date) => date
+      .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
+      .replace(/\s+/g, ' ')
+      .replace(/\b(?:am|pm)\b/gi, (period) => period.toLowerCase());
+
+    const formatReminderSchedule = (value) => {
+      if (typeof value === 'string') {
+        const naturalSchedule = value.trim().match(/^(today|tomorrow)(?:\s+at\s+(.+))?$/i);
+        if (naturalSchedule) {
+          const day = naturalSchedule[1].charAt(0).toUpperCase() + naturalSchedule[1].slice(1).toLowerCase();
+          const time = naturalSchedule[2]
+            ? naturalSchedule[2].trim().replace(/\b(?:am|pm)\b/gi, (period) => period.toLowerCase())
+            : '';
+          return time ? `${day}, ${time}` : day;
+        }
+      }
+
+      const date = toValidDate(value);
+      if (!date) {
+        return '';
+      }
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const startOfTomorrow = new Date(startOfToday.getTime());
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+      const time = formatClockTime(date);
+
+      if (startOfTarget.getTime() === startOfToday.getTime()) {
+        return `Today, ${time}`;
+      }
+      if (startOfTarget.getTime() === startOfTomorrow.getTime()) {
+        return `Tomorrow, ${time}`;
+      }
+
+      const dateLabel = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      return `${dateLabel}, ${time}`;
+    };
+
+    const formatCaptureResultTimestamp = (value) => {
+      const date = toValidDate(value);
+      if (!date) {
+        return '';
+      }
+
+      const elapsedMs = Math.max(0, Date.now() - date.getTime());
+      if (elapsedMs < 60000) {
+        return 'Just now';
+      }
+      if (elapsedMs < 3600000) {
+        const minutes = Math.max(1, Math.floor(elapsedMs / 60000));
+        return `${minutes} min ago`;
+      }
+
+      const now = new Date();
+      if (
+        date.getFullYear() === now.getFullYear()
+        && date.getMonth() === now.getMonth()
+        && date.getDate() === now.getDate()
+      ) {
+        return `Today, ${formatClockTime(date)}`;
+      }
+
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const findMatchingCaptureReminder = (messageTimestamp, reminderTitle = '') => {
+      const messageDate = toValidDate(messageTimestamp);
+      if (!messageDate || typeof localStorage === 'undefined') {
+        return null;
+      }
+
+      try {
+        const reminders = JSON.parse(localStorage.getItem('memoryCue:offlineReminders') || '[]');
+        if (!Array.isArray(reminders)) {
+          return null;
+        }
+
+        const normalizedTitle = reminderTitle.trim().toLowerCase();
+        return reminders
+          .map((reminder) => {
+            const createdDate = toValidDate(reminder?.createdAt);
+            const title = typeof reminder?.title === 'string'
+              ? reminder.title.trim()
+              : typeof reminder?.text === 'string'
+                ? reminder.text.trim()
+                : '';
+            const timeDifference = createdDate
+              ? Math.abs(messageDate.getTime() - createdDate.getTime())
+              : Number.POSITIVE_INFINITY;
+            const titleMatches = Boolean(normalizedTitle && title.toLowerCase() === normalizedTitle);
+            const isCaptureSource = reminder?.source === 'capture';
+            return { reminder, timeDifference, titleMatches, isCaptureSource };
+          })
+          .filter(({ timeDifference, titleMatches, isCaptureSource }) => (
+            timeDifference <= 120000 && (isCaptureSource || titleMatches)
+          ))
+          .sort((left, right) => {
+            if (left.titleMatches !== right.titleMatches) {
+              return left.titleMatches ? -1 : 1;
+            }
+            return left.timeDifference - right.timeDifference;
+          })[0]?.reminder || null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getCaptureResultModel = (content, messageTimestamp = null) => {
       const { mainText, relatedItems } = splitRelatedMemoryText(content);
       const normalized = mainText.toLowerCase();
       if (!normalized) {
@@ -122,19 +240,35 @@ function initAssistant() {
       if (normalized.startsWith('reminder created')) {
         const reminderSummary = mainText.replace(/^reminder created\s*/i, '').trim();
         let reminderDetail = reminderSummary.replace(/^:\s*/, '');
+        let reminderSchedule = '';
         if (/^for\s+/i.test(reminderSummary)) {
           const scheduledSummary = reminderSummary.replace(/^for\s+/i, '');
           const titleSeparatorIndex = scheduledSummary.indexOf(': ');
+          reminderSchedule = titleSeparatorIndex >= 0
+            ? scheduledSummary.slice(0, titleSeparatorIndex).trim()
+            : scheduledSummary.trim();
           reminderDetail = titleSeparatorIndex >= 0
             ? scheduledSummary.slice(titleSeparatorIndex + 2)
             : '';
         }
 
+        reminderDetail = reminderDetail.replace(/[.\s]+$/g, '').trim();
+        const matchingReminder = findMatchingCaptureReminder(messageTimestamp, reminderDetail);
+        const storedTitle = typeof matchingReminder?.title === 'string'
+          ? matchingReminder.title.trim()
+          : typeof matchingReminder?.text === 'string'
+            ? matchingReminder.text.trim()
+            : '';
+        const dueValue = matchingReminder?.due ?? matchingReminder?.dueAt ?? matchingReminder?.dueDate;
+        const category = typeof matchingReminder?.category === 'string' ? matchingReminder.category.trim() : '';
+        const metadata = [formatReminderSchedule(dueValue || reminderSchedule), category].filter(Boolean);
+
         return {
           tone: 'reminder',
           eyebrow: 'Reminder',
           title: 'Saved as reminder',
-          detail: reminderDetail.replace(/[.\s]+$/g, '').trim(),
+          detail: reminderDetail || storedTitle,
+          metadata,
           relatedItems,
         };
       }
@@ -189,7 +323,7 @@ function initAssistant() {
       return model.title;
     };
 
-    const renderCaptureResultMessage = (row, model) => {
+    const renderCaptureResultMessage = (row, model, messageTimestamp = null) => {
       row.classList.add('chat-message--capture-result', `chat-message--capture-${model.tone}`);
 
       const eyebrow = document.createElement('span');
@@ -209,27 +343,63 @@ function initAssistant() {
         row.appendChild(detail);
       }
 
+      const timestampLabel = formatCaptureResultTimestamp(messageTimestamp);
+      if ((Array.isArray(model.metadata) && model.metadata.length) || timestampLabel) {
+        const context = document.createElement('div');
+        context.className = 'capture-result-context';
+
+        if (Array.isArray(model.metadata) && model.metadata.length) {
+          const metadata = document.createElement('div');
+          metadata.className = 'capture-result-meta';
+          metadata.setAttribute('aria-label', `Reminder details: ${model.metadata.join(', ')}`);
+
+          model.metadata.forEach((metadataText) => {
+            const item = document.createElement('span');
+            item.className = 'capture-result-meta-item';
+            item.textContent = metadataText;
+            metadata.appendChild(item);
+          });
+
+          context.appendChild(metadata);
+        }
+
+        if (timestampLabel) {
+          const timestamp = document.createElement('time');
+          timestamp.className = 'capture-result-time';
+          timestamp.dateTime = toValidDate(messageTimestamp)?.toISOString() || '';
+          timestamp.textContent = timestampLabel;
+          context.appendChild(timestamp);
+        }
+
+        row.appendChild(context);
+      }
+
       if (Array.isArray(model.relatedItems) && model.relatedItems.length) {
-        const related = document.createElement('div');
+        const related = document.createElement('details');
         related.className = 'capture-result-related';
 
-        const relatedLabel = document.createElement('span');
-        relatedLabel.className = 'capture-result-related-label';
-        relatedLabel.textContent = 'Related memory';
-        related.appendChild(relatedLabel);
+        const relatedSummary = document.createElement('summary');
+        relatedSummary.className = 'capture-result-related-summary';
+        relatedSummary.textContent = `Related memories (${model.relatedItems.length})`;
+        related.appendChild(relatedSummary);
+
+        const relatedList = document.createElement('ul');
+        relatedList.className = 'capture-result-related-list';
 
         model.relatedItems.forEach((itemText) => {
-          const item = document.createElement('span');
+          const item = document.createElement('li');
           item.className = 'capture-result-related-item';
           item.textContent = itemText;
-          related.appendChild(item);
+          relatedList.appendChild(item);
         });
+
+        related.appendChild(relatedList);
 
         row.appendChild(related);
       }
     };
 
-    const appendConversationMessage = (role, content, quickActions = []) => {
+    const appendConversationMessage = (role, content, quickActions = [], messageTimestamp = null) => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
       }
@@ -237,7 +407,7 @@ function initAssistant() {
       const row = document.createElement('div');
       row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
       const normalizedContent = typeof content === 'string' ? content.trim().toLowerCase() : '';
-      const captureResultModel = role !== 'user' ? getCaptureResultModel(content) : null;
+      const captureResultModel = role !== 'user' ? getCaptureResultModel(content, messageTimestamp) : null;
       if (
         role !== 'user' &&
         (normalizedContent === 'reminder created.' || normalizedContent === 'reminder created')
@@ -245,7 +415,7 @@ function initAssistant() {
         row.classList.add('chat-message--status');
       }
       if (captureResultModel) {
-        renderCaptureResultMessage(row, captureResultModel);
+        renderCaptureResultMessage(row, captureResultModel, messageTimestamp);
       } else {
         row.textContent = content;
       }
@@ -433,7 +603,12 @@ function initAssistant() {
         if (!content) {
           return;
         }
-        appendConversationMessage(message?.role === 'user' ? 'user' : 'assistant', content, message?.quickActions);
+        appendConversationMessage(
+          message?.role === 'user' ? 'user' : 'assistant',
+          content,
+          message?.quickActions,
+          message?.timestamp,
+        );
       });
     };
 
@@ -453,18 +628,34 @@ function initAssistant() {
     const revealLatestCaptureMessage = () => {
       const appContent = document.getElementById('main');
       const latestMessage = chatConversationContainer?.lastElementChild;
-      if (!(appContent instanceof HTMLElement) || !(latestMessage instanceof HTMLElement)) {
+      if (
+        !(appContent instanceof HTMLElement)
+        || !(latestMessage instanceof HTMLElement)
+        || !latestMessage.classList.contains('chat-message')
+      ) {
         return;
       }
 
-      requestAnimationFrame(() => {
+      const scheduleFrame = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => callback();
+      const adjustScroll = () => {
         const composerTop = thinkingBarContainer?.getBoundingClientRect().top ?? window.innerHeight;
         const messageBottom = latestMessage.getBoundingClientRect().bottom;
         const overlap = messageBottom - composerTop + 12;
         if (overlap > 0) {
           appContent.scrollTop += overlap;
         }
+      };
+      scheduleFrame(() => {
+        adjustScroll();
+        scheduleFrame(adjustScroll);
       });
+    };
+
+    const refreshCaptureConversation = () => {
+      renderConversationHistory();
+      revealLatestCaptureMessage();
     };
 
     const readRemindersForRecall = () => {
@@ -833,11 +1024,13 @@ function initAssistant() {
 
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
 
-    renderConversationHistory();
-    document.addEventListener('memoryCue:chatUpdated', renderConversationHistory);
-    document.addEventListener('memoryCue:notesUpdated', renderConversationHistory);
-    document.addEventListener('memoryCue:entriesUpdated', renderConversationHistory);
-    document.addEventListener('memoryCue:remindersUpdated', renderConversationHistory);
+    refreshCaptureConversation();
+    document.addEventListener('memoryCue:chatUpdated', refreshCaptureConversation);
+    document.addEventListener('memoryCue:notesUpdated', refreshCaptureConversation);
+    document.addEventListener('memoryCue:entriesUpdated', refreshCaptureConversation);
+    document.addEventListener('memoryCue:remindersUpdated', refreshCaptureConversation);
+    window.addEventListener('resize', revealLatestCaptureMessage);
+    window.visualViewport?.addEventListener('resize', revealLatestCaptureMessage);
 
     clearChatHistoryBtn?.addEventListener('click', () => {
       clearMessages();
