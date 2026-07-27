@@ -649,7 +649,19 @@ function initAssistant() {
       if (captureResultModel) {
         renderCaptureResultMessage(row, captureResultModel, messageTimestamp, messageId);
       } else {
-        row.textContent = content;
+        const messageText = document.createElement('span');
+        messageText.className = 'chat-message-text';
+        messageText.textContent = content;
+        row.appendChild(messageText);
+
+        const timestampLabel = formatCaptureResultTimestamp(messageTimestamp);
+        if (timestampLabel) {
+          const timestamp = document.createElement('time');
+          timestamp.className = 'chat-message-time';
+          timestamp.dateTime = toValidDate(messageTimestamp)?.toISOString() || '';
+          timestamp.textContent = timestampLabel;
+          row.appendChild(timestamp);
+        }
       }
 
       if (role !== 'user' && Array.isArray(quickActions) && quickActions.length) {

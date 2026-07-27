@@ -57,6 +57,22 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelectorAll('.capture-result-related-link')).toHaveLength(0);
   });
 
+  test('renders a user capture as a timestamped chat message', () => {
+    window.__mobileMocks.getMessages = () => [{
+      role: 'user',
+      content: 'Add a reminder to print the lesson scaffold',
+      timestamp: Date.now(),
+    }];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const message = document.querySelector('.chat-message--user');
+    expect(message?.querySelector('.chat-message-text')?.textContent)
+      .toBe('Add a reminder to print the lesson scaffold');
+    expect(message?.querySelector('.chat-message-time')?.textContent).toBe('Just now');
+  });
+
   test('shows confirmed reminder metadata and opens a linked related memory', () => {
     const messageTimestamp = Date.now() - 11000;
     const due = new Date();

@@ -191,15 +191,15 @@
 #chatConversationContainer {
   width: min(100%, 40rem);
   margin: 0 auto;
-  gap: 0.55rem !important;
-  padding: 0.35rem 0 0.9rem !important;
+  gap: 0.8rem !important;
+  padding: 0.5rem 0.2rem 1rem !important;
 }
 
 #chatConversationContainer .chat-message {
-  width: 100%;
-  max-width: 100% !important;
-  border-radius: 0.8rem !important;
-  padding: 0.72rem 0.85rem !important;
+  width: fit-content;
+  max-width: min(84%, 32rem) !important;
+  border-radius: 1rem !important;
+  padding: 0.68rem 0.82rem !important;
   font-size: 0.93rem !important;
   line-height: 1.45 !important;
   text-align: left !important;
@@ -208,39 +208,49 @@
 }
 
 #chatConversationContainer .chat-message--assistant {
-  align-self: stretch !important;
-  background: color-mix(in srgb, var(--surface-elevated, #f8fafc) 90%, #ffffff 10%) !important;
+  align-self: flex-start !important;
+  margin-right: 2rem;
+  border-bottom-left-radius: 0.32rem !important;
+  background: color-mix(in srgb, var(--surface-elevated, #f8fafc) 88%, #ffffff 12%) !important;
   border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 72%, #ffffff 28%) !important;
-  box-shadow: 0 3px 10px rgba(30, 41, 59, 0.04) !important;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.06) !important;
 }
 
 #chatConversationContainer .chat-message--user {
-  align-self: stretch !important;
+  align-self: flex-end !important;
   display: grid;
-  gap: 0.16rem;
-  margin-top: 0.35rem;
-  padding: 0.42rem 0.25rem 0.5rem !important;
-  border: 0 !important;
-  border-bottom: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 76%, transparent) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--text-main, #1f2937);
-  font-weight: 600;
+  gap: 0.28rem;
+  margin-left: 2rem;
+  border: 1px solid color-mix(in srgb, #0f766e 78%, #ffffff 22%) !important;
+  border-bottom-right-radius: 0.32rem !important;
+  background: #0f766e !important;
+  box-shadow: 0 5px 14px rgba(15, 118, 110, 0.16) !important;
+  color: #ffffff;
+  font-weight: 500;
 }
 
-#chatConversationContainer .chat-message--user:first-child {
-  margin-top: 0;
+#chatConversationContainer .chat-message--user + .chat-message--user,
+#chatConversationContainer .chat-message--assistant + .chat-message--assistant {
+  margin-top: -0.35rem;
 }
 
-#chatConversationContainer .chat-message--user::before {
-  color: color-mix(in srgb, var(--accent-color, #0f766e) 64%, var(--text-muted, #6b7280) 36%);
-  content: 'You added';
-  font-size: 0.68rem;
-  font-weight: 750;
-  letter-spacing: 0.045em;
+#chatConversationContainer .chat-message-text {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#chatConversationContainer .chat-message-time {
+  justify-self: end;
+  color: color-mix(in srgb, var(--text-muted, #6b7280) 82%, transparent);
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
   line-height: 1.2;
-  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#chatConversationContainer .chat-message--user .chat-message-time {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 #chatConversationContainer .chat-message .chat-quick-actions {
@@ -278,10 +288,12 @@
 #chatConversationContainer .chat-message--capture-result {
   display: grid !important;
   gap: 0.28rem !important;
-  max-width: 100% !important;
-  margin-bottom: 0.4rem;
+  width: min(86%, 30rem);
+  max-width: min(86%, 30rem) !important;
+  margin: 0 2rem 0.2rem 0;
   padding: 0.72rem 0.82rem !important;
-  border-radius: 0.7rem !important;
+  border-radius: 1rem !important;
+  border-bottom-left-radius: 0.32rem !important;
   border-left: 3px solid color-mix(in srgb, var(--accent-color, #1e293b) 58%, transparent) !important;
 }
 
