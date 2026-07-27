@@ -50,8 +50,7 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
-    padding: 0.3rem 0.52rem;
-    margin-bottom: 0.08rem;
+    display: none;
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewList {
@@ -144,7 +143,22 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   .mobile-panel--notes .note-editor-actions-row {
-    gap: 0.12rem;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  #view-notebook #noteFolderPillMobile,
+  #view-notebook [data-teacher-mode-toggle] {
+    display: none !important;
+  }
+
+  #view-notebook [data-teacher-mode-toggle]::after {
+    content: none !important;
+  }
+
+  .mobile-panel--notes .note-editor-actions-row .notes-overview-toggle {
+    margin-left: auto;
   }
 
   .mobile-panel--notes #noteTitleMobile[hidden] {
@@ -1337,6 +1351,9 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     let toggleEl = headingEl.querySelector('.notes-overview-toggle');
     if (!(toggleEl instanceof HTMLButtonElement)) {
+      toggleEl = noteEditorSheet?.querySelector('[data-notes-overview-toggle]') || null;
+    }
+    if (!(toggleEl instanceof HTMLButtonElement)) {
       toggleEl = document.createElement('button');
       toggleEl.type = 'button';
       toggleEl.className = 'notes-overview-toggle';
@@ -1348,10 +1365,26 @@ export const initMobileNotesShellUi = (options = {}) => {
   };
 
   const renderNotesOverviewToggle = () => {
-    const { toggleEl, titleEl } = ensureNotesOverviewHeader();
+    const { headingEl, toggleEl, titleEl } = ensureNotesOverviewHeader();
     const listEl = notesOverviewPanel?.querySelector('#notesOverviewList');
-    if (!(toggleEl instanceof HTMLButtonElement) || !(titleEl instanceof HTMLElement) || !(listEl instanceof HTMLElement)) {
+    if (
+      !(headingEl instanceof HTMLElement)
+      || !(toggleEl instanceof HTMLButtonElement)
+      || !(titleEl instanceof HTMLElement)
+      || !(listEl instanceof HTMLElement)
+    ) {
       return;
+    }
+    const notebookView = notesOverviewPanel?.closest('#view-notebook');
+    if (notebookView instanceof HTMLElement) {
+      notebookView.dataset.notesMode = notesMode;
+    }
+    const editorActionsRow = noteEditorSheet?.querySelector('.note-editor-actions-row');
+    const toggleHost = notesMode === 'overview' || !(editorActionsRow instanceof HTMLElement)
+      ? headingEl
+      : editorActionsRow;
+    if (toggleEl.parentElement !== toggleHost) {
+      toggleHost.appendChild(toggleEl);
     }
     notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
@@ -1361,18 +1394,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
   };
 
-  ensureNotesOverviewHeader();
-  renderNotesOverviewToggle();
-  notesOverviewPanel?.addEventListener('click', (event) => {
-    const toggle = event.target instanceof HTMLElement
-      ? event.target.closest('[data-notes-overview-toggle]')
-      : null;
-    if (!(toggle instanceof HTMLButtonElement)) {
-      return;
-    }
+  const { toggleEl: notesOverviewToggle } = ensureNotesOverviewHeader();
+  notesOverviewToggle?.addEventListener('click', (event) => {
     event.preventDefault();
     applyNotesMode(notesMode === 'overview' ? 'notebooks' : 'overview');
   });
+  renderNotesOverviewToggle();
 
   const ensureActiveLessonCard = () => {
     if (!(notesOverviewPanel instanceof HTMLElement)) {

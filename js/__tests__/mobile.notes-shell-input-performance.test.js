@@ -154,3 +154,47 @@ test('keeps the Notes headings visually hidden while switching overview modes', 
   expect(list.hidden).toBe(true);
   expect(noteEditorSheet.classList.contains('hidden')).toBe(false);
 });
+
+test('places Saved notes beside New note in the compact editor row', () => {
+  document.body.innerHTML = `
+    <section id="view-notebook">
+      <section id="notesOverviewPanel">
+        <h2>Notes</h2>
+        <div id="notesOverviewList"></div>
+      </section>
+      <div id="noteEditorSheet">
+        <div class="scratch-notes-header-block">
+          <div class="note-editor-actions-row">
+            <button id="newNoteMobile" type="button">New note</button>
+            <button id="noteFolderPillMobile" type="button">Everyday</button>
+          </div>
+        </div>
+      </div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const noteEditorSheet = document.getElementById('noteEditorSheet');
+  const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const actionsRow = noteEditorSheet.querySelector('.note-editor-actions-row');
+
+  const { applyNotesMode } = initMobileNotesShellUi({
+    noteEditorSheet,
+    notesOverviewPanel,
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+  });
+
+  applyNotesMode('notebooks');
+  expect(document.getElementById('view-notebook').dataset.notesMode).toBe('notebooks');
+  const toggle = actionsRow.querySelector('[data-notes-overview-toggle]');
+  expect(toggle).toBeInstanceOf(HTMLButtonElement);
+  expect(toggle.textContent).toBe('Saved notes');
+
+  toggle.click();
+  expect(notesOverviewPanel.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
+  expect(toggle.textContent).toBe('Back');
+
+  toggle.click();
+  expect(actionsRow.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
+  expect(toggle.textContent).toBe('Saved notes');
+});
