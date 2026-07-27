@@ -831,7 +831,21 @@ function initAssistant() {
         return;
       }
 
-      const hiddenMessageCount = Math.max(0, messages.length - MAX_VISIBLE_CAPTURE_MESSAGES);
+      const orderedMessages = messages
+        .map((message, index) => {
+          const messageDate = toValidDate(
+            message?.timestamp ?? message?.createdAt ?? message?.updatedAt,
+          );
+          return {
+            message,
+            index,
+            timestamp: messageDate?.getTime() ?? 0,
+          };
+        })
+        .sort((a, b) => a.timestamp - b.timestamp || a.index - b.index)
+        .map(({ message }) => message);
+
+      const hiddenMessageCount = Math.max(0, orderedMessages.length - MAX_VISIBLE_CAPTURE_MESSAGES);
       if (hiddenMessageCount > 0) {
         const trimmedNotice = document.createElement('div');
         trimmedNotice.className = 'chat-history-trimmed';
@@ -842,7 +856,7 @@ function initAssistant() {
         chatConversationContainer.appendChild(trimmedNotice);
       }
 
-      messages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES).forEach((message) => {
+      orderedMessages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES).forEach((message) => {
         const content = typeof message?.content === 'string' ? message.content.trim() : '';
         if (!content) {
           return;

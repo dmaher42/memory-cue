@@ -73,6 +73,28 @@ describe('mobile capture result rendering', () => {
     expect(message?.querySelector('.chat-message-time')?.textContent).toBe('Just now');
   });
 
+  test('shows the newest messages in chronological order when cloud history arrives newest first', () => {
+    const now = Date.now();
+    window.__mobileMocks.getMessages = () => Array.from({ length: 14 }, (_, index) => ({
+      role: 'user',
+      content: `Message ${14 - index}`,
+      timestamp: now - (index * 1000),
+    }));
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const visibleMessages = Array.from(document.querySelectorAll('.chat-message-text'))
+      .map((element) => element.textContent);
+    expect(visibleMessages).toHaveLength(12);
+    expect(visibleMessages[0]).toBe('Message 3');
+    expect(visibleMessages.at(-1)).toBe('Message 14');
+    expect(visibleMessages).not.toContain('Message 1');
+    expect(visibleMessages).not.toContain('Message 2');
+    expect(document.querySelector('.chat-history-trimmed')?.textContent)
+      .toBe('Showing the latest captures. 2 older items are hidden here.');
+  });
+
   test('shows confirmed reminder metadata and opens a linked related memory', () => {
     const messageTimestamp = Date.now() - 11000;
     const due = new Date();
