@@ -122,7 +122,56 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
   jest.advanceTimersByTime(1500);
 
   expect(notes).toHaveLength(1);
+  expect(notes[0].title).toBe('Body-only journal thought');
   expect(notes[0].bodyText).toBe('Body-only journal thought');
+  expect(titleInput.value).toBe('Body-only journal thought');
+});
+
+test('body-only notes get a short automatic title for the saved notes list', () => {
+  const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
+  const titleInput = document.getElementById('noteTitleMobile');
+  const editor = document.getElementById('notebook-editor-body');
+  const saveButton = document.getElementById('noteSaveMobile');
+  let currentNoteId = null;
+  let currentNoteIsNew = true;
+  let currentNoteHasChanged = true;
+  let notes = [];
+
+  initMobileNotesEditorUi({
+    saveButton,
+    titleInput,
+    scratchNotesEditorElement: editor,
+    createNote: (title, bodyHtml, overrides = {}) => ({
+      id: 'note-1',
+      title,
+      bodyHtml,
+      bodyText: overrides.bodyText,
+      folderId: overrides.folderId,
+    }),
+    loadAllNotes: () => notes,
+    saveAllNotes: (nextNotes) => {
+      notes = nextNotes;
+      return true;
+    },
+    getEditorBodyHtml: () => editor.innerHTML,
+    getEditorBodyText: () => editor.textContent || '',
+    getCurrentNoteId: () => currentNoteId,
+    setCurrentNoteId: (value) => { currentNoteId = value; },
+    getCurrentEditingNoteFolderId: () => 'everyday',
+    getCurrentNoteIsNew: () => currentNoteIsNew,
+    setCurrentNoteIsNew: (value) => { currentNoteIsNew = value; },
+    getCurrentNoteHasChanged: () => currentNoteHasChanged,
+    setCurrentNoteHasChanged: (value) => { currentNoteHasChanged = value; },
+    hasMeaningfulContent: () => Boolean(editor.textContent.trim()),
+    hasUnsavedChanges: () => true,
+    updateStoredSnapshot: () => {},
+  });
+
+  editor.textContent = 'Thursday training was a strong session because everyone communicated and solved problems together.';
+  saveButton.click();
+
+  expect(notes[0].title).toBe('Thursday training was a strong session because everyone...');
+  expect(notes[0].title.length).toBeLessThanOrEqual(72);
 });
 
 test('long note titles grow to two lines and Enter moves focus to the note body', () => {
@@ -259,6 +308,7 @@ test('autosave persists without running the full manual save refresh path', () =
     skipNotesUpdatedEvent: true,
     skipRemoteSync: true,
   }));
+  expect(notes[0].title).toBe('Existing note');
   expect(notes[0].bodyText).toBe('Updated body while typing');
 });
 

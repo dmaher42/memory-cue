@@ -41,8 +41,25 @@ export const initMobileNotesEditorUi = (options = {}) => {
     handleFormattingShortcuts = () => {},
   } = options;
 
+  const buildAutomaticNoteTitle = (bodyText = '') => {
+    const normalizedText = String(bodyText).replace(/\s+/g, ' ').trim();
+    const maximumLength = 72;
+    if (!normalizedText || normalizedText.length <= maximumLength) {
+      return normalizedText;
+    }
+
+    const clippedText = normalizedText.slice(0, maximumLength - 3).trimEnd();
+    const lastWordBreak = clippedText.lastIndexOf(' ');
+    const titleText = lastWordBreak >= 40 ? clippedText.slice(0, lastWordBreak) : clippedText;
+    return `${titleText.trimEnd()}...`;
+  };
+
   const resizeTitleInput = () => {
-    if (!(titleInput instanceof HTMLElement) || titleInput.tagName !== 'TEXTAREA') {
+    if (
+      !(titleInput instanceof HTMLElement)
+      || titleInput.tagName !== 'TEXTAREA'
+      || titleInput.hidden
+    ) {
       return;
     }
 
@@ -104,7 +121,8 @@ export const initMobileNotesEditorUi = (options = {}) => {
     const noteBodyHtml = getEditorBodyHtml() || '';
     const noteBodyText = getEditorBodyText(noteBodyHtml);
     const rawTitle = typeof titleInput?.value === 'string' ? titleInput.value.trim() : '';
-    const sanitizedTitle = rawTitle || 'Untitled note';
+    const automaticTitle = rawTitle ? '' : buildAutomaticNoteTitle(noteBodyText);
+    const sanitizedTitle = rawTitle || automaticTitle || 'Untitled note';
     const timestamp = new Date().toISOString();
     const normalizedFolderId =
       getCurrentEditingNoteFolderId() && getCurrentEditingNoteFolderId() !== 'all'
@@ -156,7 +174,8 @@ export const initMobileNotesEditorUi = (options = {}) => {
     setCurrentNoteIsNew(false);
     setCurrentNoteHasChanged(false);
     if (titleInput instanceof HTMLElement) {
-      titleInput.dataset.noteOriginalTitle = rawTitle;
+      titleInput.value = sanitizedTitle;
+      titleInput.dataset.noteOriginalTitle = sanitizedTitle;
     }
     if (scratchNotesEditorElement instanceof HTMLElement) {
       scratchNotesEditorElement.dataset.noteOriginalBody = noteBodyHtml;

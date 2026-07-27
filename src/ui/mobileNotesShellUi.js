@@ -147,29 +147,8 @@ const NOTEBOOK_POLISH_CSS = `
     gap: 0.12rem;
   }
 
-  .mobile-panel--notes #noteTitleMobile.note-title-editor {
-    display: block;
-    width: 100%;
-    min-height: 2.05rem;
-    max-height: 3.25rem;
-    padding: 0.34rem 0.72rem;
-    border-radius: 0.78rem;
-    box-sizing: border-box;
-    field-sizing: content;
-    resize: none;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    color: var(--text-main, #1e293b);
-    font-family: system-ui, -apple-system, "SF Pro Text", "Segoe UI", sans-serif;
-    font-size: 0.95rem;
-    font-weight: 650;
-    line-height: 1.25;
-    letter-spacing: 0;
-    white-space: pre-wrap;
-  }
-
-  .mobile-panel--notes #noteTitleMobile.note-title-editor::-webkit-scrollbar {
-    display: none;
+  .mobile-panel--notes #noteTitleMobile[hidden] {
+    display: none !important;
   }
 
   .mobile-panel--notes .note-sections-bar {
