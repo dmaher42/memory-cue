@@ -111,7 +111,7 @@ test('defers note sections bar rendering while typing in the editor', () => {
   expect(innerTextRead).not.toHaveBeenCalled();
 });
 
-test('labels the compact overview as Saved notes and returns to the editor', () => {
+test('keeps the Notes headings visually hidden while switching overview modes', () => {
   document.body.innerHTML = `
     <section id="view-notebook">
       <section id="notesOverviewPanel">
@@ -136,11 +136,13 @@ test('labels the compact overview as Saved notes and returns to the editor', () 
   const heading = notesOverviewPanel.querySelector('h2');
   const toggle = notesOverviewPanel.querySelector('[data-notes-overview-toggle]');
   expect(heading.textContent).toBe('Notes');
+  expect(heading.classList.contains('sr-only')).toBe(true);
   expect(toggle.textContent).toBe('Saved notes');
   expect(list.hidden).toBe(true);
 
   applyNotesMode('overview');
   expect(heading.textContent).toBe('Saved notes');
+  expect(heading.classList.contains('sr-only')).toBe(true);
   expect(toggle.textContent).toBe('Back');
   expect(toggle.getAttribute('aria-expanded')).toBe('true');
   expect(list.hidden).toBe(false);

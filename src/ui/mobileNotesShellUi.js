@@ -41,7 +41,7 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook .notes-overview-heading {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.6rem;
   }
 
@@ -1347,6 +1347,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!(titleEl instanceof HTMLElement)) {
       return { headingEl: null, toggleEl: null, titleEl: null };
     }
+    titleEl.classList.add('sr-only');
 
     if (!(headingEl instanceof HTMLElement)) {
       headingEl = document.createElement('div');
