@@ -7152,12 +7152,6 @@ export async function initReminders(sel = {}) {
           metaRow.appendChild(dueChip);
         }
 
-        if (String(summary.priority || '').trim().toLowerCase().charAt(0) === 'h') {
-          const priorityFlag = document.createElement('span');
-          priorityFlag.className = 'reminder-stream-priority';
-          priorityFlag.textContent = 'High';
-          metaRow.appendChild(priorityFlag);
-        }
         if (metaRow.children.length) {
           rowMain.appendChild(metaRow);
         }

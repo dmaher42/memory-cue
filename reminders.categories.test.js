@@ -303,7 +303,8 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-category')).toBeNull();
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-meta')).toBeNull();
   expect(document.querySelector('[data-id="footy-first"] .reminder-stream-due')).not.toBeNull();
-  expect(document.querySelector('[data-id="footy-first"] .reminder-stream-priority').textContent).toBe('High');
+  expect(document.querySelector('[data-id="footy-first"]').dataset.priority).toBe('High');
+  expect(document.querySelector('[data-id="footy-first"] .reminder-stream-priority')).toBeNull();
   expect(document.querySelector('.reminder-completed-section')).toBeNull();
   expect(document.getElementById('completedRemindersMenuBtn').hidden).toBe(false);
   expect(document.getElementById('completedRemindersMenuCount').textContent).toBe('1');

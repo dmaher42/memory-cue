@@ -560,10 +560,18 @@ async function main() {
     }
 
     const visibleCardDestinationCount = await page.locator('.reminder-stream-row .reminder-stream-category').count();
+    const visibleCardPriorityCount = await page.locator('.reminder-stream-row .reminder-stream-priority').count();
     const movedReminderCategory = await page.locator('[data-title="Call Mum"]').getAttribute('data-category');
+    const storedCardPriorityCount = await page.locator('.reminder-stream-row[data-priority]').count();
     const dueMetadataCount = await page.locator('.reminder-stream-row .reminder-stream-due').count();
-    if (visibleCardDestinationCount !== 0 || movedReminderCategory !== 'School' || dueMetadataCount === 0) {
-      throw new Error(`Expected card destinations to stay stored but hidden while due details remain visible: ${JSON.stringify({ visibleCardDestinationCount, movedReminderCategory, dueMetadataCount })}`);
+    if (
+      visibleCardDestinationCount !== 0
+      || visibleCardPriorityCount !== 0
+      || movedReminderCategory !== 'School'
+      || storedCardPriorityCount === 0
+      || dueMetadataCount === 0
+    ) {
+      throw new Error(`Expected card destinations and priorities to stay stored but hidden while due details remain visible: ${JSON.stringify({ visibleCardDestinationCount, visibleCardPriorityCount, movedReminderCategory, storedCardPriorityCount, dueMetadataCount })}`);
     }
 
     await page.locator('[data-reminder-column="school"] [data-action="rename-column"]').click();
