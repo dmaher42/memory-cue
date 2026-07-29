@@ -559,6 +559,13 @@ async function main() {
       throw new Error(`Expected School and Footy board columns, received: ${JSON.stringify(boardColumnLabels)}`);
     }
 
+    const renameIconContent = await page.locator('[data-reminder-column="school"] [data-action="rename-column"]').evaluate((button) => (
+      getComputedStyle(button, '::after').content
+    ));
+    if (renameIconContent.includes('✎')) {
+      throw new Error(`Expected reminder group headings without pencil icons, received pseudo content: ${renameIconContent}`);
+    }
+
     const visibleCardDestinationCount = await page.locator('.reminder-stream-row .reminder-stream-category').count();
     const visibleCardPriorityCount = await page.locator('.reminder-stream-row .reminder-stream-priority').count();
     const movedReminderCategory = await page.locator('[data-title="Call Mum"]').getAttribute('data-category');

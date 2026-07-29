@@ -2321,26 +2321,6 @@ body #view-reminders .reminder-category-column-rename {
   cursor: pointer;
 }
 
-body #view-reminders .reminder-category-column-rename::after {
-  content: '✎';
-  display: inline-block;
-  position: static;
-  flex: 0 0 auto;
-  width: 0.72rem;
-  height: 0.72rem;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--reminder-column-accent);
-  font-size: 0.72rem;
-  line-height: 0.72rem;
-  opacity: 0.88;
-  pointer-events: none;
-  transform: none;
-}
-
 body #view-reminders .reminder-category-column-rename:hover,
 body #view-reminders .reminder-category-column-rename:focus-visible {
   background: color-mix(in srgb, var(--reminder-column-accent) 10%, transparent);
