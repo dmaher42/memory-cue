@@ -244,6 +244,14 @@ test('mobile reminders render School and Footy as two board columns without hidi
     value.setHours(hour, 0, 0, 0);
     return value.toISOString();
   };
+  const dueLabelAt = (dayOffset, hour) => {
+    const value = new Date(dueAt(dayOffset, hour));
+    const locale = navigator.language || undefined;
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const dateLabel = value.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone });
+    const timeLabel = value.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit', timeZone });
+    return `${dateLabel}, ${timeLabel}`;
+  };
 
   controller.__testing.setItems([
     { id: 'school-first', title: 'Reports', priority: 'Medium', category: 'School', done: false, due: dueAt(2, 15), orderIndex: 5000 },
@@ -302,7 +310,9 @@ test('mobile reminders render School and Footy as two board columns without hidi
   expect(document.querySelector('[data-id="footy-second"]').dataset.category).toBe('Footy – Drills');
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-category')).toBeNull();
   expect(document.querySelector('[data-id="footy-second"] .reminder-stream-meta')).toBeNull();
-  expect(document.querySelector('[data-id="footy-first"] .reminder-stream-due')).not.toBeNull();
+  expect(document.querySelector('[data-id="school-first"] .reminder-stream-due').textContent).toBe(dueLabelAt(2, 15));
+  expect(document.querySelector('[data-id="school-second"] .reminder-stream-due').textContent).toBe(dueLabelAt(-1, 9));
+  expect(document.querySelector('[data-id="footy-first"] .reminder-stream-due').textContent).toBe(dueLabelAt(0, 18));
   expect(document.querySelector('[data-id="footy-first"]').dataset.priority).toBe('High');
   expect(document.querySelector('[data-id="footy-first"] .reminder-stream-priority')).toBeNull();
   expect(document.querySelector('.reminder-completed-section')).toBeNull();
@@ -533,8 +543,15 @@ test('legacy Today list items migrate once into canonical reminders before the o
   expect(migrated.every((item) => item.metadata.suppressNotification === true)).toBe(true);
   expect(localStorage.getItem('dailyTasksByDate')).toBeNull();
 
-  expect(document.querySelector('[data-reminder-column="school"] [data-title="Return School Form"] .reminder-stream-due').textContent).toBe('Today');
-  expect(document.querySelector('[data-reminder-column="other"] [data-title="Check Passport"] .reminder-stream-due').textContent).toBe('Tomorrow');
+  const shortDateLabel = (offset) => {
+    const value = new Date();
+    value.setDate(value.getDate() + offset);
+    const locale = navigator.language || undefined;
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return value.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone });
+  };
+  expect(document.querySelector('[data-reminder-column="school"] [data-title="Return School Form"] .reminder-stream-due').textContent).toBe(shortDateLabel(0));
+  expect(document.querySelector('[data-reminder-column="other"] [data-title="Check Passport"] .reminder-stream-due').textContent).toBe(shortDateLabel(1));
   expect(document.querySelector('.reminder-completed-section')).toBeNull();
   expect(window.setMobileRemindersFilter('completed')).toBe(true);
   expect(document.querySelector('.reminder-completed-section-count').textContent).toBe('1');

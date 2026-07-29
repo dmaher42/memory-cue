@@ -873,14 +873,14 @@ async function main() {
       '#view-reminders .reminder-stream-meta, #view-reminders .reminder-row-meta, #view-reminders .reminder-group-row-due',
     ).allTextContents();
     const titleText = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Get Naplan');
-    const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /Tomorrow,\s*0?8:30(?:\s?AM)?/i.test(text || ''));
+    const metaText = (metaTexts || []).map((text) => (text || '').trim()).find((text) => /(?:24\s+Mar|Mar\s+24),\s*0?8:30(?:\s?AM)?/i.test(text || ''));
     const unscheduledTitle = (titleTexts || []).map((text) => (text || '').trim()).find((text) => text === 'Call Tuesday About Roster');
 
     if (titleText !== 'Get Naplan') {
       throw new Error(`Expected rendered reminders to include "Get Naplan", received: ${JSON.stringify(titleTexts)}`);
     }
 
-    if (!/Tomorrow,\s*0?8:30(?:\s?AM)?/i.test(metaText || '')) {
+    if (!/(?:24\s+Mar|Mar\s+24),\s*0?8:30(?:\s?AM)?/i.test(metaText || '')) {
       throw new Error(`Unexpected reminder meta values: ${JSON.stringify(metaTexts)}`);
     }
 

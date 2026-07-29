@@ -5994,7 +5994,7 @@ export async function initReminders(sel = {}) {
     return { key: 'other', label: 'Other' };
   }
 
-  // Compact due label for a card (day/time only, no category) e.g. "Today, 3:00 PM", "Overdue", "Thu".
+  // Compact due label for a card with an explicit calendar date, e.g. "30 Jul, 3:00 PM".
   function formatReminderDueChip(reminder, todayRange) {
     if (!reminder || typeof reminder !== 'object') {
       return '';
@@ -6002,21 +6002,21 @@ export async function initReminders(sel = {}) {
     const dueDate = reminder.due ? new Date(reminder.due) : null;
     const hasValidDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime());
     if (hasValidDueDate) {
-      const dueStart = getReminderStartOfDay(dueDate);
-      const todayStart = getReminderStartOfDay(todayRange?.start);
-      const diffDays = dueStart && todayStart
-        ? Math.round((dueStart.getTime() - todayStart.getTime()) / 86400000)
-        : null;
       const timeLabel = reminder?.metadata?.isAllDay === true ? '' : fmtTime(dueDate);
-      if (diffDays === 0) return timeLabel ? `Today, ${timeLabel}` : 'Today';
-      if (diffDays === 1) return timeLabel ? `Tomorrow, ${timeLabel}` : 'Tomorrow';
-      if (typeof diffDays === 'number' && diffDays < 0) return timeLabel ? `Overdue, ${timeLabel}` : 'Overdue';
-      let dayName = '';
-      try { dayName = dueDate.toLocaleDateString(undefined, { weekday: 'short' }); } catch { dayName = ''; }
-      if (typeof diffDays === 'number' && diffDays <= 7 && dayName) {
-        return timeLabel ? `${dayName}, ${timeLabel}` : dayName;
+      const referenceDate = todayRange?.start instanceof Date && !Number.isNaN(todayRange.start.getTime())
+        ? todayRange.start
+        : new Date();
+      const dateOptions = {
+        day: 'numeric',
+        month: 'short',
+        timeZone: TZ,
+      };
+      if (dueDate.getFullYear() !== referenceDate.getFullYear()) {
+        dateOptions.year = 'numeric';
       }
-      try { return dueDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return dayName; }
+      let dateLabel = '';
+      try { dateLabel = dueDate.toLocaleDateString(locale, dateOptions); } catch { dateLabel = fmtDayDate(dueDate); }
+      return timeLabel ? `${dateLabel}, ${timeLabel}` : dateLabel;
     }
     const inlineSchedule = extractReminderInlineSchedule(getReminderDisplaySourceText(reminder), todayRange);
     if (inlineSchedule.label) return inlineSchedule.label;
