@@ -5065,27 +5065,113 @@ body, main, section, div, p, span, li {
                 </button>
                 <div class="rte-divider" aria-hidden="true"></div>
 
-                <select id="rteFontSizeSelect" class="rte-select" aria-label="Font size" title="Font size">
-                  <option value="13">13px</option>
-                  <option value="15">15px</option>
-                  <option value="17" selected>17px</option>
-                  <option value="20">20px</option>
-                  <option value="24">24px</option>
-                  <option value="30">30px</option>
-                </select>
+                <div class="rte-menu rte-text-style-menu">
+                  <button
+                    id="rteTextStyleTrigger"
+                    class="rte-menu-trigger rte-text-style-trigger"
+                    type="button"
+                    aria-label="Text type: Body"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    aria-controls="rteTextStyleMenu"
+                    title="Text type"
+                  >
+                    <span class="rte-text-style-current" data-rte-text-style-label>Body</span>
+                    <svg class="rte-menu-chevron" viewBox="0 0 12 12" aria-hidden="true">
+                      <path d="M3 4.5 6 7.5l3-3" />
+                    </svg>
+                  </button>
+                  <div
+                    id="rteTextStyleMenu"
+                    class="rte-menu-panel rte-text-style-panel"
+                    role="menu"
+                    aria-label="Text type"
+                    hidden
+                  >
+                    <button class="rte-menu-option rte-text-style-option rte-text-style-option--heading" type="button" role="menuitemradio" aria-checked="false" data-text-style="heading">
+                      Heading
+                    </button>
+                    <button class="rte-menu-option rte-text-style-option rte-text-style-option--subheading" type="button" role="menuitemradio" aria-checked="false" data-text-style="subheading">
+                      Subheading
+                    </button>
+                    <button class="rte-menu-option rte-text-style-option rte-text-style-option--body active" type="button" role="menuitemradio" aria-checked="true" data-text-style="body">
+                      Body
+                    </button>
+                    <button class="rte-menu-option rte-text-style-option rte-text-style-option--small" type="button" role="menuitemradio" aria-checked="false" data-text-style="small">
+                      Small notes
+                    </button>
+                  </div>
+                </div>
 
                 <button
-                  class="rte-btn"
+                  class="rte-btn rte-list-trigger"
                   data-cmd="insertUnorderedList"
                   type="button"
                   title="Bulleted list"
                   aria-label="Bulleted list"
                 >
-                  List
+                  <svg class="rte-list-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="5" cy="7" r="1" />
+                    <circle cx="5" cy="12" r="1" />
+                    <circle cx="5" cy="17" r="1" />
+                    <path d="M9 7h10M9 12h10M9 17h10" />
+                  </svg>
+                  <span class="rte-list-label">List</span>
                 </button>
 
+                <div class="rte-menu rte-align-menu">
+                  <button
+                    id="rteAlignmentTrigger"
+                    class="rte-menu-trigger rte-align-trigger"
+                    type="button"
+                    data-alignment="left"
+                    aria-label="Text alignment: Left"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    aria-controls="rteAlignmentMenu"
+                    title="Text alignment"
+                  >
+                    <svg class="rte-align-icon rte-align-icon--left" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 6h16M4 10h11M4 14h16M4 18h11" />
+                    </svg>
+                    <svg class="rte-align-icon rte-align-icon--center" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />
+                    </svg>
+                    <svg class="rte-align-icon rte-align-icon--right" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 6h16M9 10h11M4 14h16M9 18h11" />
+                    </svg>
+                    <svg class="rte-menu-chevron" viewBox="0 0 12 12" aria-hidden="true">
+                      <path d="M3 4.5 6 7.5l3-3" />
+                    </svg>
+                  </button>
+                  <div
+                    id="rteAlignmentMenu"
+                    class="rte-menu-panel rte-align-panel"
+                    role="menu"
+                    aria-label="Text alignment"
+                    hidden
+                  >
+                    <button class="rte-menu-option rte-align-option active" data-cmd="justifyLeft" data-alignment="left" type="button" role="menuitemradio" aria-label="Align left" aria-checked="true" title="Align left">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h11M4 14h16M4 18h11" /></svg>
+                    </button>
+                    <button class="rte-menu-option rte-align-option" data-cmd="justifyCenter" data-alignment="center" type="button" role="menuitemradio" aria-label="Align centre" aria-checked="false" title="Align centre">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 10h10M4 14h16M7 18h10" /></svg>
+                    </button>
+                    <button class="rte-menu-option rte-align-option" data-cmd="justifyRight" data-alignment="right" type="button" role="menuitemradio" aria-label="Align right" aria-checked="false" title="Align right">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M9 10h11M4 14h16M9 18h11" /></svg>
+                    </button>
+                  </div>
+                </div>
+
                 <details class="rte-more">
-                  <summary class="rte-more-trigger" aria-label="More text tools">More</summary>
+                  <summary class="rte-more-trigger" aria-label="More text tools">
+                    <span class="rte-more-label">More</span>
+                    <svg class="rte-more-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="5" cy="12" r="1.4" />
+                      <circle cx="12" cy="12" r="1.4" />
+                      <circle cx="19" cy="12" r="1.4" />
+                    </svg>
+                  </summary>
                   <div class="rte-more-panel" role="group" aria-label="More text tools">
                     <button class="rte-btn" data-cmd="removeFormat" type="button" title="Remove formatting" aria-label="Remove formatting">
                       Clear

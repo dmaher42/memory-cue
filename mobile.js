@@ -2086,6 +2086,9 @@ const initMobileNotes = () => {
     'insertorderedlist',
     'indent',
     'outdent',
+    'justifyleft',
+    'justifycenter',
+    'justifyright',
   ]);
 
   const FONT_SIZE_OPTIONS = [
@@ -2097,6 +2100,18 @@ const initMobileNotes = () => {
     { px: 30, legacySize: '7' },
   ];
   const DEFAULT_FONT_SIZE_OPTION = FONT_SIZE_OPTIONS.find((option) => option.px === 17) || FONT_SIZE_OPTIONS[2];
+  const TEXT_STYLE_OPTIONS = [
+    { id: 'heading', label: 'Heading', compactLabel: 'Heading', tagName: 'h2' },
+    { id: 'subheading', label: 'Subheading', compactLabel: 'Subhead', tagName: 'h3' },
+    { id: 'body', label: 'Body', compactLabel: 'Body', tagName: 'p' },
+    { id: 'small', label: 'Small notes', compactLabel: 'Small', tagName: 'p' },
+  ];
+  const DEFAULT_TEXT_STYLE_OPTION = TEXT_STYLE_OPTIONS.find((option) => option.id === 'body');
+  const ALIGNMENT_OPTIONS = [
+    { id: 'left', label: 'Left', command: 'justifyleft' },
+    { id: 'center', label: 'Centre', command: 'justifycenter' },
+    { id: 'right', label: 'Right', command: 'justifyright' },
+  ];
 
   const getFontSizeOption = (value) => {
     const numericValue = Number.parseInt(String(value || ''), 10);
@@ -2146,6 +2161,62 @@ const initMobileNotes = () => {
     return anchorNode === scratchNotesEditorElement || scratchNotesEditorElement.contains(anchorNode);
   };
 
+  const getElementFromSelectionNode = (node) => {
+    if (node instanceof Element) {
+      return node;
+    }
+    return node?.parentElement instanceof Element ? node.parentElement : null;
+  };
+
+  const EDITOR_BLOCK_SELECTOR = 'h1, h2, h3, h4, h5, h6, p, div, blockquote, li';
+
+  const getSelectedEditorBlocks = () => {
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+    if (!selectionBelongsToEditor(selection)) {
+      return [];
+    }
+
+    const range = selection.getRangeAt(0);
+    const selectedBlocks = Array.from(scratchNotesEditorElement.querySelectorAll(EDITOR_BLOCK_SELECTOR))
+      .filter((element) => {
+        try {
+          return range.intersectsNode(element);
+        } catch {
+          return false;
+        }
+      });
+
+    if (selectedBlocks.length) {
+      return selectedBlocks;
+    }
+
+    const selectionElement = getElementFromSelectionNode(range.commonAncestorContainer);
+    const closestBlock = selectionElement?.closest(EDITOR_BLOCK_SELECTOR);
+    return closestBlock
+      && closestBlock !== scratchNotesEditorElement
+      && scratchNotesEditorElement.contains(closestBlock)
+      ? [closestBlock]
+      : [];
+  };
+
+  const getCurrentTextStyleOption = () => {
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+    if (!selectionBelongsToEditor(selection)) {
+      return DEFAULT_TEXT_STYLE_OPTION;
+    }
+
+    const range = selection.getRangeAt(0);
+    const selectionElement = getElementFromSelectionNode(range.commonAncestorContainer);
+    const currentBlock = selectionElement?.closest(EDITOR_BLOCK_SELECTOR);
+    if (currentBlock?.getAttribute('data-note-text-style') === 'small') {
+      return TEXT_STYLE_OPTIONS.find((option) => option.id === 'small') || DEFAULT_TEXT_STYLE_OPTION;
+    }
+
+    const currentTagName = currentBlock?.tagName?.toLowerCase();
+    return TEXT_STYLE_OPTIONS.find((option) => option.tagName === currentTagName)
+      || DEFAULT_TEXT_STYLE_OPTION;
+  };
+
   const applyPixelFontSize = (value) => {
     const option = getFontSizeOption(value);
     const selection = typeof window !== 'undefined' ? window.getSelection() : null;
@@ -2193,8 +2264,27 @@ const initMobileNotes = () => {
     return true;
   };
 
+  const applyTextStyle = (styleId) => {
+    const option = TEXT_STYLE_OPTIONS.find((candidate) => candidate.id === styleId)
+      || DEFAULT_TEXT_STYLE_OPTION;
+    if (!option) {
+      return;
+    }
+
+    applyFormatCommand('formatBlock', option.tagName);
+    getSelectedEditorBlocks().forEach((blockElement) => {
+      if (option.id === 'small') {
+        blockElement.setAttribute('data-note-text-style', 'small');
+      } else {
+        blockElement.removeAttribute('data-note-text-style');
+      }
+    });
+    updateToolbarState();
+  };
+
   function updateToolbarState() {
-    const buttons = document.querySelectorAll('.rte-btn[data-cmd]');
+    const buttons = document.querySelectorAll('.rte-btn[data-cmd], .rte-align-option[data-cmd]');
+    let activeAlignment = ALIGNMENT_OPTIONS[0];
     buttons.forEach((button) => {
       const command = (button.dataset.cmd || '').toLowerCase();
       if (!command || !TOGGLE_COMMANDS.has(command)) {
@@ -2204,9 +2294,45 @@ const initMobileNotes = () => {
       try {
         const active = document.queryCommandState(command);
         button.classList.toggle('active', !!active);
+        if (button.classList.contains('rte-align-option')) {
+          button.setAttribute('aria-checked', active ? 'true' : 'false');
+          if (active) {
+            activeAlignment = ALIGNMENT_OPTIONS.find((option) => option.command === command)
+              || activeAlignment;
+          }
+        }
       } catch (err) {
         button.classList.remove('active');
       }
+    });
+
+    if (!document.querySelector('.rte-align-option.active')) {
+      const leftAlignmentButton = document.querySelector('.rte-align-option[data-alignment="left"]');
+      if (leftAlignmentButton instanceof HTMLButtonElement) {
+        leftAlignmentButton.classList.add('active');
+        leftAlignmentButton.setAttribute('aria-checked', 'true');
+      }
+    }
+
+    const alignmentTrigger = document.getElementById('rteAlignmentTrigger');
+    if (alignmentTrigger instanceof HTMLButtonElement) {
+      alignmentTrigger.dataset.alignment = activeAlignment.id;
+      alignmentTrigger.setAttribute('aria-label', `Text alignment: ${activeAlignment.label}`);
+    }
+
+    const textStyleOption = getCurrentTextStyleOption() || DEFAULT_TEXT_STYLE_OPTION;
+    const textStyleTrigger = document.getElementById('rteTextStyleTrigger');
+    if (textStyleTrigger instanceof HTMLButtonElement && textStyleOption) {
+      textStyleTrigger.setAttribute('aria-label', `Text type: ${textStyleOption.label}`);
+      const currentLabel = textStyleTrigger.querySelector('[data-rte-text-style-label]');
+      if (currentLabel instanceof HTMLElement) {
+        currentLabel.textContent = textStyleOption.compactLabel || textStyleOption.label;
+      }
+    }
+    document.querySelectorAll('.rte-text-style-option[data-text-style]').forEach((button) => {
+      const isActive = button.getAttribute('data-text-style') === textStyleOption?.id;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-checked', isActive ? 'true' : 'false');
     });
   }
 
@@ -2340,31 +2466,85 @@ const initMobileNotes = () => {
     }
   };
 
-  // Wire up formatting toolbar (bold, italic, underline, lists, indent/outdent, undo/redo)
+  // Wire up formatting toolbar controls while preserving the editor selection.
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
+    const closeToolbarMenus = (menuToKeep = null) => {
+      toolbarEl.querySelectorAll('.rte-menu').forEach((menu) => {
+        if (menu === menuToKeep) {
+          return;
+        }
+        const trigger = menu.querySelector('.rte-menu-trigger');
+        const panel = menu.querySelector('.rte-menu-panel');
+        if (trigger instanceof HTMLButtonElement) {
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+        if (panel instanceof HTMLElement) {
+          panel.hidden = true;
+        }
+      });
+    };
+
+    toolbarEl.addEventListener('mousedown', (event) => {
+      if (event.target.closest('.rte-menu-trigger, .rte-menu-option')) {
+        event.preventDefault();
+      }
+    });
+
     toolbarEl.addEventListener('click', (event) => {
-      const button = event.target.closest('.rte-btn[data-cmd]');
-      if (!button) return;
+      const menuTrigger = event.target.closest('.rte-menu-trigger');
+      if (menuTrigger instanceof HTMLButtonElement) {
+        event.preventDefault();
+        const menu = menuTrigger.closest('.rte-menu');
+        const panel = menu?.querySelector('.rte-menu-panel');
+        if (menu instanceof HTMLElement && panel instanceof HTMLElement) {
+          const shouldOpen = panel.hidden;
+          closeToolbarMenus(shouldOpen ? menu : null);
+          panel.hidden = !shouldOpen;
+          menuTrigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+          const moreMenu = toolbarEl.querySelector('.rte-more');
+          if (shouldOpen && moreMenu && 'open' in moreMenu) {
+            moreMenu.open = false;
+          }
+        }
+        return;
+      }
+
+      const textStyleButton = event.target.closest('.rte-text-style-option[data-text-style]');
+      if (textStyleButton instanceof HTMLButtonElement) {
+        event.preventDefault();
+        applyTextStyle(textStyleButton.dataset.textStyle);
+        closeToolbarMenus();
+        return;
+      }
+
+      const commandButton = event.target.closest('[data-cmd]');
+      if (!(commandButton instanceof HTMLButtonElement)) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
-      const command = button.getAttribute('data-cmd');
+      const command = commandButton.getAttribute('data-cmd');
       if (command) {
         applyFormatCommand(command);
-        const moreMenu = button.closest('.rte-more');
+        closeToolbarMenus();
+        const moreMenu = commandButton.closest('.rte-more');
         if (moreMenu && 'open' in moreMenu) {
           moreMenu.open = false;
         }
       }
     });
-  }
 
-  const fontSizeSelectEl = document.getElementById('rteFontSizeSelect');
-  if (fontSizeSelectEl instanceof HTMLSelectElement) {
-    fontSizeSelectEl.addEventListener('change', () => {
-      const option = getFontSizeOption(fontSizeSelectEl.value);
-      fontSizeSelectEl.value = String(option.px);
-      applyFormatCommand('fontSizePx', option.px);
+    document.addEventListener('click', (event) => {
+      if (!toolbarEl.contains(event.target)) {
+        closeToolbarMenus();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeToolbarMenus();
+      }
     });
   }
 

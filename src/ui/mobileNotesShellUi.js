@@ -802,6 +802,7 @@ const NOTEBOOK_POLISH_CSS = `
 
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-btn,
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-select,
+    body[data-active-view="notebooks"] .note-editor-toolbar .rte-menu-trigger,
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-more-trigger {
       min-height: 30px;
       height: 30px;
@@ -853,7 +854,7 @@ const NOTEBOOK_POLISH_CSS = `
     @media (max-width: 340px) {
       body[data-active-view="notebooks"] .note-editor-toolbar {
         padding-inline: 0.62rem !important;
-        gap: 0.24rem;
+        gap: 0.18rem;
       }
 
       body[data-active-view="notebooks"] #notebook-editor-body {

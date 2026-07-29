@@ -3258,6 +3258,185 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   z-index: 2;
 }
 
+.note-editor-toolbar .rte-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.note-editor-toolbar .rte-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 0.58rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #ffffff;
+  color: var(--text-primary, #1e293b);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.note-editor-toolbar .rte-menu-trigger:hover {
+  background: #f3f4f6;
+}
+
+.note-editor-toolbar .rte-menu-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--accent-color, #0f766e) 42%, transparent);
+  background: #e0f2fe;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color, #0f766e) 10%, transparent);
+}
+
+.note-editor-toolbar .rte-menu-chevron {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.62;
+  transition: transform 0.15s ease;
+}
+
+.note-editor-toolbar .rte-menu-trigger[aria-expanded="true"] .rte-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.note-editor-toolbar .rte-text-style-trigger {
+  min-width: 72px;
+  justify-content: space-between;
+}
+
+.note-editor-toolbar .rte-align-trigger {
+  width: 42px;
+  padding-inline: 0.42rem;
+}
+
+.note-editor-toolbar .rte-align-icon {
+  display: none;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.note-editor-toolbar .rte-align-trigger[data-alignment="left"] .rte-align-icon--left,
+.note-editor-toolbar .rte-align-trigger[data-alignment="center"] .rte-align-icon--center,
+.note-editor-toolbar .rte-align-trigger[data-alignment="right"] .rte-align-icon--right {
+  display: block;
+}
+
+.note-editor-toolbar .rte-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  z-index: 70;
+  padding: 0.38rem;
+  border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.16)) 78%, transparent);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.note-editor-toolbar .rte-menu-panel[hidden] {
+  display: none;
+}
+
+.note-editor-toolbar .rte-text-style-panel {
+  left: 0;
+  display: grid;
+  gap: 0.12rem;
+  min-width: 168px;
+}
+
+.note-editor-toolbar .rte-menu-option {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.note-editor-toolbar .rte-menu-option:hover {
+  background: #f3f4f6;
+}
+
+.note-editor-toolbar .rte-menu-option.active,
+.note-editor-toolbar .rte-menu-option[aria-checked="true"] {
+  background: #e0f2fe;
+  color: #0f3f56;
+}
+
+.note-editor-toolbar .rte-text-style-option {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 0.48rem 0.62rem;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.note-editor-toolbar .rte-text-style-option--heading {
+  font-size: 1.06rem;
+  font-weight: 750;
+}
+
+.note-editor-toolbar .rte-text-style-option--subheading {
+  font-size: 0.94rem;
+  font-weight: 650;
+}
+
+.note-editor-toolbar .rte-text-style-option--body {
+  font-size: 0.84rem;
+  font-weight: 400;
+}
+
+.note-editor-toolbar .rte-text-style-option--small {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.note-editor-toolbar .rte-align-panel {
+  right: 0;
+  display: flex;
+  gap: 0.2rem;
+}
+
+.note-editor-toolbar .rte-align-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.note-editor-toolbar .rte-align-option svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
 .note-editor-toolbar .rte-color-input {
   width: 28px;
   height: 28px;
@@ -3315,6 +3494,18 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
 
 .note-editor-toolbar .list-label {
   display: none;
+}
+
+.note-editor-toolbar .rte-list-icon,
+.note-editor-toolbar .rte-more-icon {
+  display: none;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
 }
 
 #view-notebook #notesOverviewPanel {
@@ -3442,6 +3633,28 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   overflow-y: auto;
 }
 
+#notebook-editor-body h2 {
+  margin: 1.2rem 0 0.58rem;
+  font-size: 1.65rem;
+  line-height: 1.22;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+#notebook-editor-body h3 {
+  margin: 1rem 0 0.48rem;
+  font-size: 1.24rem;
+  line-height: 1.32;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+#notebook-editor-body [data-note-text-style="small"] {
+  font-size: 0.82rem;
+  line-height: 1.52;
+  color: #64748b;
+}
+
 .scratch-notes-body {
   width: 100%;
   max-width: 100%;
@@ -3550,6 +3763,25 @@ html[data-theme="dracula"] .notebook-folder-scroll-wrap::after {
   cursor: pointer;
   list-style: none;
   user-select: none;
+}
+
+@media (max-width: 340px) {
+  .note-editor-toolbar .rte-list-label,
+  .note-editor-toolbar .rte-more-label {
+    display: none;
+  }
+
+  .note-editor-toolbar .rte-list-icon,
+  .note-editor-toolbar .rte-more-icon {
+    display: block;
+  }
+
+  .note-editor-toolbar .rte-list-trigger,
+  .note-editor-toolbar .rte-more-trigger {
+    width: 30px;
+    min-width: 30px;
+    padding-inline: 0;
+  }
 }
 
 .note-editor-toolbar .rte-more-trigger::-webkit-details-marker {
@@ -4781,10 +5013,27 @@ html[data-theme="professional-dark"] .note-editor-toolbar {
 html[data-theme="dark"] .note-editor-toolbar .rte-btn,
 html[data-theme="professional-dark"] .note-editor-toolbar .rte-btn,
 html[data-theme="dark"] .note-editor-toolbar .rte-select,
-html[data-theme="professional-dark"] .note-editor-toolbar .rte-select {
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-select,
+html[data-theme="dark"] .note-editor-toolbar .rte-menu-trigger,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-menu-trigger,
+html[data-theme="dark"] .note-editor-toolbar .rte-menu-panel,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-menu-panel {
   background: color-mix(in srgb, var(--surface-elevated) 96%, #ffffff 4%);
   color: var(--text-main);
   border-color: color-mix(in srgb, var(--card-border) 82%, transparent);
+}
+
+html[data-theme="dark"] .note-editor-toolbar .rte-menu-option:hover,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-menu-option:hover {
+  background: color-mix(in srgb, var(--surface-elevated) 74%, #ffffff 8%);
+}
+
+html[data-theme="dark"] .note-editor-toolbar .rte-menu-option.active,
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-menu-option.active,
+html[data-theme="dark"] .note-editor-toolbar .rte-menu-option[aria-checked="true"],
+html[data-theme="professional-dark"] .note-editor-toolbar .rte-menu-option[aria-checked="true"] {
+  background: color-mix(in srgb, var(--accent-color, #38bdf8) 28%, var(--surface-elevated) 72%);
+  color: var(--text-main);
 }
 
 html[data-theme="dark"] .notebook-notes-search input[type="search"],
