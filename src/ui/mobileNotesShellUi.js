@@ -24,6 +24,91 @@ const NOTEBOOK_POLISH_CSS = `
     display: none !important;
   }
 
+  #notesHeaderActions {
+    display: none;
+  }
+
+  body[data-active-view="notebooks"] #reminders-slim-header {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.42rem;
+  }
+
+  body[data-active-view="notebooks"] #reminders-slim-header #overflowMenuBtn {
+    position: static;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  body[data-active-view="notebooks"] #reminders-slim-header .header-title {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    min-width: 0;
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  body[data-active-view="notebooks"] #notesHeaderActions:not([hidden]) {
+    grid-column: 3;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-overview-toggle,
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-header-action {
+    width: auto;
+    min-width: 0;
+    min-height: 30px;
+    height: 30px;
+    padding: 0.28rem 0.58rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--mobile-header-button-border, rgba(30, 41, 59, 0.14)) 75%, transparent);
+    background: color-mix(in srgb, var(--mobile-header-button-bg, #ffffff) 96%, #f8fafc 4%);
+    color: var(--text-main, #1e293b);
+    font-size: 0.7rem;
+    line-height: 1;
+    font-weight: 650;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-header-action {
+    color: color-mix(in srgb, var(--accent-color, #0f766e) 88%, #0f172a 12%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, #ffffff 90%);
+  }
+
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-overview-toggle:hover,
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-overview-toggle:focus-visible,
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-header-action:hover,
+  body[data-active-view="notebooks"] #notesHeaderActions .notes-header-action:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, #ffffff 86%);
+    color: var(--text-main, #1e293b);
+    outline: none;
+  }
+
+  @media (max-width: 340px) {
+    body[data-active-view="notebooks"] #reminders-slim-header {
+      gap: 0.28rem;
+      padding-inline: 0.5rem;
+    }
+
+    body[data-active-view="notebooks"] #notesHeaderActions {
+      gap: 0.2rem;
+    }
+
+    body[data-active-view="notebooks"] #notesHeaderActions .notes-overview-toggle,
+    body[data-active-view="notebooks"] #notesHeaderActions .notes-header-action {
+      padding-inline: 0.46rem;
+      font-size: 0.67rem;
+    }
+  }
+
   #view-notebook #notesOverviewPanel {
     padding: 0.32rem 0.52rem;
     margin: 0.16rem 0.7rem 0.12rem;
@@ -1384,6 +1469,9 @@ export const initMobileNotesShellUi = (options = {}) => {
 
     let toggleEl = headingEl.querySelector('.notes-overview-toggle');
     if (!(toggleEl instanceof HTMLButtonElement)) {
+      toggleEl = document.getElementById('notesHeaderActions')?.querySelector('[data-notes-overview-toggle]') || null;
+    }
+    if (!(toggleEl instanceof HTMLButtonElement)) {
       toggleEl = noteEditorSheet?.querySelector('[data-notes-overview-toggle]') || null;
     }
     if (!(toggleEl instanceof HTMLButtonElement)) {
@@ -1395,6 +1483,27 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
 
     return { headingEl, toggleEl, titleEl };
+  };
+
+  const appHeader = document.getElementById('reminders-slim-header');
+  const appHeaderTitle = appHeader?.querySelector('.header-title');
+  const notesHeaderActions = document.getElementById('notesHeaderActions');
+  const newNoteButton = document.getElementById('newNoteMobile');
+  if (appHeaderTitle instanceof HTMLElement && !appHeaderTitle.dataset.defaultTitle) {
+    appHeaderTitle.dataset.defaultTitle = appHeaderTitle.textContent?.trim() || 'Memory Cue';
+  }
+
+  const renderNotesAppHeader = () => {
+    const notesViewIsActive = document.body?.dataset.activeView === 'notebooks';
+    if (notesHeaderActions instanceof HTMLElement) {
+      notesHeaderActions.hidden = !notesViewIsActive;
+      notesHeaderActions.setAttribute('aria-hidden', notesViewIsActive ? 'false' : 'true');
+    }
+    if (appHeaderTitle instanceof HTMLElement) {
+      appHeaderTitle.textContent = notesViewIsActive
+        ? (notesMode === 'overview' ? 'Saved notes' : 'Notes')
+        : (appHeaderTitle.dataset.defaultTitle || 'Memory Cue');
+    }
   };
 
   const renderNotesOverviewToggle = () => {
@@ -1413,19 +1522,29 @@ export const initMobileNotesShellUi = (options = {}) => {
       notebookView.dataset.notesMode = notesMode;
     }
     const editorActionsRow = noteEditorSheet?.querySelector('.note-editor-actions-row');
-    const toggleHost = notesMode === 'overview' || !(editorActionsRow instanceof HTMLElement)
-      ? headingEl
-      : editorActionsRow;
+    const hasNotesHeader = notesHeaderActions instanceof HTMLElement;
+    const toggleHost = hasNotesHeader
+      ? notesHeaderActions
+      : (notesMode === 'overview' || !(editorActionsRow instanceof HTMLElement) ? headingEl : editorActionsRow);
     if (toggleEl.parentElement !== toggleHost) {
-      toggleHost.appendChild(toggleEl);
+      if (hasNotesHeader && newNoteButton instanceof HTMLElement) {
+        toggleHost.insertBefore(toggleEl, newNoteButton);
+      } else {
+        toggleHost.appendChild(toggleEl);
+      }
+    }
+    if (editorActionsRow instanceof HTMLElement) {
+      editorActionsRow.hidden = hasNotesHeader;
     }
     notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
     titleEl.textContent = notesMode === 'overview' ? 'Saved notes' : 'Notes';
-    titleEl.classList.toggle('sr-only', notesMode !== 'overview');
+    titleEl.classList.toggle('sr-only', hasNotesHeader || notesMode !== 'overview');
     toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Saved notes';
+    toggleEl.setAttribute('aria-label', notesMode === 'overview' ? 'Back to note editor' : 'Open saved notes');
     toggleEl.setAttribute('aria-expanded', notesMode === 'overview' ? 'true' : 'false');
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
+    renderNotesAppHeader();
   };
 
   const { toggleEl: notesOverviewToggle } = ensureNotesOverviewHeader();
@@ -1433,6 +1552,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     event.preventDefault();
     applyNotesMode(notesMode === 'overview' ? 'notebooks' : 'overview');
   });
+  newNoteButton?.addEventListener('click', () => {
+    if (notesMode === 'overview') {
+      applyNotesMode('notebooks');
+    }
+  });
+  window.addEventListener('memorycue:navigation:changed', renderNotesAppHeader);
   renderNotesOverviewToggle();
 
   const ensureActiveLessonCard = () => {

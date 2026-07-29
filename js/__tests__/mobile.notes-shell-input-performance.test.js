@@ -161,8 +161,15 @@ test('shows a Saved notes heading and refreshes the list before opening it', () 
   expect(noteEditorSheet.classList.contains('hidden')).toBe(false);
 });
 
-test('places Saved notes beside New note in the compact editor row', () => {
+test('places Saved notes and New in the Notes app header', () => {
   document.body.innerHTML = `
+    <header id="reminders-slim-header">
+      <button id="overflowMenuBtn" type="button">Menu</button>
+      <h1 class="header-title">Memory Cue</h1>
+      <div id="notesHeaderActions" hidden aria-hidden="true">
+        <button id="newNoteMobile" type="button">+ New</button>
+      </div>
+    </header>
     <section id="view-notebook">
       <section id="notesOverviewPanel">
         <h2>Notes</h2>
@@ -171,7 +178,6 @@ test('places Saved notes beside New note in the compact editor row', () => {
       <div id="noteEditorSheet">
         <div class="scratch-notes-header-block">
           <div class="note-editor-actions-row">
-            <button id="newNoteMobile" type="button">New note</button>
             <button id="noteFolderPillMobile" type="button">Everyday</button>
           </div>
         </div>
@@ -183,6 +189,8 @@ test('places Saved notes beside New note in the compact editor row', () => {
   const noteEditorSheet = document.getElementById('noteEditorSheet');
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
   const actionsRow = noteEditorSheet.querySelector('.note-editor-actions-row');
+  const headerActions = document.getElementById('notesHeaderActions');
+  document.body.dataset.activeView = 'notebooks';
 
   const { applyNotesMode } = initMobileNotesShellUi({
     noteEditorSheet,
@@ -192,15 +200,21 @@ test('places Saved notes beside New note in the compact editor row', () => {
 
   applyNotesMode('notebooks');
   expect(document.getElementById('view-notebook').dataset.notesMode).toBe('notebooks');
-  const toggle = actionsRow.querySelector('[data-notes-overview-toggle]');
+  const toggle = headerActions.querySelector('[data-notes-overview-toggle]');
   expect(toggle).toBeInstanceOf(HTMLButtonElement);
   expect(toggle.textContent).toBe('Saved notes');
+  expect(headerActions.hidden).toBe(false);
+  expect(actionsRow.hidden).toBe(true);
+  expect(headerActions.lastElementChild.id).toBe('newNoteMobile');
+  expect(document.querySelector('#reminders-slim-header .header-title').textContent).toBe('Notes');
 
   toggle.click();
-  expect(notesOverviewPanel.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
+  expect(headerActions.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
   expect(toggle.textContent).toBe('Back');
+  expect(document.querySelector('#reminders-slim-header .header-title').textContent).toBe('Saved notes');
 
-  toggle.click();
-  expect(actionsRow.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
+  document.getElementById('newNoteMobile').click();
+  expect(headerActions.querySelector('[data-notes-overview-toggle]')).toBe(toggle);
   expect(toggle.textContent).toBe('Saved notes');
+  expect(document.querySelector('#reminders-slim-header .header-title').textContent).toBe('Notes');
 });

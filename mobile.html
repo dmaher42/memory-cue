@@ -4871,6 +4871,16 @@ body, main, section, div, p, span, li {
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
       <h1 class="header-title title">Memory Cue</h1>
+      <div id="notesHeaderActions" class="notes-header-actions" hidden aria-hidden="true">
+        <button
+          type="button"
+          id="newNoteMobile"
+          class="note-inline-action notes-header-action"
+          aria-label="New note"
+        >
+          + New
+        </button>
+      </div>
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
@@ -5012,13 +5022,6 @@ body, main, section, div, p, span, li {
                 ></textarea>
               </div>
               <div class="note-editor-actions-row">
-                <button
-                  type="button"
-                  id="newNoteMobile"
-                  class="note-inline-action"
-                >
-                  New note
-                </button>
                 <button
                   type="button"
                   id="noteFolderPillMobile"
