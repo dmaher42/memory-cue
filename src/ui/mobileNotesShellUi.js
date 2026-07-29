@@ -616,8 +616,137 @@ const NOTEBOOK_POLISH_CSS = `
     color: var(--text-main, #1e293b);
   }
 
-  body[data-active-view="notebooks"] .note-editor-card {
-    padding-bottom: 56px !important;
+  @media (max-width: 899px) {
+    body[data-active-view="notebooks"] #view-notebook {
+      --notes-canvas-bg: #ffffff;
+    }
+
+    html[data-theme="dark"] body[data-active-view="notebooks"] #view-notebook,
+    html[data-theme="professional-dark"] body[data-active-view="notebooks"] #view-notebook {
+      --notes-canvas-bg: var(--surface-elevated, #172033);
+    }
+
+    body[data-active-view="notebooks"] #main {
+      padding-bottom: 0 !important;
+    }
+
+    body[data-active-view="notebooks"] #view-notebook,
+    body[data-active-view="notebooks"] #view-notebook .mobile-view-inner,
+    body[data-active-view="notebooks"] #noteEditorSheet,
+    body[data-active-view="notebooks"] #scratch-notes-card,
+    body[data-active-view="notebooks"] .note-editor-card,
+    body[data-active-view="notebooks"] .note-editor-inner,
+    body[data-active-view="notebooks"] .note-content-wrapper {
+      background: var(--notes-canvas-bg, #ffffff) !important;
+    }
+
+    body[data-active-view="notebooks"] #view-notebook,
+    body[data-active-view="notebooks"] #view-notebook .mobile-view-inner,
+    body[data-active-view="notebooks"] #noteEditorSheet,
+    body[data-active-view="notebooks"] #scratch-notes-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    body[data-active-view="notebooks"] .note-editor-card {
+      flex: 0 0 auto;
+      width: 100%;
+      min-height: 0;
+      margin: 0;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    body[data-active-view="notebooks"] .scratch-notes-header-block {
+      display: none !important;
+    }
+
+    body[data-active-view="notebooks"] .note-editor-toolbar {
+      position: relative;
+      top: auto;
+      width: 100%;
+      margin: 0 !important;
+      padding: 0.58rem 0.75rem 0.66rem !important;
+      gap: 0.3rem;
+      border: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 58%, transparent);
+      border-radius: 0;
+      background: var(--notes-canvas-bg, #ffffff);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    body[data-active-view="notebooks"] .note-editor-toolbar .rte-divider {
+      display: none;
+    }
+
+    body[data-active-view="notebooks"] .note-editor-toolbar .rte-btn,
+    body[data-active-view="notebooks"] .note-editor-toolbar .rte-select,
+    body[data-active-view="notebooks"] .note-editor-toolbar .rte-more-trigger {
+      min-height: 30px;
+      height: 30px;
+    }
+
+    body[data-active-view="notebooks"] .note-content-wrapper,
+    body[data-active-view="notebooks"] .note-editor-content-wrapper,
+    body[data-active-view="notebooks"] .scratch-notes-body-wrapper {
+      flex: 0 0 calc(100dvh - 151px);
+      width: 100%;
+      height: calc(100dvh - 151px);
+      min-height: 0;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      overflow: hidden;
+    }
+
+    body[data-active-view="notebooks"] .note-editor-inner {
+      flex: 0 0 auto;
+      min-height: 0;
+    }
+
+    body[data-active-view="notebooks"] #notebook-editor-body {
+      flex: 0 0 calc(100dvh - 151px);
+      width: 100%;
+      height: calc(100dvh - 151px) !important;
+      min-height: calc(100dvh - 151px);
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 1.2rem 1.25rem calc(1.75rem + env(safe-area-inset-bottom, 0px)) !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: var(--notes-canvas-bg, #ffffff) !important;
+      box-shadow: none !important;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scroll-padding-bottom: 1.75rem;
+      font-size: 17px;
+      line-height: 1.58;
+    }
+
+    body[data-active-view="notebooks"] #notebook-editor-body p {
+      margin: 0 0 1rem;
+    }
+
+    @media (max-width: 340px) {
+      body[data-active-view="notebooks"] .note-editor-toolbar {
+        padding-inline: 0.62rem !important;
+        gap: 0.24rem;
+      }
+
+      body[data-active-view="notebooks"] #notebook-editor-body {
+        padding-inline: 1rem !important;
+      }
+    }
   }
 `;
 

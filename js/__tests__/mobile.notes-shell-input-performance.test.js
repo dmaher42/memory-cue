@@ -218,3 +218,21 @@ test('places Saved notes and New in the Notes app header', () => {
   expect(toggle.textContent).toBe('Saved notes');
   expect(document.querySelector('#reminders-slim-header .header-title').textContent).toBe('Notes');
 });
+
+test('installs the full-page Notes writing canvas styles', () => {
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+
+  initMobileNotesShellUi({
+    noteEditorSheet: document.getElementById('noteEditorSheet'),
+    notesOverviewPanel: document.getElementById('notesOverviewPanel'),
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+  });
+
+  const style = document.getElementById('memory-cue-notebook-polish');
+  expect(style).toBeInstanceOf(HTMLStyleElement);
+  expect(style.textContent).toContain('body[data-active-view="notebooks"] #notebook-editor-body');
+  expect(style.textContent).toContain('height: calc(100dvh - 151px)');
+  expect(style.textContent).toContain('border-radius: 0 !important');
+  expect(style.textContent).toContain('.scratch-notes-header-block');
+  expect(style.textContent).toContain('display: none !important');
+});
