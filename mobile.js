@@ -3089,8 +3089,6 @@ const initMobileNotes = () => {
       const item = document.createElement('article');
       item.className = 'notes-overview-item';
       item.dataset.noteId = note.id;
-      const folder = getFolderNameById(note?.folderId || 'unsorted') || 'Unsorted';
-      const timestamp = formatNoteTimestamp(note?.updatedAt || note?.createdAt);
       const safeTitle = note?.title || 'Untitled note';
 
       const openButton = document.createElement('button');
@@ -3101,11 +3099,6 @@ const initMobileNotes = () => {
         <div class="notes-overview-item-title-row">
           <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
           ${note?.pinned ? '<span class="notes-overview-pinned-label">Pinned</span>' : ''}
-        </div>
-        <div class="notes-overview-item-meta">
-          <span>${escapeHtml(folder)}</span>
-          <span class="notes-overview-item-meta-dot" aria-hidden="true">\u2022</span>
-          <span>${timestamp}</span>
         </div>
       `;
       openButton.addEventListener('click', () => {

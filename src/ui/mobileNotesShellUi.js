@@ -247,7 +247,6 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook #notesOverviewList .notes-overview-item-main {
     display: grid;
     min-width: 0;
-    gap: 0.28rem;
     padding: 0.58rem 0.5rem 0.58rem 0.62rem;
     border: 0;
     border-radius: 0.6rem;
@@ -290,17 +289,6 @@ const NOTEBOOK_POLISH_CSS = `
     font-size: 0.62rem;
     line-height: 1;
     font-weight: 700;
-  }
-
-  #view-notebook #notesOverviewList .notes-overview-item-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.28rem;
-    margin-top: 0;
-    font-size: 0.72rem;
-    line-height: 1.2;
-    color: color-mix(in srgb, var(--text-main, #1e293b) 72%, #7c8798 28%);
   }
 
   #view-notebook #notesOverviewList .notes-overview-item-actions {

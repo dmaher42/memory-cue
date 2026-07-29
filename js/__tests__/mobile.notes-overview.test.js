@@ -108,7 +108,7 @@ describe('mobile Saved notes overview', () => {
     expect(html).toContain('placeholder="Search saved notes"');
   });
 
-  test('renders searchable metadata-only cards with the shared actions menu', () => {
+  test('renders searchable title-only cards with the shared actions menu', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
@@ -116,8 +116,9 @@ describe('mobile Saved notes overview', () => {
     expect(cards).toHaveLength(2);
     expect(cards[0].querySelector('.notes-overview-item-title').textContent).toBe('Thursday training');
     expect(cards[0].querySelector('.notes-overview-pinned-label').textContent).toBe('Pinned');
-    expect(cards[0].querySelector('.notes-overview-item-meta').textContent).toContain('Coaching');
-    expect(cards[0].querySelectorAll('.notes-overview-item-meta span')).toHaveLength(3);
+    expect(cards[0].querySelector('.notes-overview-item-meta')).toBeNull();
+    expect(cards[0].textContent).not.toContain('Coaching');
+    expect(cards[0].textContent).not.toContain('Today');
     expect(cards[0].querySelector('.notes-overview-item-preview')).toBeNull();
     expect(document.getElementById('note-options-sheet').parentElement).toBe(document.body);
     expect(document.getElementById('note-folder-sheet').parentElement).toBe(document.body);
