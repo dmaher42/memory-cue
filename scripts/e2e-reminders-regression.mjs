@@ -559,6 +559,13 @@ async function main() {
       throw new Error(`Expected School and Footy board columns, received: ${JSON.stringify(boardColumnLabels)}`);
     }
 
+    const visibleCardDestinationCount = await page.locator('.reminder-stream-row .reminder-stream-category').count();
+    const movedReminderCategory = await page.locator('[data-title="Call Mum"]').getAttribute('data-category');
+    const dueMetadataCount = await page.locator('.reminder-stream-row .reminder-stream-due').count();
+    if (visibleCardDestinationCount !== 0 || movedReminderCategory !== 'School' || dueMetadataCount === 0) {
+      throw new Error(`Expected card destinations to stay stored but hidden while due details remain visible: ${JSON.stringify({ visibleCardDestinationCount, movedReminderCategory, dueMetadataCount })}`);
+    }
+
     await page.locator('[data-reminder-column="school"] [data-action="rename-column"]').click();
     await page.locator('[data-reminder-column="school"] .reminder-category-column-rename-input').fill('Work');
     const renameEditorScreenshotOutput = typeof process.env.PLAYWRIGHT_RENAME_EDITOR_SCREENSHOT_PATH === 'string'

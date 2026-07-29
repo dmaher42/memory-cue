@@ -7152,19 +7152,15 @@ export async function initReminders(sel = {}) {
           metaRow.appendChild(dueChip);
         }
 
-        const catLabel = document.createElement('span');
-        catLabel.className = 'reminder-stream-category';
-        catLabel.textContent = catName;
-        catLabel.title = catName;
-        metaRow.appendChild(catLabel);
-
         if (String(summary.priority || '').trim().toLowerCase().charAt(0) === 'h') {
           const priorityFlag = document.createElement('span');
           priorityFlag.className = 'reminder-stream-priority';
           priorityFlag.textContent = 'High';
           metaRow.appendChild(priorityFlag);
         }
-        rowMain.appendChild(metaRow);
+        if (metaRow.children.length) {
+          rowMain.appendChild(metaRow);
+        }
 
         if (summary.done) {
           itemEl.classList.add('reminder-row-completed');
