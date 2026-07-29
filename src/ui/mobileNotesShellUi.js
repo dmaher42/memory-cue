@@ -41,12 +41,16 @@ const NOTEBOOK_POLISH_CSS = `
   #view-notebook .notes-overview-heading {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 0.6rem;
   }
 
   #view-notebook .notes-overview-heading h2 {
     margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
   }
 
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
@@ -159,6 +163,59 @@ const NOTEBOOK_POLISH_CSS = `
 
   .mobile-panel--notes .note-editor-actions-row .notes-overview-toggle {
     margin-left: auto;
+  }
+
+  .mobile-panel--notes .note-save-status-row {
+    display: flex;
+    justify-content: flex-end;
+    min-height: 0.72rem;
+    padding: 0 0.12rem;
+  }
+
+  .mobile-panel--notes .note-save-state {
+    font-size: 0.68rem;
+    line-height: 1;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--text-main, #1e293b) 58%, #7c8798 42%);
+    white-space: nowrap;
+  }
+
+  .mobile-panel--notes .note-save-state[data-state="saving"] {
+    color: color-mix(in srgb, var(--accent-color, #1e293b) 76%, #7c8798 24%);
+  }
+
+  .mobile-panel--notes .note-save-state[data-state="error"] {
+    color: var(--error-color, #b91c1c);
+  }
+
+  .mobile-panel--notes #notebook-editor-body[data-placeholder]:empty::before {
+    color: color-mix(in srgb, var(--text-main, #1e293b) 38%, transparent);
+    font-style: normal;
+  }
+
+  #view-notebook .notes-overview-empty {
+    display: grid;
+    justify-items: start;
+    gap: 0.38rem;
+    padding: 1rem 0.2rem 0.75rem;
+  }
+
+  #view-notebook .notes-overview-empty-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+  }
+
+  #view-notebook .notes-overview-empty-copy {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--text-main, #1e293b) 62%, #7c8798 38%);
+  }
+
+  #view-notebook .notes-overview-empty .note-inline-action {
+    margin-top: 0.28rem;
   }
 
   .mobile-panel--notes #noteTitleMobile[hidden] {
@@ -560,6 +617,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     openNewFolderDialog = () => {},
     closeOverflowMenu = () => {},
     handleDeleteNote = () => {},
+    flushCurrentNote = () => {},
     refreshFromStorage = () => {},
     saveAllNotes = () => {},
     onOpenNoteOptionsMove = null,
@@ -1340,8 +1398,6 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (!(titleEl instanceof HTMLElement)) {
       return { headingEl: null, toggleEl: null, titleEl: null };
     }
-    titleEl.classList.add('sr-only');
-
     if (!(headingEl instanceof HTMLElement)) {
       headingEl = document.createElement('div');
       headingEl.className = 'notes-overview-heading';
@@ -1389,6 +1445,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     notesOverviewCollapsed = notesMode !== 'overview';
     listEl.hidden = notesOverviewCollapsed;
     titleEl.textContent = notesMode === 'overview' ? 'Saved notes' : 'Notes';
+    titleEl.classList.toggle('sr-only', notesMode !== 'overview');
     toggleEl.textContent = notesMode === 'overview' ? 'Back' : 'Saved notes';
     toggleEl.setAttribute('aria-expanded', notesMode === 'overview' ? 'true' : 'false');
     toggleEl.setAttribute('aria-controls', 'notesOverviewList');
@@ -1500,6 +1557,10 @@ export const initMobileNotesShellUi = (options = {}) => {
 
   const applyNotesMode = (mode = 'notebooks') => {
     notesMode = mode === 'overview' ? 'overview' : 'notebooks';
+    if (notesMode === 'overview') {
+      flushCurrentNote();
+      refreshFromStorage({ preserveDraft: true });
+    }
     const notebookView = notesOverviewPanel?.closest('#view-notebook');
     if (notebookView instanceof HTMLElement) {
       notebookView.dataset.notesMode = notesMode;

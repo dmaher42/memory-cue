@@ -2854,9 +2854,35 @@ const initMobileNotes = () => {
     notesOverviewList.innerHTML = '';
     const items = getNotesOverviewItems();
     if (!items.length) {
-      const empty = document.createElement('p');
-      empty.className = 'text-sm text-base-content/70';
-      empty.textContent = 'No notes found.';
+      const hasActiveFilter = Boolean((notesOverviewQuery || '').trim())
+        || (notesOverviewStateValue || 'all').toLowerCase() !== 'all';
+      const empty = document.createElement('div');
+      empty.className = 'notes-overview-empty';
+
+      const title = document.createElement('h3');
+      title.className = 'notes-overview-empty-title';
+      title.textContent = hasActiveFilter ? 'No notes found' : 'No saved notes yet';
+      empty.appendChild(title);
+
+      const copy = document.createElement('p');
+      copy.className = 'notes-overview-empty-copy';
+      copy.textContent = hasActiveFilter
+        ? 'Try a different search or filter.'
+        : 'Your notes will appear here as soon as you start writing.';
+      empty.appendChild(copy);
+
+      if (!hasActiveFilter) {
+        const startButton = document.createElement('button');
+        startButton.type = 'button';
+        startButton.className = 'note-inline-action';
+        startButton.textContent = 'Start a note';
+        startButton.addEventListener('click', () => {
+          applyNotesMode('notebooks');
+          document.getElementById('newNoteMobile')?.click();
+        });
+        empty.appendChild(startButton);
+      }
+
       notesOverviewList.appendChild(empty);
       return;
     }
@@ -3962,6 +3988,7 @@ const initMobileNotes = () => {
     openNewFolderDialog,
     closeOverflowMenu,
     handleDeleteNote,
+    flushCurrentNote: () => flushNoteAutoSave(),
     refreshFromStorage,
     saveAllNotes,
     onOpenNoteOptionsMove: (noteId, note, triggerEl) => {
@@ -4055,6 +4082,7 @@ const initMobileNotes = () => {
     resizeTitleInput: editorResizeTitleInput,
   } = initMobileNotesEditorUi({
     saveButton,
+    statusElement: document.getElementById('notesStatusText'),
     titleInput,
     scratchNotesEditorElement,
     footerNewNoteBtn,

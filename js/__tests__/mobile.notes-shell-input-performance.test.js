@@ -111,7 +111,7 @@ test('defers note sections bar rendering while typing in the editor', () => {
   expect(innerTextRead).not.toHaveBeenCalled();
 });
 
-test('keeps the Notes headings visually hidden while switching overview modes', () => {
+test('shows a Saved notes heading and refreshes the list before opening it', () => {
   document.body.innerHTML = `
     <section id="view-notebook">
       <section id="notesOverviewPanel">
@@ -126,11 +126,15 @@ test('keeps the Notes headings visually hidden while switching overview modes', 
   const notesOverviewPanel = document.getElementById('notesOverviewPanel');
   const noteEditorSheet = document.getElementById('noteEditorSheet');
   const list = document.getElementById('notesOverviewList');
+  const flushCurrentNote = jest.fn();
+  const refreshFromStorage = jest.fn();
 
   const { applyNotesMode } = initMobileNotesShellUi({
     noteEditorSheet,
     notesOverviewPanel,
     savedNotesSheet: document.getElementById('savedNotesSheet'),
+    flushCurrentNote,
+    refreshFromStorage,
   });
 
   const heading = notesOverviewPanel.querySelector('h2');
@@ -141,8 +145,10 @@ test('keeps the Notes headings visually hidden while switching overview modes', 
   expect(list.hidden).toBe(true);
 
   applyNotesMode('overview');
+  expect(flushCurrentNote).toHaveBeenCalledTimes(1);
+  expect(refreshFromStorage).toHaveBeenCalledWith({ preserveDraft: true });
   expect(heading.textContent).toBe('Saved notes');
-  expect(heading.classList.contains('sr-only')).toBe(true);
+  expect(heading.classList.contains('sr-only')).toBe(false);
   expect(toggle.textContent).toBe('Back');
   expect(toggle.getAttribute('aria-expanded')).toBe('true');
   expect(list.hidden).toBe(false);

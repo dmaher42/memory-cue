@@ -5119,6 +5119,16 @@ body, main, section, div, p, span, li {
                 </details>
               </div>
 
+              <div class="note-save-status-row">
+                <span
+                  id="notesStatusText"
+                  class="note-save-state"
+                  role="status"
+                  aria-live="polite"
+                  data-state="idle"
+                >Autosaves</span>
+              </div>
+
             <div class="note-editor-inner">
               <!-- Minimal main editor with soft styling -->
               <div class="distraction-free-editor-container note-content-wrapper note-editor-content-wrapper scratch-notes-body-wrapper">
@@ -5130,6 +5140,7 @@ body, main, section, div, p, span, li {
                   role="textbox"
                   aria-label="Note"
                   aria-multiline="true"
+                  data-placeholder="Start writing…"
                 ></div>
               </div>
             </div>
@@ -5146,7 +5157,6 @@ body, main, section, div, p, span, li {
           <div class="note-actions fixed-bottom flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 text-xs text-base-content/60 font-medium">
                 <span id="notesSyncStatus" class="sync-dot hidden"></span>
-                <span id="notesStatusText" role="status">Ready</span>
             </div>
 
             <button
