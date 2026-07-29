@@ -4082,7 +4082,6 @@ const initMobileNotes = () => {
     resizeTitleInput: editorResizeTitleInput,
   } = initMobileNotesEditorUi({
     saveButton,
-    statusElement: document.getElementById('notesStatusText'),
     titleInput,
     scratchNotesEditorElement,
     footerNewNoteBtn,

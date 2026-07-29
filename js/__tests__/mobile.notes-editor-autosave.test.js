@@ -35,7 +35,6 @@ beforeEach(() => {
   document.body.innerHTML = `
     <input id="noteTitleMobile" />
     <div id="notebook-editor-body" contenteditable="true"></div>
-    <span id="notesStatusText" data-state="idle">Autosaves</span>
     <button id="noteSaveMobile" type="button">Save</button>
     <button id="newNoteMobile" type="button">New note</button>
   `;
@@ -60,7 +59,6 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
 
   initMobileNotesEditorUi({
     saveButton,
-    statusElement: document.getElementById('notesStatusText'),
     titleInput,
     scratchNotesEditorElement: editor,
     newNoteButton,
@@ -120,7 +118,6 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
   editor.dispatchEvent(new Event('input', { bubbles: true }));
 
   expect(currentNoteHasChanged).toBe(true);
-  expect(document.getElementById('notesStatusText').textContent).toBe('Saving…');
 
   jest.advanceTimersByTime(1500);
 
@@ -128,8 +125,6 @@ test('body typing in a new note marks it changed so autosave can save it', () =>
   expect(notes[0].title).toBe('Body-only journal thought');
   expect(notes[0].bodyText).toBe('Body-only journal thought');
   expect(titleInput.value).toBe('Body-only journal thought');
-  expect(document.getElementById('notesStatusText').textContent).toBe('Saved');
-  expect(document.getElementById('notesStatusText').dataset.state).toBe('saved');
 });
 
 test('body-only notes get a short automatic title for the saved notes list', () => {

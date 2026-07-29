@@ -165,29 +165,6 @@ const NOTEBOOK_POLISH_CSS = `
     margin-left: auto;
   }
 
-  .mobile-panel--notes .note-save-status-row {
-    display: flex;
-    justify-content: flex-end;
-    min-height: 0.72rem;
-    padding: 0 0.12rem;
-  }
-
-  .mobile-panel--notes .note-save-state {
-    font-size: 0.68rem;
-    line-height: 1;
-    font-weight: 600;
-    color: color-mix(in srgb, var(--text-main, #1e293b) 58%, #7c8798 42%);
-    white-space: nowrap;
-  }
-
-  .mobile-panel--notes .note-save-state[data-state="saving"] {
-    color: color-mix(in srgb, var(--accent-color, #1e293b) 76%, #7c8798 24%);
-  }
-
-  .mobile-panel--notes .note-save-state[data-state="error"] {
-    color: var(--error-color, #b91c1c);
-  }
-
   .mobile-panel--notes #notebook-editor-body[data-placeholder]:empty::before {
     color: color-mix(in srgb, var(--text-main, #1e293b) 38%, transparent);
     font-style: normal;

@@ -8,7 +8,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
 
   const {
     saveButton = null,
-    statusElement = null,
     titleInput = null,
     scratchNotesEditorElement = null,
     footerNewNoteBtn = null,
@@ -41,14 +40,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
     handleListShortcuts = () => {},
     handleFormattingShortcuts = () => {},
   } = options;
-
-  const setSaveStatus = (message, state = 'idle') => {
-    if (!(statusElement instanceof HTMLElement)) {
-      return;
-    }
-    statusElement.textContent = message;
-    statusElement.dataset.state = state;
-  };
 
   const buildAutomaticNoteTitle = (bodyText = '') => {
     const normalizedText = String(bodyText).replace(/\s+/g, ' ').trim();
@@ -118,7 +109,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
       folderId: activeFolderId,
     };
     openNoteEditorForNewNote(newNote);
-    setSaveStatus('Autosaves', 'idle');
   };
 
   const persistCurrentNote = ({ refreshAfterSave = true, saveOptions = {} } = {}) => {
@@ -178,7 +168,6 @@ export const initMobileNotesEditorUi = (options = {}) => {
 
     const saved = saveAllNotes(notesArray, saveOptions);
     if (!saved) {
-      setSaveStatus('Couldn’t save', 'error');
       return false;
     }
     updateStoredSnapshot();
@@ -194,12 +183,10 @@ export const initMobileNotesEditorUi = (options = {}) => {
     if (refreshAfterSave) {
       refreshFromStorage({ preserveDraft: false });
     }
-    setSaveStatus('Saved', 'saved');
     return true;
   };
 
   saveButton?.addEventListener('click', () => {
-    setSaveStatus('Saving…', 'saving');
     persistCurrentNote({ refreshAfterSave: true });
   });
 
@@ -241,7 +228,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
         });
       }
     } catch {
-      setSaveStatus('Couldn’t save', 'error');
+      /* ignore autosave errors */
     }
   }, AUTOSAVE_DELAY);
 
@@ -273,14 +260,12 @@ export const initMobileNotesEditorUi = (options = {}) => {
     if (getCurrentNoteIsNew()) {
       if (!hasMeaningfulContent()) {
         setCurrentNoteHasChanged(false);
-        setSaveStatus('Autosaves', 'idle');
         return;
       }
       setCurrentNoteHasChanged(true);
     } else {
       setCurrentNoteHasChanged(true);
     }
-    setSaveStatus('Saving…', 'saving');
     debouncedAutoSave();
   };
 
