@@ -139,6 +139,74 @@ test('mobile reminders normalise uncategorised rows to General', async () => {
   expect(excursionItems).toHaveLength(1);
 });
 
+test('mobile reminders provide separate visible Active and Done lists', async () => {
+  document.body.innerHTML = `
+    <input id="title" />
+    <input id="date" />
+    <input id="time" />
+    <textarea id="details"></textarea>
+    <select id="priority"><option>Medium</option></select>
+    <input id="category" list="categorySuggestions" />
+    <datalist id="categorySuggestions"></datalist>
+    <button id="saveBtn" type="button"></button>
+    <button id="cancelEditBtn" type="button"></button>
+    <section id="reminderListSection"><div id="wrapper"><p id="emptyState"></p><ul id="list"></ul></div></section>
+    <div id="status"></div>
+    <div id="syncStatus"></div>
+  `;
+
+  const controller = await initReminders({
+    titleSel: '#title',
+    dateSel: '#date',
+    timeSel: '#time',
+    detailsSel: '#details',
+    prioritySel: '#priority',
+    categorySel: '#category',
+    saveBtnSel: '#saveBtn',
+    cancelEditBtnSel: '#cancelEditBtn',
+    listSel: '#list',
+    statusSel: '#status',
+    syncStatusSel: '#syncStatus',
+    emptyStateSel: '#emptyState',
+    listWrapperSel: '#wrapper',
+    categoryOptionsSel: '#categorySuggestions',
+    variant: 'mobile',
+    firebaseDeps: createFirebaseStubs(),
+  });
+
+  const now = Date.now();
+  controller.__testing.setItems([
+    { id: 'next-registration', title: 'Register for winter basketball', category: 'Footy', done: false, createdAt: now - 3000 },
+    { id: 'older-completed', title: 'Registered for autumn basketball', category: 'Footy', done: true, createdAt: now - 5000, completedAt: now - 172800000 },
+    { id: 'latest-completed', title: 'Registered for summer basketball', category: 'Footy', done: true, createdAt: now - 4000, completedAt: now },
+  ]);
+  controller.__testing.render();
+
+  const activeButton = document.querySelector('[data-reminders-filter="active"]');
+  const doneButton = document.querySelector('[data-reminders-filter="completed"]');
+  expect(activeButton).not.toBeNull();
+  expect(doneButton).not.toBeNull();
+  expect(activeButton.getAttribute('aria-pressed')).toBe('true');
+  expect(activeButton.querySelector('.reminder-view-switch-count').textContent).toBe('1');
+  expect(doneButton.querySelector('.reminder-view-switch-count').textContent).toBe('2');
+  expect(document.querySelector('[data-id="next-registration"]')).not.toBeNull();
+  expect(document.querySelector('[data-id="latest-completed"]')).toBeNull();
+
+  doneButton.click();
+
+  expect(doneButton.getAttribute('aria-pressed')).toBe('true');
+  expect(document.querySelector('[data-id="next-registration"]')).toBeNull();
+  expect(Array.from(document.querySelectorAll('[data-reminder-item="true"]')).map((item) => item.dataset.id))
+    .toEqual(['latest-completed', 'older-completed']);
+  expect(document.querySelector('[data-id="latest-completed"] .reminder-stream-completed-date').textContent)
+    .toBe('Completed today');
+
+  activeButton.click();
+  expect(activeButton.getAttribute('aria-pressed')).toBe('true');
+  expect(document.querySelector('[data-id="next-registration"]')).not.toBeNull();
+  expect(document.querySelector('[data-id="latest-completed"]')).toBeNull();
+});
+
 test('reminder sheet switches between board columns and a custom category', async () => {
   document.body.innerHTML = `
     <div id="create-sheet" data-mode="create"></div>

@@ -98,6 +98,12 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
     : normalizeIsoString(source.notifyAt);
   const createdAt = Number.isFinite(Number(source.createdAt)) ? Number(source.createdAt) : now;
   const updatedAt = Number.isFinite(Number(source.updatedAt)) ? Number(source.updatedAt) : createdAt;
+  const done = typeof source.done === 'boolean'
+    ? source.done
+    : Boolean(source.completed || source.isDone || source.status === 'done');
+  const completedAt = done
+    ? (Number.isFinite(Number(source.completedAt)) ? Number(source.completedAt) : updatedAt)
+    : null;
   const notes = typeof source.notes === 'string'
     ? source.notes
     : typeof source.bodyText === 'string'
@@ -114,9 +120,8 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
     priority: source.priority || 'Medium',
     category: normalizeCategory(source.category),
     source: normalizeReminderSource(source.source ?? source.metadata?.source),
-    done: typeof source.done === 'boolean'
-      ? source.done
-      : Boolean(source.completed || source.isDone || source.status === 'done'),
+    done,
+    completedAt,
     createdAt,
     updatedAt,
     keywords: normalizeReminderKeywords(

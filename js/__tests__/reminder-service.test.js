@@ -96,3 +96,30 @@ test('createReminder keeps an explicit epoch-millisecond dueAt (assistant/captur
   expect(reminder.due).toBe(new Date(dueMs).toISOString());
   expect(reminder.dueAt).toBe(new Date(dueMs).toISOString());
 });
+
+test('completeReminder records when an item was done and clears that date when reopened', () => {
+  const updates = [];
+  const { completeReminder } = loadReminderService({
+    updateReminderInStore: (_id, patch) => {
+      updates.push(patch);
+      return { id: 'basketball-registration', ...patch };
+    },
+  });
+
+  const completed = completeReminder('basketball-registration', true);
+  const reopened = completeReminder('basketball-registration', false);
+
+  expect(completed).toMatchObject({
+    done: true,
+    completed: true,
+    completedAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+  expect(reopened).toMatchObject({
+    done: false,
+    completed: false,
+    completedAt: null,
+    updatedAt: Date.now(),
+  });
+  expect(updates).toHaveLength(2);
+});

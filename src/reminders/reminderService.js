@@ -444,10 +444,12 @@ export function completeReminder(id, completed = true, options = {}) {
   if (!id) {
     return null;
   }
+  const completedAt = Date.now();
   const updated = updateReminderInStore(id, {
     done: !!completed,
     completed: !!completed,
-    updatedAt: Date.now(),
+    completedAt: completed ? completedAt : null,
+    updatedAt: completedAt,
   });
   if (!updated) {
     return null;

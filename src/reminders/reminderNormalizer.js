@@ -125,6 +125,9 @@ export function normalizeReminder(input = {}) {
     || source.done === true
     || source.isDone === true
     || source.status === 'done';
+  const completedAt = completed
+    ? (normalizeEpochMs(source.completedAt) ?? updatedAt)
+    : null;
   const dueAt = normalizeEpochMs(source.dueAt ?? source.dueDate ?? source.date ?? source.time ?? source.due);
   const due = normalizeIsoString(source.due ?? source.dueAt ?? source.dueDate ?? source.date ?? source.time);
 
@@ -139,6 +142,7 @@ export function normalizeReminder(input = {}) {
     createdAt,
     updatedAt,
     completed,
+    completedAt,
     done: completed,
     status: completed ? 'done' : 'open',
     category: normalizeNullableString(source.category) ?? DEFAULT_CATEGORY,

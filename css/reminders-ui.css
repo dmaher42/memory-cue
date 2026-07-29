@@ -2204,6 +2204,73 @@ body #view-reminders #remindersListMobile {
   gap: 0.24rem;
 }
 
+body #view-reminders .reminder-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0.08rem 0 0.34rem;
+  padding: 0.22rem;
+  border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #e2e8f0) 18%);
+}
+
+body #view-reminders .reminder-view-switch-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 2.2rem;
+  padding: 0.42rem 0.7rem;
+  border: 0;
+  border-radius: 0.72rem;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+body #view-reminders .reminder-view-switch-button:hover,
+body #view-reminders .reminder-view-switch-button:focus-visible {
+  background: color-mix(in srgb, var(--surface-card, #ffffff) 68%, var(--color-secondary, #e2e8f0) 32%);
+}
+
+body #view-reminders .reminder-view-switch-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 58%, transparent);
+  outline-offset: 1px;
+}
+
+body #view-reminders .reminder-view-switch-button.is-active {
+  background: var(--surface-card, #ffffff);
+  color: var(--text-main, #0f172a);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+body #view-reminders .reminder-view-switch-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.42rem;
+  height: 1.42rem;
+  padding: 0 0.34rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary, #64748b) 12%, transparent);
+  color: inherit;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+body #view-reminders .reminder-view-switch-button.is-active .reminder-view-switch-count {
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, transparent);
+  color: var(--accent-color, #0f766e);
+}
+
+body #view-reminders .reminder-stream-completed-date {
+  color: color-mix(in srgb, var(--accent-color, #0f766e) 82%, var(--text-secondary, #64748b));
+  font-weight: 700;
+}
+
 body #view-reminders .reminders-screen-header {
   gap: 0.65rem;
   padding: 0.64rem 0.78rem;

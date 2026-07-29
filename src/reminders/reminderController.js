@@ -1087,6 +1087,80 @@ export async function initReminders(sel = {}) {
   let reminderSortMode = REMINDER_SORT_OPTIONS.created;
   let completedReminderSectionExpanded = false;
 
+  function ensureReminderViewSwitch() {
+    if (variant !== 'mobile' || typeof document === 'undefined' || !(listWrapper instanceof HTMLElement)) {
+      return null;
+    }
+
+    const existing = document.getElementById('reminderViewSwitch');
+    if (existing instanceof HTMLElement) {
+      return existing;
+    }
+
+    const listSection = listWrapper.closest('#reminderListSection') || listWrapper;
+    const host = listSection.parentElement;
+    if (!(host instanceof HTMLElement)) {
+      return null;
+    }
+
+    const viewSwitch = document.createElement('nav');
+    viewSwitch.id = 'reminderViewSwitch';
+    viewSwitch.className = 'reminder-view-switch';
+    viewSwitch.setAttribute('aria-label', 'Reminder lists');
+
+    const createButton = (filter, label) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'reminder-view-switch-button';
+      button.dataset.remindersFilter = filter;
+      button.innerHTML = `<span>${label}</span><span class="reminder-view-switch-count" aria-hidden="true">0</span>`;
+      button.addEventListener('click', () => {
+        if (filter === 'completed') {
+          showCompletedReminders({ focusList: false });
+        } else {
+          showActiveReminders();
+        }
+      });
+      return button;
+    };
+
+    viewSwitch.append(
+      createButton('active', 'Active'),
+      createButton('completed', 'Done'),
+    );
+    host.insertBefore(viewSwitch, listSection);
+    return viewSwitch;
+  }
+
+  function syncReminderViewSwitch(activeCount = 0, completedCount = 0) {
+    const viewSwitch = ensureReminderViewSwitch();
+    if (!(viewSwitch instanceof HTMLElement)) {
+      return;
+    }
+
+    const showingCompleted = completedReminderSectionExpanded;
+    const counts = {
+      active: Math.max(0, Number(activeCount) || 0),
+      completed: Math.max(0, Number(completedCount) || 0),
+    };
+
+    viewSwitch.querySelectorAll('[data-reminders-filter]').forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const filter = button.dataset.remindersFilter;
+      const isSelected = filter === (showingCompleted ? 'completed' : 'active');
+      const count = counts[filter] ?? 0;
+      button.classList.toggle('is-active', isSelected);
+      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      button.setAttribute('aria-label', `${filter === 'completed' ? 'Done' : 'Active'} reminders, ${count}`);
+      const countEl = button.querySelector('.reminder-view-switch-count');
+      if (countEl) {
+        countEl.textContent = String(count);
+      }
+    });
+  }
+
   function syncCompletedRemindersMenu(count = 0) {
     const completedCount = Math.max(0, Number(count) || 0);
     const shouldHide = completedCount === 0;
@@ -1103,33 +1177,29 @@ export async function initReminders(sel = {}) {
         `View ${completedCount} completed ${completedCount === 1 ? 'reminder' : 'reminders'}`,
       );
     }
-    if (shouldHide) {
-      completedReminderSectionExpanded = false;
-    }
   }
 
-  function showCompletedReminders() {
-    const completedCount = items.filter((item) => item?.done === true).length;
-    if (!completedCount) {
-      syncCompletedRemindersMenu(0);
-      return false;
-    }
-
+  function showCompletedReminders({ focusList = true } = {}) {
     completedReminderSectionExpanded = true;
     render();
 
+    if (!focusList) {
+      return true;
+    }
+
     const focusCompletedSection = () => {
-      const toggle = document.querySelector('.reminder-completed-section-toggle');
-      if (!(toggle instanceof HTMLElement)) {
+      const target = document.querySelector('.reminder-completed-section-toggle')
+        || document.querySelector('[data-reminders-filter="completed"]');
+      if (!(target instanceof HTMLElement)) {
         return;
       }
-      if (typeof toggle.scrollIntoView === 'function') {
-        toggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       try {
-        toggle.focus({ preventScroll: true });
+        target.focus({ preventScroll: true });
       } catch {
-        toggle.focus();
+        target.focus();
       }
     };
 
@@ -1138,6 +1208,12 @@ export async function initReminders(sel = {}) {
     } else {
       focusCompletedSection();
     }
+    return true;
+  }
+
+  function showActiveReminders() {
+    completedReminderSectionExpanded = false;
+    render();
     return true;
   }
 
@@ -5152,6 +5228,7 @@ export async function initReminders(sel = {}) {
       onCompleted: (record) => {
         it.done = !!record.done;
         it.completed = !!record.completed;
+        it.completedAt = record.completedAt || null;
         it.updatedAt = record.updatedAt;
       },
     });
@@ -6612,6 +6689,31 @@ export async function initReminders(sel = {}) {
     return cleanedTitle || 'Untitled reminder';
   }
 
+  function formatReminderCompletedLabel(value) {
+    const completedDate = new Date(value);
+    if (Number.isNaN(completedDate.getTime())) {
+      return 'Completed';
+    }
+
+    const today = getReminderStartOfDay(new Date());
+    const completedDay = getReminderStartOfDay(completedDate);
+    const daysAgo = today && completedDay
+      ? Math.round((today.getTime() - completedDay.getTime()) / 86400000)
+      : null;
+    if (daysAgo === 0) {
+      return 'Completed today';
+    }
+    if (daysAgo === 1) {
+      return 'Completed yesterday';
+    }
+
+    const locale = typeof navigator !== 'undefined' ? navigator.language || undefined : undefined;
+    const options = completedDate.getFullYear() === new Date().getFullYear()
+      ? { day: 'numeric', month: 'short' }
+      : { day: 'numeric', month: 'short', year: 'numeric' };
+    return `Completed ${completedDate.toLocaleDateString(locale, options)}`;
+  }
+
 
   function getUpcomingTodayReminders(reminders = []) {
     const now = Date.now();
@@ -6818,8 +6920,15 @@ export async function initReminders(sel = {}) {
 
     let rows = sortReminderRows(items);
     const activeRows = rows.filter((row) => !row?.done);
-    const completedRows = rows.filter((row) => row?.done);
+    const completedRows = rows
+      .filter((row) => row?.done)
+      .sort((a, b) => (
+        Number(b?.completedAt || b?.updatedAt || b?.createdAt || 0)
+        - Number(a?.completedAt || a?.updatedAt || a?.createdAt || 0)
+      ));
+    const showingCompletedReminders = variant === 'mobile' && completedReminderSectionExpanded;
     syncCompletedRemindersMenu(completedRows.length);
+    syncReminderViewSwitch(activeRows.length, completedRows.length);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
@@ -6830,7 +6939,9 @@ export async function initReminders(sel = {}) {
     const highlightToday = true;
 
     const hasAny = items.length > 0;
-    const hasRows = activeRows.length > 0 || completedRows.length > 0;
+    const hasRows = showingCompletedReminders
+      ? completedRows.length > 0
+      : activeRows.length > 0;
     const upcomingToday = getUpcomingTodayReminders(activeRows);
     const agendaGroups = groupRemindersByDay(activeRows);
     if (variant === 'mobile') {
@@ -6848,13 +6959,17 @@ export async function initReminders(sel = {}) {
 
     if(emptyStateEl){
       if(!hasRows){
-        const description = hasAny ? 'You are all caught up for now.' : emptyInitialText;
+        const description = showingCompletedReminders
+          ? 'Finished reminders will appear here as a record of what you have done.'
+          : (hasAny ? 'You are all caught up for now.' : emptyInitialText);
         if(sharedEmptyStateMount){
           sharedEmptyStateMount(emptyStateEl, {
-            icon: hasAny ? 'sparkles' : 'bell',
-            title: hasAny ? 'All clear' : 'Create your first cue',
+            icon: showingCompletedReminders || hasAny ? 'sparkles' : 'bell',
+            title: showingCompletedReminders
+              ? 'Nothing completed yet'
+              : (hasAny ? 'All clear' : 'Create your first cue'),
             description,
-            action: hasAny
+            action: showingCompletedReminders || hasAny
               ? undefined
               : `<button id="emptyStateCreateBtn" type="button" class="${sharedEmptyStateCtaClasses}">Create reminder</button>`
           });
@@ -6946,6 +7061,7 @@ export async function initReminders(sel = {}) {
         id: reminder.id,
         title: reminderTitle,
         dueIso: reminder.due || null,
+        completedAt: reminder.completedAt || null,
         priority: reminder.priority || 'Medium',
         category: catName,
         done: Boolean(reminder.done),
@@ -7133,10 +7249,15 @@ export async function initReminders(sel = {}) {
 
         const metaRow = document.createElement('div');
         metaRow.className = 'reminder-stream-meta';
-        const dueChipText = formatReminderDueChip(reminder, todayRange);
+        const dueChipText = summary.done
+          ? formatReminderCompletedLabel(summary.completedAt || reminder.updatedAt || reminder.createdAt)
+          : formatReminderDueChip(reminder, todayRange);
         if (dueChipText) {
           const dueChip = document.createElement('span');
           dueChip.className = 'reminder-stream-due';
+          if (summary.done) {
+            dueChip.classList.add('reminder-stream-completed-date');
+          }
           const chipDueDate = summary.dueIso ? new Date(summary.dueIso) : null;
           const chipDueStart = getReminderStartOfDay(chipDueDate);
           const chipTodayStart = getReminderStartOfDay(todayRange?.start);
@@ -7257,7 +7378,7 @@ export async function initReminders(sel = {}) {
       return itemEl;
     };
 
-    if (variant === 'mobile') {
+    if (variant === 'mobile' && !showingCompletedReminders) {
       const columnItems = new Map(REMINDER_BOARD_COLUMNS.map((column) => [column.key, []]));
       const boardLabels = new Map(
         REMINDER_BOARD_COLUMNS.map((column) => [column.key, getReminderBoardLabel(column)]),
@@ -7393,7 +7514,7 @@ export async function initReminders(sel = {}) {
         otherSection.append(heading, sectionItems);
         frag.appendChild(otherSection);
       }
-    } else {
+    } else if (variant !== 'mobile') {
       activeRows.forEach((r) => {
         const catName = r.category || DEFAULT_CATEGORY;
         const itemEl = buildReminderCard(r, catName, {
@@ -7414,12 +7535,12 @@ export async function initReminders(sel = {}) {
         onToggle: () => {
           completedReminderSectionExpanded = !completedReminderSectionExpanded;
           if (variant === 'mobile' && !completedReminderSectionExpanded) {
-            const menuButton = document.getElementById('overflowMenuBtn');
-            if (menuButton instanceof HTMLElement) {
+            const activeButton = document.querySelector('[data-reminders-filter="active"]');
+            if (activeButton instanceof HTMLElement) {
               try {
-                menuButton.focus({ preventScroll: true });
+                activeButton.focus({ preventScroll: true });
               } catch {
-                menuButton.focus();
+                activeButton.focus();
               }
             }
           }
@@ -7774,9 +7895,15 @@ export async function initReminders(sel = {}) {
   scheduleEmbeddingBackfill();
 
   if (variant === 'mobile') {
-    window.setMobileRemindersFilter = (filter) => (
-      filter === 'completed' ? showCompletedReminders() : false
-    );
+    window.setMobileRemindersFilter = (filter) => {
+      if (filter === 'completed') {
+        return showCompletedReminders();
+      }
+      if (filter === 'active' || filter === 'all') {
+        return showActiveReminders();
+      }
+      return false;
+    };
   }
 
 

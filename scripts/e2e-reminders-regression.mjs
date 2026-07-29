@@ -920,13 +920,19 @@ async function main() {
     await page.waitForFunction(() => {
       const menuButton = document.getElementById('completedRemindersMenuBtn');
       const count = document.getElementById('completedRemindersMenuCount');
-      return menuButton && !menuButton.hidden && count?.textContent?.trim() === '1';
+      const activeButton = document.querySelector('[data-reminders-filter="active"]');
+      const doneButton = document.querySelector('[data-reminders-filter="completed"]');
+      const doneCount = doneButton?.querySelector('.reminder-view-switch-count');
+      return menuButton
+        && !menuButton.hidden
+        && count?.textContent?.trim() === '1'
+        && activeButton?.getAttribute('aria-pressed') === 'true'
+        && doneCount?.textContent?.trim() === '1';
     });
     if (await page.locator('.reminder-completed-section').count()) {
       throw new Error('Expected completed reminders to remain hidden from the active board.');
     }
 
-    await page.locator('#overflowMenuBtn').click();
     const doneMenuScreenshotOutput = typeof process.env.PLAYWRIGHT_DONE_MENU_SCREENSHOT_PATH === 'string'
       ? process.env.PLAYWRIGHT_DONE_MENU_SCREENSHOT_PATH.trim()
       : '';
@@ -935,7 +941,7 @@ async function main() {
       await fs.mkdir(path.dirname(doneMenuScreenshotPath), { recursive: true });
       await page.screenshot({ path: doneMenuScreenshotPath, fullPage: true });
     }
-    await page.locator('#completedRemindersMenuBtn').click();
+    await page.locator('[data-reminders-filter="completed"]').click();
     await page.locator('[data-action="clear-completed-reminders"]').waitFor({ state: 'visible' });
     const clearedDoneCount = Number(
       (await page.locator('.reminder-completed-section-count').textContent())?.trim(),

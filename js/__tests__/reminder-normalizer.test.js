@@ -53,3 +53,35 @@ test('normalizes reminders with serializable title, notes, due, and completion f
   expect(serialized.priority).toBe('Medium');
 });
 
+test('keeps a completion timestamp and backfills older completed reminders from updatedAt', () => {
+  const { normalizeReminder } = loadReminderNormalizer();
+
+  const completed = normalizeReminder({
+    id: 'registered-basketball',
+    title: 'Registered for basketball',
+    done: true,
+    createdAt: 1000,
+    updatedAt: 2000,
+    completedAt: 3000,
+  });
+  const legacyCompleted = normalizeReminder({
+    id: 'legacy-done',
+    title: 'Older completed item',
+    completed: true,
+    createdAt: 1000,
+    updatedAt: 2000,
+  });
+  const active = normalizeReminder({
+    id: 'active',
+    title: 'Next competition registration',
+    done: false,
+    createdAt: 1000,
+    updatedAt: 2000,
+    completedAt: 3000,
+  });
+
+  expect(completed.completedAt).toBe(3000);
+  expect(legacyCompleted.completedAt).toBe(2000);
+  expect(active.completedAt).toBeNull();
+});
+
