@@ -138,6 +138,48 @@ const NOTEBOOK_POLISH_CSS = `
     color: var(--text-main, #1e293b);
   }
 
+  #view-notebook .notes-overview-search-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 0.12rem 0 0.52rem;
+  }
+
+  #view-notebook .notes-overview-search-icon {
+    position: absolute;
+    left: 0.78rem;
+    z-index: 1;
+    color: color-mix(in srgb, var(--text-main, #1e293b) 48%, #7c8798 52%);
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  #view-notebook .notes-overview-search-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0.62rem 0.85rem 0.62rem 2.35rem;
+    border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 82%, transparent);
+    border-radius: 0.78rem;
+    background: color-mix(in srgb, var(--surface-elevated, #ffffff) 97%, #f8fafc 3%);
+    color: var(--text-main, #1e293b);
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.2;
+    outline: none;
+    box-shadow: none;
+  }
+
+  #view-notebook .notes-overview-search-input::placeholder {
+    color: color-mix(in srgb, var(--text-main, #1e293b) 46%, #94a3b8 54%);
+  }
+
+  #view-notebook .notes-overview-search-input:focus {
+    border-color: color-mix(in srgb, var(--accent-color, #0f766e) 62%, #cbd5e1 38%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color, #0f766e) 12%, transparent);
+  }
+
   #view-notebook[data-notes-mode="notebooks"] #notesOverviewPanel {
     display: none;
   }
@@ -165,7 +207,9 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewList {
+    display: grid;
     gap: 0.36rem;
+    margin-top: 0 !important;
   }
 
   #view-notebook #notesOverviewList[hidden] {
@@ -173,17 +217,20 @@ const NOTEBOOK_POLISH_CSS = `
   }
 
   #view-notebook #notesOverviewList .notes-overview-item {
-    gap: 0.2rem;
-    padding: 0.62rem 0.72rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    align-items: center;
+    gap: 0.18rem;
+    padding: 0.12rem;
     margin: 0;
-    border-radius: 0.5rem;
+    border-radius: 0.72rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
     background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
     box-shadow: none;
   }
 
   #view-notebook #notesOverviewList .notes-overview-item:hover,
-  #view-notebook #notesOverviewList .notes-overview-item:focus-visible {
+  #view-notebook #notesOverviewList .notes-overview-item:focus-within {
     background: color-mix(in srgb, #ffffff 91%, #f8fafc 9%);
     border-color: color-mix(in srgb, var(--accent-color, #1e293b) 18%, transparent);
     outline: none;
@@ -197,6 +244,31 @@ const NOTEBOOK_POLISH_CSS = `
     box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent-color, #1e293b) 72%, transparent);
   }
 
+  #view-notebook #notesOverviewList .notes-overview-item-main {
+    display: grid;
+    min-width: 0;
+    gap: 0.28rem;
+    padding: 0.58rem 0.5rem 0.58rem 0.62rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+  }
+
+  #view-notebook #notesOverviewList .notes-overview-item-main:focus-visible,
+  #view-notebook #notesOverviewList .notes-overview-item-actions:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 65%, transparent);
+    outline-offset: 1px;
+  }
+
+  #view-notebook #notesOverviewList .notes-overview-item-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
   #view-notebook #notesOverviewList .notes-overview-item-title {
     display: -webkit-box;
     overflow: hidden;
@@ -208,12 +280,53 @@ const NOTEBOOK_POLISH_CSS = `
     letter-spacing: 0;
   }
 
+  #view-notebook #notesOverviewList .notes-overview-pinned-label {
+    flex: 0 0 auto;
+    margin-top: 0.08rem;
+    padding: 0.15rem 0.38rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, #ffffff 90%);
+    color: color-mix(in srgb, var(--accent-color, #0f766e) 82%, #0f172a 18%);
+    font-size: 0.62rem;
+    line-height: 1;
+    font-weight: 700;
+  }
+
   #view-notebook #notesOverviewList .notes-overview-item-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 0.28rem;
     margin-top: 0;
     font-size: 0.72rem;
     line-height: 1.2;
     color: color-mix(in srgb, var(--text-main, #1e293b) 72%, #7c8798 28%);
+  }
+
+  #view-notebook #notesOverviewList .notes-overview-item-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: color-mix(in srgb, var(--text-main, #1e293b) 62%, #7c8798 38%);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  #view-notebook #notesOverviewList .notes-overview-item-actions:hover,
+  #view-notebook #notesOverviewList .notes-overview-item-actions:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, #ffffff 90%);
+    color: var(--text-main, #1e293b);
+  }
+
+  body[data-active-view="notebooks"] #note-options-sheet .note-action-create-lesson-cue,
+  body[data-active-view="notebooks"] #note-options-sheet .note-action-set-active-lesson {
+    display: none !important;
   }
 
   #view-notebook [data-active-lesson-card] {
@@ -2312,7 +2425,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     setActiveFolderSheetOpener(triggerEl || document.activeElement);
 
     const folders = getFolderOptions();
-    const unsortedFolder = { id: 'unsorted', name: getFolderNameById('unsorted') || 'Unsorted' };
+    const storedUnsortedFolder = (Array.isArray(folders) ? folders : [])
+      .find((folder) => folder && String(folder.id) === 'unsorted');
+    const unsortedFolder = {
+      id: 'unsorted',
+      name: storedUnsortedFolder?.name || 'Unsorted',
+    };
     const activeNote = noteId ? getAllNotes().find((n) => n.id === noteId) || null : null;
     const activeFolderId =
       initialFolderId ||

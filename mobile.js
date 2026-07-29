@@ -2011,6 +2011,24 @@ const initMobileNotes = () => {
   const noteFolderSheetClose = noteFolderSheet?.querySelector('.note-folder-sheet-close');
   const ACTIVE_NOTE_SHADOW_CLASS = 'shadow-[0_0_0_3px_var(--accent-color)]';
 
+  // These controls were authored inside the retired saved-notes overlay. The current
+  // Saved Notes overview keeps that overlay hidden, so fixed sheets and dialogs must be
+  // hosted by the document body to remain visible and usable.
+  [
+    noteFolderSheet,
+    noteFolderSheetBackdrop,
+    document.getElementById('moveFolderSheet'),
+    document.getElementById('note-options-overlay'),
+    document.getElementById('note-options-sheet'),
+    document.getElementById('newFolderModal'),
+    document.getElementById('renameFolderModal'),
+    document.getElementById('deleteFolderModal'),
+  ].forEach((element) => {
+    if (element instanceof HTMLElement && element.parentElement !== document.body) {
+      document.body.appendChild(element);
+    }
+  });
+
   const createScratchNotesEditor = () => {
     if (!scratchNotesEditorElement) {
       return null;
@@ -2867,7 +2885,7 @@ const initMobileNotes = () => {
       const copy = document.createElement('p');
       copy.className = 'notes-overview-empty-copy';
       copy.textContent = hasActiveFilter
-        ? 'Try a different search or filter.'
+        ? 'Try a different search.'
         : 'Your notes will appear here as soon as you start writing.';
       empty.appendChild(copy);
 
@@ -2888,22 +2906,29 @@ const initMobileNotes = () => {
     }
 
     items.slice(0, 30).forEach((note) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'notes-overview-item';
-      button.dataset.noteId = note.id;
+      const item = document.createElement('article');
+      item.className = 'notes-overview-item';
+      item.dataset.noteId = note.id;
       const folder = getFolderNameById(note?.folderId || 'unsorted') || 'Unsorted';
-      const timestamp = formatNoteTimestamp(note?.createdAt || note?.updatedAt);
+      const timestamp = formatNoteTimestamp(note?.updatedAt || note?.createdAt);
       const safeTitle = note?.title || 'Untitled note';
-      button.innerHTML = `
-        <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
+
+      const openButton = document.createElement('button');
+      openButton.type = 'button';
+      openButton.className = 'notes-overview-item-main';
+      openButton.dataset.noteId = note.id;
+      openButton.innerHTML = `
+        <div class="notes-overview-item-title-row">
+          <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
+          ${note?.pinned ? '<span class="notes-overview-pinned-label">Pinned</span>' : ''}
+        </div>
         <div class="notes-overview-item-meta">
           <span>${escapeHtml(folder)}</span>
           <span class="notes-overview-item-meta-dot" aria-hidden="true">\u2022</span>
           <span>${timestamp}</span>
         </div>
       `;
-      button.addEventListener('click', () => {
+      openButton.addEventListener('click', () => {
         setEditorValues(note);
         updateListSelection();
         applyNotesMode('notebooks');
@@ -2912,7 +2937,24 @@ const initMobileNotes = () => {
           notebooksBtn.click();
         }
       });
-      notesOverviewList.appendChild(button);
+
+      const actionsButton = document.createElement('button');
+      actionsButton.type = 'button';
+      actionsButton.className = 'notes-overview-item-actions note-options-button';
+      actionsButton.dataset.role = 'note-menu';
+      actionsButton.dataset.noteId = note.id;
+      actionsButton.setAttribute('aria-label', `Actions for ${safeTitle}`);
+      actionsButton.setAttribute('aria-haspopup', 'menu');
+      actionsButton.textContent = '\u22ef';
+      actionsButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openNoteOptionsMenu(note.id, actionsButton);
+      });
+
+      item.appendChild(openButton);
+      item.appendChild(actionsButton);
+      notesOverviewList.appendChild(item);
     });
     updateListSelection();
   };

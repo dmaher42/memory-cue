@@ -4170,10 +4170,14 @@ section[data-route="dashboard"] .dashboard-shortcuts {
 .move-to-folder-sheet .sheet-backdrop {
   position: absolute;
   inset: 0;
+  display: block;
+  padding: 0;
   background: rgba(0, 0, 0, 0.4);
+  z-index: 0;
 }
 
 .move-to-folder-sheet .sheet-body {
+  position: relative;
   background: var(--surface, var(--surface-elevated, #f9f9fb));
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
@@ -4183,7 +4187,7 @@ section[data-route="dashboard"] .dashboard-shortcuts {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 10;
+  z-index: 1;
   gap: 8px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;

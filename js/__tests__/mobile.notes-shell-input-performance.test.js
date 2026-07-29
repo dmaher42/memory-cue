@@ -235,4 +235,8 @@ test('installs the full-page Notes writing canvas styles', () => {
   expect(style.textContent).toContain('border-radius: 0 !important');
   expect(style.textContent).toContain('.scratch-notes-header-block');
   expect(style.textContent).toContain('display: none !important');
+  expect(style.textContent).toContain('.notes-overview-search-input');
+  expect(style.textContent).toContain('.notes-overview-item-actions');
+  expect(style.textContent).toContain('.note-action-create-lesson-cue');
+  expect(style.textContent).toContain('.note-action-set-active-lesson');
 });
