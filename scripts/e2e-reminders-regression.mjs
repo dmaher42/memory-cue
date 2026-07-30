@@ -920,13 +920,16 @@ async function main() {
     await page.waitForFunction(() => {
       const menuButton = document.getElementById('completedRemindersMenuBtn');
       const count = document.getElementById('completedRemindersMenuCount');
-      const activeButton = document.querySelector('[data-reminders-filter="active"]');
-      const doneButton = document.querySelector('[data-reminders-filter="completed"]');
-      const doneCount = doneButton?.querySelector('.reminder-view-switch-count');
+      const headerTitle = document.querySelector('#reminders-slim-header .header-title');
+      const viewToggle = document.getElementById('remindersHeaderToggle');
+      const viewToggleLabel = document.getElementById('remindersHeaderToggleLabel');
+      const doneCount = document.getElementById('remindersHeaderToggleCount');
       return menuButton
         && !menuButton.hidden
         && count?.textContent?.trim() === '1'
-        && activeButton?.getAttribute('aria-pressed') === 'true'
+        && headerTitle?.textContent?.trim() === 'Reminders'
+        && viewToggle?.dataset.remindersFilter === 'completed'
+        && viewToggleLabel?.textContent?.trim() === 'Done'
         && doneCount?.textContent?.trim() === '1';
     });
     if (await page.locator('.reminder-completed-section').count()) {
@@ -941,8 +944,16 @@ async function main() {
       await fs.mkdir(path.dirname(doneMenuScreenshotPath), { recursive: true });
       await page.screenshot({ path: doneMenuScreenshotPath, fullPage: true });
     }
-    await page.locator('[data-reminders-filter="completed"]').click();
+    await page.locator('#remindersHeaderToggle').click();
     await page.locator('[data-action="clear-completed-reminders"]').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+      const headerTitle = document.querySelector('#reminders-slim-header .header-title');
+      const viewToggle = document.getElementById('remindersHeaderToggle');
+      const viewToggleLabel = document.getElementById('remindersHeaderToggleLabel');
+      return headerTitle?.textContent?.trim() === 'Done reminders'
+        && viewToggle?.dataset.remindersFilter === 'active'
+        && viewToggleLabel?.textContent?.trim() === 'Back';
+    });
     const clearedDoneCount = Number(
       (await page.locator('.reminder-completed-section-count').textContent())?.trim(),
     );

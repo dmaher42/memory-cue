@@ -2204,66 +2204,98 @@ body #view-reminders #remindersListMobile {
   gap: 0.24rem;
 }
 
-body #view-reminders .reminder-view-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.25rem;
-  margin: 0.08rem 0 0.34rem;
-  padding: 0.22rem;
-  border: 1px solid color-mix(in srgb, var(--card-border, #e2e8f0) 78%, transparent);
-  border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 82%, var(--color-secondary, #e2e8f0) 18%);
+#remindersHeaderActions {
+  display: none;
 }
 
-body #view-reminders .reminder-view-switch-button {
+body[data-active-view='reminders'] #reminders-slim-header {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+body[data-active-view='reminders'] #reminders-slim-header #overflowMenuBtn {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+body[data-active-view='reminders'] #reminders-slim-header .header-title {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  min-width: 0;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+body[data-active-view='reminders'] #remindersHeaderActions:not([hidden]) {
+  grid-column: 3;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+body[data-active-view='reminders'] #remindersHeaderToggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.42rem;
-  min-height: 2.2rem;
-  padding: 0.42rem 0.7rem;
-  border: 0;
-  border-radius: 0.72rem;
-  background: transparent;
-  color: var(--text-secondary, #64748b);
+  gap: 0.3rem;
+  width: auto;
+  min-width: 0;
+  min-height: 30px;
+  height: 30px;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid color-mix(in srgb, var(--mobile-header-button-border, rgba(30, 41, 59, 0.14)) 75%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mobile-header-button-bg, #ffffff) 96%, #f8fafc 4%);
+  color: var(--text-main, #1e293b);
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  line-height: 1;
+  font-weight: 650;
+  white-space: nowrap;
+  box-shadow: none;
   cursor: pointer;
 }
 
-body #view-reminders .reminder-view-switch-button:hover,
-body #view-reminders .reminder-view-switch-button:focus-visible {
-  background: color-mix(in srgb, var(--surface-card, #ffffff) 68%, var(--color-secondary, #e2e8f0) 32%);
+body[data-active-view='reminders'] #remindersHeaderToggle:hover,
+body[data-active-view='reminders'] #remindersHeaderToggle:focus-visible {
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, #ffffff 86%);
+  color: var(--text-main, #1e293b);
+  outline: none;
 }
 
-body #view-reminders .reminder-view-switch-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 58%, transparent);
-  outline-offset: 1px;
-}
-
-body #view-reminders .reminder-view-switch-button.is-active {
-  background: var(--surface-card, #ffffff);
-  color: var(--text-main, #0f172a);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
-}
-
-body #view-reminders .reminder-view-switch-count {
+body[data-active-view='reminders'] .reminders-header-action-count {
   display: inline-grid;
   place-items: center;
-  min-width: 1.42rem;
-  height: 1.42rem;
-  padding: 0 0.34rem;
+  min-width: 1.18rem;
+  height: 1.18rem;
+  padding: 0 0.28rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text-secondary, #64748b) 12%, transparent);
-  color: inherit;
-  font-size: 0.68rem;
+  background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, transparent);
+  color: var(--accent-color, #0f766e);
+  font-size: 0.64rem;
   line-height: 1;
 }
 
-body #view-reminders .reminder-view-switch-button.is-active .reminder-view-switch-count {
-  background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, transparent);
-  color: var(--accent-color, #0f766e);
+body[data-active-view='reminders'] .reminders-header-action-count[hidden] {
+  display: none;
+}
+
+@media (max-width: 340px) {
+  body[data-active-view='reminders'] #reminders-slim-header {
+    gap: 0.28rem;
+    padding-inline: 0.5rem;
+  }
+
+  body[data-active-view='reminders'] #remindersHeaderToggle {
+    padding-inline: 0.5rem;
+    font-size: 0.68rem;
+  }
 }
 
 body #view-reminders .reminder-stream-completed-date {

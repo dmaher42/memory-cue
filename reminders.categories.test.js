@@ -139,8 +139,17 @@ test('mobile reminders normalise uncategorised rows to General', async () => {
   expect(excursionItems).toHaveLength(1);
 });
 
-test('mobile reminders provide separate visible Active and Done lists', async () => {
+test('mobile reminders switch between active and done lists from the compact header', async () => {
   document.body.innerHTML = `
+    <header id="reminders-slim-header">
+      <h1 class="header-title">Memory Cue</h1>
+      <div id="remindersHeaderActions" hidden aria-hidden="true">
+        <button id="remindersHeaderToggle" type="button" data-reminders-filter="completed">
+          <span id="remindersHeaderToggleLabel">Done</span>
+          <span id="remindersHeaderToggleCount">0</span>
+        </button>
+      </div>
+    </header>
     <input id="title" />
     <input id="date" />
     <input id="time" />
@@ -154,6 +163,7 @@ test('mobile reminders provide separate visible Active and Done lists', async ()
     <div id="status"></div>
     <div id="syncStatus"></div>
   `;
+  document.body.dataset.activeView = 'reminders';
 
   const controller = await initReminders({
     titleSel: '#title',
@@ -182,27 +192,35 @@ test('mobile reminders provide separate visible Active and Done lists', async ()
   ]);
   controller.__testing.render();
 
-  const activeButton = document.querySelector('[data-reminders-filter="active"]');
-  const doneButton = document.querySelector('[data-reminders-filter="completed"]');
-  expect(activeButton).not.toBeNull();
-  expect(doneButton).not.toBeNull();
-  expect(activeButton.getAttribute('aria-pressed')).toBe('true');
-  expect(activeButton.querySelector('.reminder-view-switch-count').textContent).toBe('1');
-  expect(doneButton.querySelector('.reminder-view-switch-count').textContent).toBe('2');
+  const headerTitle = document.querySelector('#reminders-slim-header .header-title');
+  const viewToggle = document.getElementById('remindersHeaderToggle');
+  const viewToggleLabel = document.getElementById('remindersHeaderToggleLabel');
+  const viewToggleCount = document.getElementById('remindersHeaderToggleCount');
+  expect(document.getElementById('remindersHeaderActions').hidden).toBe(false);
+  expect(headerTitle.textContent).toBe('Reminders');
+  expect(viewToggle.dataset.remindersFilter).toBe('completed');
+  expect(viewToggleLabel.textContent).toBe('Done');
+  expect(viewToggleCount.textContent).toBe('2');
   expect(document.querySelector('[data-id="next-registration"]')).not.toBeNull();
   expect(document.querySelector('[data-id="latest-completed"]')).toBeNull();
 
-  doneButton.click();
+  viewToggle.click();
 
-  expect(doneButton.getAttribute('aria-pressed')).toBe('true');
+  expect(headerTitle.textContent).toBe('Done reminders');
+  expect(viewToggle.dataset.remindersFilter).toBe('active');
+  expect(viewToggleLabel.textContent).toBe('Back');
+  expect(viewToggleCount.hidden).toBe(true);
   expect(document.querySelector('[data-id="next-registration"]')).toBeNull();
   expect(Array.from(document.querySelectorAll('[data-reminder-item="true"]')).map((item) => item.dataset.id))
     .toEqual(['latest-completed', 'older-completed']);
   expect(document.querySelector('[data-id="latest-completed"] .reminder-stream-completed-date').textContent)
     .toBe('Completed today');
 
-  activeButton.click();
-  expect(activeButton.getAttribute('aria-pressed')).toBe('true');
+  viewToggle.click();
+  expect(headerTitle.textContent).toBe('Reminders');
+  expect(viewToggle.dataset.remindersFilter).toBe('completed');
+  expect(viewToggleLabel.textContent).toBe('Done');
+  expect(viewToggleCount.hidden).toBe(false);
   expect(document.querySelector('[data-id="next-registration"]')).not.toBeNull();
   expect(document.querySelector('[data-id="latest-completed"]')).toBeNull();
 });

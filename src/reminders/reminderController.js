@@ -1076,6 +1076,20 @@ export async function initReminders(sel = {}) {
     typeof document !== 'undefined' ? document.getElementById('completedRemindersMenuBtn') : null;
   const completedRemindersMenuCount =
     typeof document !== 'undefined' ? document.getElementById('completedRemindersMenuCount') : null;
+  const appHeader =
+    typeof document !== 'undefined' ? document.getElementById('reminders-slim-header') : null;
+  const appHeaderTitle = appHeader?.querySelector('.header-title');
+  const remindersHeaderActions =
+    typeof document !== 'undefined' ? document.getElementById('remindersHeaderActions') : null;
+  const remindersHeaderToggle =
+    typeof document !== 'undefined' ? document.getElementById('remindersHeaderToggle') : null;
+  const remindersHeaderToggleLabel =
+    typeof document !== 'undefined' ? document.getElementById('remindersHeaderToggleLabel') : null;
+  const remindersHeaderToggleCount =
+    typeof document !== 'undefined' ? document.getElementById('remindersHeaderToggleCount') : null;
+  if (appHeaderTitle instanceof HTMLElement && !appHeaderTitle.dataset.defaultTitle) {
+    appHeaderTitle.dataset.defaultTitle = appHeaderTitle.textContent?.trim() || 'Memory Cue';
+  }
 
   // Mobile reminders filter state and cache
   let mobileRemindersCache = [];
@@ -1087,76 +1101,80 @@ export async function initReminders(sel = {}) {
   let reminderSortMode = REMINDER_SORT_OPTIONS.created;
   let completedReminderSectionExpanded = false;
 
-  function ensureReminderViewSwitch() {
-    if (variant !== 'mobile' || typeof document === 'undefined' || !(listWrapper instanceof HTMLElement)) {
+  function ensureReminderHeaderToggle() {
+    if (variant !== 'mobile' || !(remindersHeaderToggle instanceof HTMLElement)) {
       return null;
     }
 
-    const existing = document.getElementById('reminderViewSwitch');
-    if (existing instanceof HTMLElement) {
-      return existing;
-    }
-
-    const listSection = listWrapper.closest('#reminderListSection') || listWrapper;
-    const host = listSection.parentElement;
-    if (!(host instanceof HTMLElement)) {
-      return null;
-    }
-
-    const viewSwitch = document.createElement('nav');
-    viewSwitch.id = 'reminderViewSwitch';
-    viewSwitch.className = 'reminder-view-switch';
-    viewSwitch.setAttribute('aria-label', 'Reminder lists');
-
-    const createButton = (filter, label) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'reminder-view-switch-button';
-      button.dataset.remindersFilter = filter;
-      button.innerHTML = `<span>${label}</span><span class="reminder-view-switch-count" aria-hidden="true">0</span>`;
-      button.addEventListener('click', () => {
-        if (filter === 'completed') {
+    if (remindersHeaderToggle.dataset.reminderViewWired !== 'true') {
+      remindersHeaderToggle.dataset.reminderViewWired = 'true';
+      remindersHeaderToggle.addEventListener('click', () => {
+        if (remindersHeaderToggle.dataset.remindersFilter === 'completed') {
           showCompletedReminders({ focusList: false });
         } else {
           showActiveReminders();
         }
       });
-      return button;
-    };
-
-    viewSwitch.append(
-      createButton('active', 'Active'),
-      createButton('completed', 'Done'),
-    );
-    host.insertBefore(viewSwitch, listSection);
-    return viewSwitch;
+    }
+    return remindersHeaderToggle;
   }
 
-  function syncReminderViewSwitch(activeCount = 0, completedCount = 0) {
-    const viewSwitch = ensureReminderViewSwitch();
-    if (!(viewSwitch instanceof HTMLElement)) {
+  function syncReminderHeader(activeCount = 0, completedCount = 0) {
+    const viewToggle = ensureReminderHeaderToggle();
+    if (!(viewToggle instanceof HTMLElement)) {
+      return;
+    }
+
+    const remindersViewIsActive = document.body?.dataset.activeView === 'reminders';
+    if (remindersHeaderActions instanceof HTMLElement) {
+      remindersHeaderActions.hidden = !remindersViewIsActive;
+      remindersHeaderActions.setAttribute('aria-hidden', remindersViewIsActive ? 'false' : 'true');
+    }
+    if (!remindersViewIsActive) {
       return;
     }
 
     const showingCompleted = completedReminderSectionExpanded;
-    const counts = {
-      active: Math.max(0, Number(activeCount) || 0),
-      completed: Math.max(0, Number(completedCount) || 0),
-    };
+    const normalizedActiveCount = Math.max(0, Number(activeCount) || 0);
+    const normalizedCompletedCount = Math.max(0, Number(completedCount) || 0);
+    const nextFilter = showingCompleted ? 'active' : 'completed';
+    const nextLabel = showingCompleted ? 'Back' : 'Done';
 
-    viewSwitch.querySelectorAll('[data-reminders-filter]').forEach((button) => {
-      if (!(button instanceof HTMLElement)) {
-        return;
-      }
-      const filter = button.dataset.remindersFilter;
-      const isSelected = filter === (showingCompleted ? 'completed' : 'active');
-      const count = counts[filter] ?? 0;
-      button.classList.toggle('is-active', isSelected);
-      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      button.setAttribute('aria-label', `${filter === 'completed' ? 'Done' : 'Active'} reminders, ${count}`);
-      const countEl = button.querySelector('.reminder-view-switch-count');
-      if (countEl) {
-        countEl.textContent = String(count);
+    if (appHeaderTitle instanceof HTMLElement) {
+      appHeaderTitle.textContent = showingCompleted ? 'Done reminders' : 'Reminders';
+    }
+    viewToggle.dataset.remindersFilter = nextFilter;
+    viewToggle.setAttribute(
+      'aria-label',
+      showingCompleted
+        ? `Back to ${normalizedActiveCount} active ${normalizedActiveCount === 1 ? 'reminder' : 'reminders'}`
+        : `View ${normalizedCompletedCount} done ${normalizedCompletedCount === 1 ? 'reminder' : 'reminders'}`,
+    );
+    if (remindersHeaderToggleLabel instanceof HTMLElement) {
+      remindersHeaderToggleLabel.textContent = nextLabel;
+    }
+    if (remindersHeaderToggleCount instanceof HTMLElement) {
+      remindersHeaderToggleCount.textContent = String(normalizedCompletedCount);
+      remindersHeaderToggleCount.hidden = showingCompleted;
+    }
+  }
+
+  function syncReminderHeaderFromItems() {
+    const activeCount = Array.isArray(items)
+      ? items.filter((item) => item?.done !== true).length
+      : 0;
+    const completedCount = Array.isArray(items)
+      ? items.filter((item) => item?.done === true).length
+      : 0;
+    syncReminderHeader(activeCount, completedCount);
+  }
+
+  if (variant === 'mobile' && typeof window !== 'undefined') {
+    window.addEventListener('memorycue:navigation:changed', () => {
+      if (typeof queueMicrotask === 'function') {
+        queueMicrotask(syncReminderHeaderFromItems);
+      } else {
+        window.setTimeout(syncReminderHeaderFromItems, 0);
       }
     });
   }
@@ -6928,7 +6946,7 @@ export async function initReminders(sel = {}) {
       ));
     const showingCompletedReminders = variant === 'mobile' && completedReminderSectionExpanded;
     syncCompletedRemindersMenu(completedRows.length);
-    syncReminderViewSwitch(activeRows.length, completedRows.length);
+    syncReminderHeader(activeRows.length, completedRows.length);
 
     if (variant === 'mobile') {
       mobileRemindersCache = rows.slice();
