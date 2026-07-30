@@ -50,11 +50,56 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Saved as reminder');
-    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
-    expect(document.querySelector('.capture-result-meta')?.textContent).toBe('Tomorrow, 8:30 am');
-    expect(document.querySelector('.capture-result-time')?.textContent).toBe('Just now');
+    expect(document.querySelector('.capture-result-status')?.textContent).toBe('✓ Reminder set');
+    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Prepare the complete lesson sequence');
+    expect(document.querySelector('.capture-result-detail')).toBeNull();
+    expect(document.querySelector('.capture-result-meta')?.textContent).toBe('Due Tomorrow, 8:30 am');
+    expect(document.querySelector('.capture-result-time')).toBeNull();
     expect(document.querySelectorAll('.capture-result-related-link')).toHaveLength(0);
+  });
+
+  test('turns a user capture and its confirmation into one compact confirmed bubble', () => {
+    const messageTimestamp = Date.now();
+    localStorage.setItem('memoryCue:offlineReminders', JSON.stringify([{
+      id: 'paired-reminder',
+      title: 'Buy milk',
+      due: 'tomorrow at 6:15 am',
+      category: 'General',
+      source: 'capture',
+      createdAt: messageTimestamp - 100,
+    }]));
+    window.__mobileMocks.getMessages = () => [
+      {
+        id: 'paired-user-message',
+        role: 'user',
+        content: 'remind me to buy milk tomorrow at 6:15 am',
+        timestamp: messageTimestamp - 200,
+      },
+      {
+        id: 'paired-assistant-message',
+        role: 'assistant',
+        content: 'Reminder created for tomorrow at 6:15 am: Buy milk.',
+        timestamp: messageTimestamp,
+      },
+    ];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const rows = document.querySelectorAll('.chat-message');
+    const confirmed = document.querySelector('.chat-message--capture-confirmed');
+    expect(rows).toHaveLength(1);
+    expect(confirmed?.classList.contains('chat-message--user')).toBe(true);
+    expect(confirmed?.querySelector('.capture-result-status')?.textContent).toBe('✓ Reminder set');
+    expect(confirmed?.querySelector('.capture-result-title')?.textContent).toBe('Buy milk');
+    expect(confirmed?.querySelector('.capture-result-meta')?.textContent)
+      .toBe('Due Tomorrow, 6:15 amGeneral');
+    expect(confirmed?.querySelectorAll('time')).toHaveLength(0);
+    expect(confirmed?.querySelector('.chat-message-text')).toBeNull();
+    expect(confirmed?.textContent).not.toContain('Open reminder');
+    expect(confirmed?.querySelector('[data-capture-action="open-reminder"]')?.tagName).toBe('BUTTON');
+    expect(confirmed?.querySelector('[data-capture-action="open-reminder"]')?.getAttribute('aria-label'))
+      .toBe('Open reminder: Buy milk');
   });
 
   test('renders a user capture as a timestamped chat message', () => {
@@ -71,6 +116,32 @@ describe('mobile capture result rendering', () => {
     expect(message?.querySelector('.chat-message-text')?.textContent)
       .toBe('Add a reminder to print the lesson scaffold');
     expect(message?.querySelector('.chat-message-time')?.textContent).toBe('Just now');
+  });
+
+  test('keeps a missing-time question separate from the user capture', () => {
+    const messageTimestamp = Date.now();
+    window.__mobileMocks.getMessages = () => [
+      {
+        role: 'user',
+        content: 'remind me to buy milk',
+        timestamp: messageTimestamp - 100,
+      },
+      {
+        role: 'assistant',
+        content: 'When should I remind you?',
+        timestamp: messageTimestamp,
+      },
+    ];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    expect(document.querySelectorAll('.chat-message')).toHaveLength(2);
+    expect(document.querySelector('.chat-message--user .chat-message-text')?.textContent)
+      .toBe('remind me to buy milk');
+    expect(document.querySelector('.chat-message--capture-clarify .capture-result-title')?.textContent)
+      .toBe('Needs a time');
+    expect(document.querySelector('.chat-message--capture-confirmed')).toBeNull();
   });
 
   test('shows the newest messages in chronological order when cloud history arrives newest first', () => {
@@ -118,8 +189,8 @@ describe('mobile capture result rendering', () => {
         '- Prior lesson notes',
       ].join('\n'),
       relatedMemories: [
-        { noteId: 'curriculum-map', label: 'Curriculum map' },
-        { noteId: 'prior-lesson-notes', label: 'Prior lesson notes' },
+        { noteId: 'curriculum-map', label: 'Curriculum map', score: 3 },
+        { noteId: 'prior-lesson-notes', label: 'Prior lesson notes', score: 2 },
       ],
       timestamp: messageTimestamp,
     }];
@@ -133,14 +204,16 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Prepare the complete lesson sequence');
+    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Prepare the complete lesson sequence');
     expect(Array.from(document.querySelectorAll('.capture-result-meta-item')).map((item) => item.textContent))
-      .toEqual(['Tomorrow, 8:30 am', 'School']);
+      .toEqual(['Due Tomorrow, 8:30 am', 'School']);
     expect(document.querySelector('.capture-result-meta')?.getAttribute('aria-label'))
-      .toBe('Reminder details: Tomorrow, 8:30 am, School');
+      .toBe('Reminder details: Due Tomorrow, 8:30 am, School');
     const related = document.querySelector('.capture-result-related');
     expect(related?.open).toBe(false);
-    expect(related?.querySelector('summary')?.textContent).toBe('Related memories (2)');
+    expect(related?.querySelector('summary')?.textContent).toBe('');
+    expect(related?.querySelector('summary')?.getAttribute('aria-label'))
+      .toBe('2 high-confidence related memories');
     expect(Array.from(related?.querySelectorAll('li') || []).map((item) => item.textContent))
       .toEqual(['Curriculum map', 'Prior lesson notes']);
     const relatedLinks = Array.from(related?.querySelectorAll('.capture-result-related-link') || []);
@@ -227,8 +300,9 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Saved to notes');
-    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Excursion permission form checklist');
+    expect(document.querySelector('.capture-result-status')?.textContent).toBe('✓ Note saved');
+    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Excursion permission form checklist');
+    expect(document.querySelector('.capture-result-detail')).toBeNull();
     expect(document.querySelector('.capture-result-meta')?.textContent).toBe('School');
     expect(document.querySelector('.capture-result-meta')?.getAttribute('aria-label')).toBe('Note details: School');
 

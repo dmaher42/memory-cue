@@ -41,6 +41,10 @@ const normalizeRelatedMemoryReferences = (memories = []) => {
     const noteTitle = typeof memory?.noteTitle === 'string' ? memory.noteTitle.trim() : '';
     const preview = typeof memory?.preview === 'string' ? memory.preview.trim() : '';
     const storedLabel = typeof memory?.label === 'string' ? memory.label.trim() : '';
+    const score = Number(memory?.score);
+    if (!Number.isFinite(score) || score < 2) {
+      return references;
+    }
     const label = storedLabel || (
       title && noteTitle && title.toLowerCase() !== noteTitle.toLowerCase()
         ? `${title} (${noteTitle})`
@@ -51,6 +55,7 @@ const normalizeRelatedMemoryReferences = (memories = []) => {
     references.push({
       noteId,
       label,
+      score,
       ...(preview ? { preview } : {}),
     });
     return references;

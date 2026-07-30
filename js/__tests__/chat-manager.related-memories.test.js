@@ -56,17 +56,20 @@ test('stores exact related-note references with the assistant message', async ()
         title: 'Curriculum map',
         noteTitle: 'Curriculum map',
         preview: 'Sequence and achievement standards.',
+        score: 3,
       },
       {
         noteId: 'lesson-notes',
         title: 'Assessment ideas',
         noteTitle: 'Prior lesson notes',
         preview: 'Exit ticket and source analysis prompts.',
+        score: 2,
       },
       {
         noteId: 'lesson-notes',
         title: 'Duplicate section',
         noteTitle: 'Prior lesson notes',
+        score: 1,
       },
     ],
   });
@@ -79,11 +82,13 @@ test('stores exact related-note references with the assistant message', async ()
     {
       noteId: 'curriculum-map',
       label: 'Curriculum map',
+      score: 3,
       preview: 'Sequence and achievement standards.',
     },
     {
       noteId: 'lesson-notes',
       label: 'Assessment ideas (Prior lesson notes)',
+      score: 2,
       preview: 'Exit ticket and source analysis prompts.',
     },
   ]);

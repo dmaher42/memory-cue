@@ -145,22 +145,16 @@ function initAssistant() {
           .map((memory) => {
             const noteId = typeof memory?.noteId === 'string' ? memory.noteId.trim() : '';
             const label = typeof memory?.label === 'string' ? memory.label.trim() : '';
-            return noteId && label ? { noteId, label } : null;
+            const score = Number(memory?.score);
+            return noteId && label && Number.isFinite(score) && score >= 2
+              ? { noteId, label, score }
+              : null;
           })
           .filter(Boolean)
           .slice(0, 3)
         : [];
 
-      if (structuredItems.length) {
-        return structuredItems;
-      }
-
-      return (Array.isArray(textItems) ? textItems : [])
-        .map((label) => (typeof label === 'string' && label.trim()
-          ? { noteId: '', label: label.trim() }
-          : null))
-        .filter(Boolean)
-        .slice(0, 3);
+      return structuredItems;
     };
 
     const toValidDate = (value) => {
@@ -350,13 +344,16 @@ function initAssistant() {
             : '';
         const dueValue = matchingReminder?.due ?? matchingReminder?.dueAt ?? matchingReminder?.dueDate;
         const category = typeof matchingReminder?.category === 'string' ? matchingReminder.category.trim() : '';
-        const metadata = [formatReminderSchedule(dueValue || reminderSchedule), category].filter(Boolean);
+        const schedule = formatReminderSchedule(dueValue || reminderSchedule);
+        const metadata = [schedule ? `Due ${schedule}` : '', category].filter(Boolean);
 
         return {
           tone: 'reminder',
           eyebrow: 'Reminder',
-          title: 'Saved as reminder',
-          detail: reminderDetail || storedTitle,
+          statusLabel: 'Reminder set',
+          title: reminderDetail || storedTitle,
+          fallbackTitle: 'Reminder',
+          detail: '',
           metadata,
           reminderId: typeof matchingReminder?.id === 'string' ? matchingReminder.id : '',
           relatedItems,
@@ -397,8 +394,10 @@ function initAssistant() {
         return {
           tone: 'note',
           eyebrow: 'Note',
-          title: 'Saved to notes',
-          detail: storedTitle,
+          statusLabel: 'Note saved',
+          title: storedTitle,
+          fallbackTitle: 'Saved note',
+          detail: '',
           metadata: notebookName ? [notebookName] : [],
           noteId: typeof matchingNote?.id === 'string' ? matchingNote.id : '',
           relatedItems,
@@ -409,8 +408,10 @@ function initAssistant() {
         return {
           tone: 'review',
           eyebrow: 'Review',
-          title: 'Saved for later review',
-          detail: 'I kept this in the inbox so it can be sorted later.',
+          statusLabel: 'Saved for review',
+          title: '',
+          fallbackTitle: 'Saved for later review',
+          detail: '',
           relatedItems,
         };
       }
@@ -434,35 +435,72 @@ function initAssistant() {
         return content;
       }
 
-      if (model.tone === 'reminder') return 'Saved as reminder.';
-      if (model.tone === 'note') return 'Saved to notes.';
-      if (model.tone === 'review') return 'Saved for later review.';
+      if (model.tone === 'reminder' || model.tone === 'note' || model.tone === 'review') return '';
       if (model.tone === 'clarify') return 'Needs a time.';
       if (model.tone === 'undone') return `${model.eyebrow} removed.`;
       return model.title;
     };
 
-    const renderCaptureResultMessage = (row, model, messageTimestamp = null, messageId = '') => {
+    const renderCaptureResultMessage = (
+      row,
+      model,
+      messageTimestamp = null,
+      messageId = '',
+      confirmedContent = '',
+    ) => {
       row.classList.add('chat-message--capture-result', `chat-message--capture-${model.tone}`);
+      if (model.statusLabel) {
+        row.classList.add('chat-message--capture-confirmed');
+      }
 
-      const eyebrow = document.createElement('span');
-      eyebrow.className = 'capture-result-eyebrow';
-      eyebrow.textContent = model.eyebrow;
+      const capturedItemType = model.reminderId ? 'reminder' : model.noteId ? 'note' : '';
+      const capturedItemId = model.reminderId || model.noteId || '';
+      const resolvedTitle = [model.title, confirmedContent, model.fallbackTitle, model.detail]
+        .find((value) => typeof value === 'string' && value.trim())
+        ?.trim() || 'Captured item';
+      const contentSurface = document.createElement(capturedItemType && capturedItemId ? 'button' : 'div');
+      contentSurface.className = capturedItemType && capturedItemId
+        ? 'capture-result-content capture-result-card-action'
+        : 'capture-result-content';
+
+      if (capturedItemType && capturedItemId) {
+        contentSurface.type = 'button';
+        contentSurface.dataset.captureAction = `open-${capturedItemType}`;
+        contentSurface.setAttribute('aria-label', `Open ${capturedItemType}: ${resolvedTitle}`);
+        contentSurface.addEventListener('click', () => {
+          const savedNotes = capturedItemType === 'note' ? loadAllNotes() : [];
+          const opened = capturedItemType === 'reminder'
+            ? reminderControllerApi?.openReminderById?.(capturedItemId)
+            : Array.isArray(savedNotes) && savedNotes.some((note) => note?.id === capturedItemId);
+          if (opened && capturedItemType === 'note') {
+            document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+              detail: { noteId: capturedItemId },
+            }));
+          }
+          if (!opened) {
+            setThinkingBarStatus(`${capturedItemType === 'reminder' ? 'Reminder' : 'Note'} is no longer available.`);
+          }
+        });
+      }
+
+      const status = document.createElement('span');
+      status.className = model.statusLabel ? 'capture-result-status' : 'capture-result-eyebrow';
+      status.textContent = model.statusLabel ? `\u2713 ${model.statusLabel}` : model.eyebrow;
 
       const title = document.createElement('strong');
       title.className = 'capture-result-title';
-      title.textContent = model.title;
+      title.textContent = resolvedTitle;
 
-      row.append(eyebrow, title);
+      contentSurface.append(status, title);
 
-      if (typeof model.detail === 'string' && model.detail.trim() && model.detail.trim() !== model.title) {
+      if (typeof model.detail === 'string' && model.detail.trim() && model.detail.trim() !== resolvedTitle) {
         const detail = document.createElement('span');
         detail.className = 'capture-result-detail';
         detail.textContent = model.detail.trim();
-        row.appendChild(detail);
+        contentSurface.appendChild(detail);
       }
 
-      const timestampLabel = formatCaptureResultTimestamp(messageTimestamp);
+      const timestampLabel = model.statusLabel ? '' : formatCaptureResultTimestamp(messageTimestamp);
       if ((Array.isArray(model.metadata) && model.metadata.length) || timestampLabel) {
         const context = document.createElement('div');
         context.className = 'capture-result-context';
@@ -490,36 +528,15 @@ function initAssistant() {
           context.appendChild(timestamp);
         }
 
-        row.appendChild(context);
+        contentSurface.appendChild(context);
       }
 
-      const capturedItemType = model.reminderId ? 'reminder' : model.noteId ? 'note' : '';
-      const capturedItemId = model.reminderId || model.noteId || '';
+      row.appendChild(contentSurface);
+
+      const footer = document.createElement('div');
+      footer.className = 'capture-result-footer';
+
       if (capturedItemType && capturedItemId) {
-        const actions = document.createElement('div');
-        actions.className = 'capture-result-actions';
-
-        const openButton = document.createElement('button');
-        openButton.type = 'button';
-        openButton.className = 'capture-result-action capture-result-action--open';
-        openButton.dataset.captureAction = `open-${capturedItemType}`;
-        openButton.textContent = `Open ${capturedItemType}`;
-        openButton.addEventListener('click', () => {
-          const savedNotes = capturedItemType === 'note' ? loadAllNotes() : [];
-          const opened = capturedItemType === 'reminder'
-            ? reminderControllerApi?.openReminderById?.(capturedItemId)
-            : Array.isArray(savedNotes) && savedNotes.some((note) => note?.id === capturedItemId);
-          if (opened && capturedItemType === 'note') {
-            document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
-              detail: { noteId: capturedItemId },
-            }));
-          }
-          if (!opened) {
-            setThinkingBarStatus(`${capturedItemType === 'reminder' ? 'Reminder' : 'Note'} is no longer available.`);
-          }
-        });
-        actions.appendChild(openButton);
-
         const messageDate = toValidDate(messageTimestamp);
         const undoRemainingMs = messageDate
           ? CAPTURE_UNDO_WINDOW_MS - Math.max(0, Date.now() - messageDate.getTime())
@@ -532,6 +549,9 @@ function initAssistant() {
           undoButton.textContent = 'Undo';
           const undoExpiryTimer = window.setTimeout(() => {
             undoButton.remove();
+            if (!footer.childElementCount) {
+              footer.remove();
+            }
           }, undoRemainingMs);
           undoButton.addEventListener('click', async () => {
             window.clearTimeout(undoExpiryTimer);
@@ -547,20 +567,15 @@ function initAssistant() {
               return;
             }
 
-            const capturedTitle = typeof model.detail === 'string' && model.detail.trim()
-              ? model.detail.trim()
-              : (capturedItemType === 'reminder' ? 'Reminder' : 'Note');
             const itemLabel = capturedItemType === 'reminder' ? 'Reminder' : 'Note';
             updateMessage(messageId, {
-              content: `${itemLabel} creation undone: ${capturedTitle}.`,
+              content: `${itemLabel} creation undone: ${resolvedTitle}.`,
               quickActions: [],
             });
             setThinkingBarStatus(`${itemLabel} removed.`);
           });
-          actions.appendChild(undoButton);
+          footer.appendChild(undoButton);
         }
-
-        row.appendChild(actions);
       }
 
       if (Array.isArray(model.relatedItems) && model.relatedItems.length) {
@@ -569,7 +584,26 @@ function initAssistant() {
 
         const relatedSummary = document.createElement('summary');
         relatedSummary.className = 'capture-result-related-summary';
-        relatedSummary.textContent = `Related memories (${model.relatedItems.length})`;
+        relatedSummary.setAttribute(
+          'aria-label',
+          `${model.relatedItems.length} high-confidence related ${model.relatedItems.length === 1 ? 'memory' : 'memories'}`,
+        );
+        relatedSummary.title = 'Related memories';
+        const relatedIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        relatedIcon.classList.add('capture-result-related-icon');
+        relatedIcon.setAttribute('viewBox', '0 0 24 24');
+        relatedIcon.setAttribute('aria-hidden', 'true');
+        relatedIcon.setAttribute('fill', 'none');
+        relatedIcon.setAttribute('stroke', 'currentColor');
+        relatedIcon.setAttribute('stroke-width', '2');
+        relatedIcon.setAttribute('stroke-linecap', 'round');
+        relatedIcon.setAttribute('stroke-linejoin', 'round');
+        const firstLink = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        firstLink.setAttribute('d', 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71');
+        const secondLink = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        secondLink.setAttribute('d', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71');
+        relatedIcon.append(firstLink, secondLink);
+        relatedSummary.appendChild(relatedIcon);
         related.appendChild(relatedSummary);
 
         const relatedList = document.createElement('ul');
@@ -585,29 +619,25 @@ function initAssistant() {
             return;
           }
 
-          if (noteId) {
-            const link = document.createElement('button');
-            link.type = 'button';
-            link.className = 'capture-result-related-link';
-            link.dataset.relatedNoteId = noteId;
-            link.textContent = label;
-            link.setAttribute('aria-label', `Open related note: ${label}`);
-            link.addEventListener('click', () => {
-              const notes = loadAllNotes();
-              const noteExists = Array.isArray(notes) && notes.some((note) => note?.id === noteId);
-              if (!noteExists) {
-                setThinkingBarStatus('Related note is no longer available.');
-                return;
-              }
+          const link = document.createElement('button');
+          link.type = 'button';
+          link.className = 'capture-result-related-link';
+          link.dataset.relatedNoteId = noteId;
+          link.textContent = label;
+          link.setAttribute('aria-label', `Open related note: ${label}`);
+          link.addEventListener('click', () => {
+            const notes = loadAllNotes();
+            const noteExists = Array.isArray(notes) && notes.some((note) => note?.id === noteId);
+            if (!noteExists) {
+              setThinkingBarStatus('Related note is no longer available.');
+              return;
+            }
 
-              document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
-                detail: { noteId },
-              }));
-            });
-            item.appendChild(link);
-          } else {
-            item.textContent = label;
-          }
+            document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+              detail: { noteId },
+            }));
+          });
+          item.appendChild(link);
           relatedList.appendChild(item);
         });
 
@@ -617,8 +647,11 @@ function initAssistant() {
             revealLatestCaptureMessage();
           }
         });
+        footer.appendChild(related);
+      }
 
-        row.appendChild(related);
+      if (footer.childElementCount) {
+        row.appendChild(footer);
       }
     };
 
@@ -629,6 +662,7 @@ function initAssistant() {
       messageTimestamp = null,
       messageId = '',
       relatedMemories = [],
+      options = {},
     ) => {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
@@ -637,9 +671,9 @@ function initAssistant() {
       const row = document.createElement('div');
       row.className = `chat-message ${role === 'user' ? 'chat-message--user' : 'chat-message--assistant'}`;
       const normalizedContent = typeof content === 'string' ? content.trim().toLowerCase() : '';
-      const captureResultModel = role !== 'user'
+      const captureResultModel = options.captureResultModel || (role !== 'user'
         ? getCaptureResultModel(content, messageTimestamp, relatedMemories)
-        : null;
+        : null);
       if (
         role !== 'user' &&
         (normalizedContent === 'reminder created.' || normalizedContent === 'reminder created')
@@ -647,7 +681,13 @@ function initAssistant() {
         row.classList.add('chat-message--status');
       }
       if (captureResultModel) {
-        renderCaptureResultMessage(row, captureResultModel, messageTimestamp, messageId);
+        renderCaptureResultMessage(
+          row,
+          captureResultModel,
+          messageTimestamp,
+          messageId,
+          options.confirmedContent,
+        );
       } else {
         const messageText = document.createElement('span');
         messageText.className = 'chat-message-text';
@@ -856,11 +896,38 @@ function initAssistant() {
         chatConversationContainer.appendChild(trimmedNotice);
       }
 
-      orderedMessages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES).forEach((message) => {
+      const visibleMessages = orderedMessages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES);
+      const mergeableCaptureTones = new Set(['reminder', 'note', 'review']);
+      for (let index = 0; index < visibleMessages.length; index += 1) {
+        const message = visibleMessages[index];
         const content = typeof message?.content === 'string' ? message.content.trim() : '';
         if (!content) {
-          return;
+          continue;
         }
+
+        const nextMessage = visibleMessages[index + 1];
+        const nextContent = typeof nextMessage?.content === 'string' ? nextMessage.content.trim() : '';
+        if (message?.role === 'user' && nextMessage?.role !== 'user' && nextContent) {
+          const captureResultModel = getCaptureResultModel(
+            nextContent,
+            nextMessage?.timestamp,
+            nextMessage?.relatedMemories,
+          );
+          if (captureResultModel && mergeableCaptureTones.has(captureResultModel.tone)) {
+            appendConversationMessage(
+              'user',
+              content,
+              [],
+              nextMessage?.timestamp,
+              nextMessage?.id,
+              nextMessage?.relatedMemories,
+              { captureResultModel, confirmedContent: content },
+            );
+            index += 1;
+            continue;
+          }
+        }
+
         appendConversationMessage(
           message?.role === 'user' ? 'user' : 'assistant',
           content,
@@ -869,7 +936,7 @@ function initAssistant() {
           message?.id,
           message?.relatedMemories,
         );
-      });
+      }
     };
 
     const setThinkingBarStatus = (label) => {
