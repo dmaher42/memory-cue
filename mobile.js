@@ -345,7 +345,8 @@ function initAssistant() {
         const dueValue = matchingReminder?.due ?? matchingReminder?.dueAt ?? matchingReminder?.dueDate;
         const category = typeof matchingReminder?.category === 'string' ? matchingReminder.category.trim() : '';
         const schedule = formatReminderSchedule(dueValue || reminderSchedule);
-        const metadata = [schedule ? `Due ${schedule}` : '', category].filter(Boolean);
+        const visibleCategory = category.toLowerCase() === 'general' ? '' : category;
+        const metadata = [schedule ? `Due ${schedule}` : '', visibleCategory].filter(Boolean);
 
         return {
           tone: 'reminder',

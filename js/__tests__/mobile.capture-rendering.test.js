@@ -93,7 +93,8 @@ describe('mobile capture result rendering', () => {
     expect(confirmed?.querySelector('.capture-result-status')?.textContent).toBe('✓ Reminder set');
     expect(confirmed?.querySelector('.capture-result-title')?.textContent).toBe('Buy milk');
     expect(confirmed?.querySelector('.capture-result-meta')?.textContent)
-      .toBe('Due Tomorrow, 6:15 amGeneral');
+      .toBe('Due Tomorrow, 6:15 am');
+    expect(confirmed?.textContent).not.toContain('General');
     expect(confirmed?.querySelectorAll('time')).toHaveLength(0);
     expect(confirmed?.querySelector('.chat-message-text')).toBeNull();
     expect(confirmed?.textContent).not.toContain('Open reminder');
