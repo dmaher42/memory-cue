@@ -62,8 +62,91 @@ const normalizeRelatedMemoryReferences = (memories = []) => {
   }, []);
 };
 
-const createMessage = (role, content, quickActions = [], relatedMemories = []) => {
+const QUERY_RESULT_TYPES = new Set(['memory_results', 'reminder_results', 'mixed_results']);
+
+const normalizeQueryResultItem = (item, typeHint = '') => {
+  const source = item && typeof item === 'object' ? item : {};
+  const rawType = String(typeHint || source.type || source.source || '').trim().toLowerCase();
+  const type = rawType === 'reminder'
+    ? 'reminder'
+    : rawType === 'note'
+      ? 'note'
+      : '';
+  const id = typeof source.id === 'string' ? source.id.trim() : '';
+  const title = [source.title, source.noteTitle, source.text]
+    .find((value) => typeof value === 'string' && value.trim())
+    ?.trim() || '';
+  if (!type || !id || !title) {
+    return null;
+  }
+
+  const due = type === 'reminder'
+    ? [source.due, source.dueAt, source.dueDate]
+      .find((value) => typeof value === 'string' && value.trim())
+      ?.trim() || ''
+    : '';
+
+  return {
+    id,
+    type,
+    title,
+    ...(due ? { due } : {}),
+  };
+};
+
+const normalizeQueryResultItems = (data) => {
+  if (!data || typeof data !== 'object' || !QUERY_RESULT_TYPES.has(data.type)) {
+    return [];
+  }
+
+  const candidates = data.type === 'mixed_results'
+    ? [
+      ...(Array.isArray(data.memories) ? data.memories.map((item) => ({ item, hint: '' })) : []),
+      ...(Array.isArray(data.reminders) ? data.reminders.map((item) => ({ item, hint: 'reminder' })) : []),
+    ]
+    : (Array.isArray(data.items)
+      ? data.items.map((item) => ({ item, hint: data.type === 'reminder_results' ? 'reminder' : '' }))
+      : []);
+
+  const seen = new Set();
+  return candidates.reduce((items, candidate) => {
+    if (items.length >= 8) {
+      return items;
+    }
+    const normalized = normalizeQueryResultItem(candidate.item, candidate.hint);
+    const key = normalized ? `${normalized.type}:${normalized.id}` : '';
+    if (!normalized || seen.has(key)) {
+      return items;
+    }
+    seen.add(key);
+    items.push(normalized);
+    return items;
+  }, []);
+};
+
+const buildQueryResultSummary = (items) => {
+  const results = Array.isArray(items) ? items : [];
+  const noteCount = results.filter((item) => item.type === 'note').length;
+  const reminderCount = results.filter((item) => item.type === 'reminder').length;
+  if (!noteCount && !reminderCount) {
+    return "I couldn't find any matching notes or reminders.";
+  }
+
+  const parts = [];
+  if (noteCount) {
+    parts.push(`${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`);
+  }
+  if (reminderCount) {
+    parts.push(`${reminderCount} ${reminderCount === 1 ? 'reminder' : 'reminders'}`);
+  }
+  return `I found ${parts.join(' and ')}.`;
+};
+
+const createMessage = (role, content, quickActions = [], relatedMemories = [], resultItems = []) => {
   const relatedMemoryReferences = normalizeRelatedMemoryReferences(relatedMemories);
+  const queryResultItems = Array.isArray(resultItems)
+    ? resultItems.filter((item) => item && typeof item === 'object')
+    : [];
   return {
     id: generateMessageId(),
     role,
@@ -71,18 +154,24 @@ const createMessage = (role, content, quickActions = [], relatedMemories = []) =
     quickActions,
     timestamp: Date.now(),
     ...(relatedMemoryReferences.length ? { relatedMemories: relatedMemoryReferences } : {}),
+    ...(queryResultItems.length ? { resultItems: queryResultItems } : {}),
   };
 };
 
 const normalizeRouteResult = (result) => {
   if (typeof result === 'string') {
-    return { message: result, quickActions: [], status: null };
+    return { message: result, quickActions: [], status: null, resultItems: [], isQueryResult: false };
   }
 
+  const isQueryResult = QUERY_RESULT_TYPES.has(result?.data?.type);
+  const resultItems = normalizeQueryResultItems(result?.data);
+  const suppliedMessage = typeof result?.message === 'string' ? result.message.trim() : '';
   return {
-    message: typeof result?.message === 'string' ? result.message : '',
+    message: suppliedMessage || (isQueryResult ? buildQueryResultSummary(resultItems) : ''),
     quickActions: Array.isArray(result?.quickActions) ? result.quickActions : [],
     status: result?.status && typeof result.status === 'object' ? result.status : null,
+    resultItems,
+    isQueryResult,
   };
 };
 
@@ -401,19 +490,27 @@ export const handleChatMessage = async (text, dependencies = {}) => {
   const response = normalizeRouteResult(routeResult);
   
   // Keep note IDs beside the readable fallback text so the UI can open exact matches.
-  try {
-    const related = findRelatedMemories(message);
-    const relatedMemories = normalizeRelatedMemoryReferences(related);
-    if (relatedMemories.length > 0) {
-      response.relatedMemories = relatedMemories;
-      const relatedList = relatedMemories.map((item) => `- ${item.label}`).join('\n');
-      response.message += `\n\nRelated from your memory:\n${relatedList}`;
+  if (!response.isQueryResult) {
+    try {
+      const related = findRelatedMemories(message);
+      const relatedMemories = normalizeRelatedMemoryReferences(related);
+      if (relatedMemories.length > 0) {
+        response.relatedMemories = relatedMemories;
+        const relatedList = relatedMemories.map((item) => `- ${item.label}`).join('\n');
+        response.message += `\n\nRelated from your memory:\n${relatedList}`;
+      }
+    } catch (error) {
+      console.warn('[chat-manager] Failed to fetch related memories', error);
     }
-  } catch (error) {
-    console.warn('[chat-manager] Failed to fetch related memories', error);
   }
 
-  addMessage(createMessage('assistant', response.message, response.quickActions, response.relatedMemories));
+  addMessage(createMessage(
+    'assistant',
+    response.message,
+    response.quickActions,
+    response.relatedMemories,
+    response.resultItems,
+  ));
   return response;
 };
 

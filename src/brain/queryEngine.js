@@ -7,6 +7,72 @@ import { semanticSearch } from './semanticSearchService.js';
 
 const normalizeText = (value) => (typeof value === 'string' ? value.trim() : '');
 
+const QUERY_STOP_WORDS = new Set([
+  'a',
+  'about',
+  'all',
+  'an',
+  'and',
+  'any',
+  'are',
+  'did',
+  'do',
+  'find',
+  'for',
+  'have',
+  'i',
+  'in',
+  'is',
+  'list',
+  'me',
+  'my',
+  'note',
+  'notes',
+  'of',
+  'on',
+  'reminder',
+  'reminders',
+  'saved',
+  'show',
+  'the',
+  'to',
+  'today',
+  'tomorrow',
+  'what',
+  'when',
+  'where',
+  'which',
+  'with',
+  'write',
+  'wrote',
+]);
+
+const extractQueryTerms = (query) =>
+  normalizeText(query)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 1 && !QUERY_STOP_WORDS.has(term));
+
+const rankEntriesByQuery = (entries, query, getSearchText) => {
+  const source = Array.isArray(entries) ? entries : [];
+  const terms = extractQueryTerms(query);
+  if (!terms.length) {
+    return source;
+  }
+
+  return source
+    .map((entry, index) => {
+      const haystack = normalizeText(getSearchText(entry)).toLowerCase();
+      const score = terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
+      return { entry, index, score };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ entry }) => entry);
+};
+
 const normalizeReminderDate = (reminder) => {
   const dueAt = normalizeText(reminder?.dueAt);
   if (dueAt) {
@@ -16,11 +82,8 @@ const normalizeReminderDate = (reminder) => {
   return due;
 };
 
-const normalizeEmbedding = (value) => (
-  Array.isArray(value)
-    ? value.map((item) => Number(item)).filter((item) => Number.isFinite(item))
-    : []
-);
+const normalizeEmbedding = (value) =>
+  Array.isArray(value) ? value.map((item) => Number(item)).filter((item) => Number.isFinite(item)) : [];
 
 const cosineSimilarity = (left, right) => {
   const a = normalizeEmbedding(left);
@@ -49,6 +112,9 @@ const cosineSimilarity = (left, right) => {
 
 export function detectIntent(query) {
   const text = normalizeText(query);
+  const q = text.toLowerCase();
+  const hasReminderKeywords = /\b(remind|reminder|reminders|today|tomorrow|due)\b/.test(q);
+  const hasMemoryKeywords = /\b(note|notes|wrote|write|ideas?|journal)\b/.test(q);
   const routedIntent = intentRouter(text, {
     source: 'query_engine',
     entryPoint: 'queryEngine.detectIntent',
@@ -60,16 +126,18 @@ export function detectIntent(query) {
   }
 
   if (normalizedType === 'query') {
+    if (hasReminderKeywords && hasMemoryKeywords) {
+      return { type: 'mixed_query', source: 'intent_router' };
+    }
+    if (hasReminderKeywords) {
+      return { type: 'reminder_query', source: 'intent_router' };
+    }
     return { type: 'memory_query', source: 'intent_router' };
   }
 
   if (normalizedType !== 'unknown') {
     return { type: 'mixed_query', source: 'intent_router' };
   }
-
-  const q = text.toLowerCase();
-  const hasReminderKeywords = q.includes('remind') || q.includes('today') || q.includes('due') || q.includes('reminder');
-  const hasMemoryKeywords = q.includes('what did i') || q.includes('notes') || q.includes('write') || q.includes('ideas');
 
   if (hasReminderKeywords && hasMemoryKeywords) {
     return { type: 'mixed_query', source: 'heuristic_fallback' };
@@ -92,18 +160,11 @@ function filterToday(reminders) {
 }
 
 function filterRemindersByQuery(reminders, query) {
-  const normalized = normalizeText(query).toLowerCase();
-  if (!normalized) {
-    return reminders;
-  }
-
-  return reminders.filter((reminder) => {
-    const haystack = [reminder?.title, reminder?.text, reminder?.notes]
+  return rankEntriesByQuery(reminders, query, (reminder) =>
+    [reminder?.title, reminder?.text, reminder?.notes, reminder?.category]
       .filter((value) => typeof value === 'string' && value.trim())
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(normalized);
-  });
+      .join(' '),
+  );
 }
 
 async function handleReminderQuery(intent, query) {
@@ -114,8 +175,7 @@ async function handleReminderQuery(intent, query) {
   }
 
   reminders = filterRemindersByQuery(reminders, query);
-  const semanticMatches = (await searchSemanticEntries(query))
-    .filter((entry) => entry.type === 'reminder');
+  const semanticMatches = (await searchSemanticEntries(query)).filter((entry) => entry.type === 'reminder');
 
   return {
     type: 'reminder_results',
@@ -125,15 +185,11 @@ async function handleReminderQuery(intent, query) {
 }
 
 function searchMemories(memories, query) {
-  const q = normalizeText(query).toLowerCase();
-  if (!q) {
-    return memories;
-  }
-
-  return memories.filter((memory) => {
-    const text = typeof memory?.text === 'string' ? memory.text.toLowerCase() : '';
-    return text.includes(q);
-  });
+  return rankEntriesByQuery(memories, query, (memory) =>
+    [memory?.title, memory?.text, memory?.body, memory?.bodyText, ...(Array.isArray(memory?.tags) ? memory.tags : [])]
+      .filter((value) => typeof value === 'string' && value.trim())
+      .join(' '),
+  );
 }
 
 function getSemanticSourceEntries() {
@@ -196,14 +252,15 @@ async function handleMemoryQuery(intent, query) {
   console.log('[semantic] query:', query);
 
   const memories = getMemories();
-  const keywordResults = searchMemories(memories, query);
-  const [semanticResults, semanticEntries] = await Promise.all([
-    semanticSearch(query),
-    searchSemanticEntries(query),
-  ]);
+  const sourceEntries = getSemanticSourceEntries().filter((entry) => entry.type === 'note');
+  const keywordResults = mergeResults(searchMemories(memories, query), searchMemories(sourceEntries, query));
+  const [semanticResults, semanticEntries] = await Promise.all([semanticSearch(query), searchSemanticEntries(query)]);
   console.log('[semantic] results:', semanticResults.length);
 
-  const merged = mergeResults(keywordResults, [...semanticResults, ...semanticEntries]);
+  const merged = mergeResults(
+    keywordResults,
+    [...semanticResults, ...semanticEntries].filter((entry) => entry?.type !== 'reminder'),
+  );
 
   return {
     type: 'memory_results',
@@ -222,7 +279,7 @@ function mergeResults(keyword, semantic) {
 
     map.set(item.id, {
       ...item,
-      score: Number.isFinite(item?.score) ? item.score : Math.max(0, 1 - (index * 0.01)),
+      score: Number.isFinite(item?.score) ? item.score : Math.max(0, 1 - index * 0.01),
     });
   });
 
@@ -256,7 +313,10 @@ async function handleMixedQuery(intent, query) {
   return {
     type: 'mixed_results',
     memories: memories.items,
-    reminders: mergeResults(reminders.items, semanticEntries.filter((entry) => entry.type === 'reminder')),
+    reminders: mergeResults(
+      reminders.items,
+      semanticEntries.filter((entry) => entry.type === 'reminder'),
+    ),
     intent,
   };
 }

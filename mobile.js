@@ -345,15 +345,17 @@ function initAssistant() {
         const dueValue = matchingReminder?.due ?? matchingReminder?.dueAt ?? matchingReminder?.dueDate;
         const category = typeof matchingReminder?.category === 'string' ? matchingReminder.category.trim() : '';
         const schedule = formatReminderSchedule(dueValue || reminderSchedule);
-        const metadata = [schedule ? `Due ${schedule}` : '', category].filter(Boolean);
+        const metadata = [schedule ? `Due ${schedule}` : ''].filter(Boolean);
 
         return {
           tone: 'reminder',
           eyebrow: 'Reminder',
           statusLabel: 'Reminder set',
+          statusIcon: '\u2713',
           title: reminderDetail || storedTitle,
           fallbackTitle: 'Reminder',
           detail: '',
+          categoryLabel: category,
           metadata,
           reminderId: typeof matchingReminder?.id === 'string' ? matchingReminder.id : '',
           relatedItems,
@@ -363,9 +365,11 @@ function initAssistant() {
       if (normalized.startsWith('reminder creation undone')) {
         return {
           tone: 'undone',
-          eyebrow: 'Reminder',
-          title: 'Reminder removed',
-          detail: mainText.replace(/^reminder creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          eyebrow: 'Reminder removed',
+          statusLabel: '',
+          title: mainText.replace(/^reminder creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          fallbackTitle: 'Removed reminder',
+          detail: 'removed',
           relatedItems: [],
         };
       }
@@ -373,9 +377,11 @@ function initAssistant() {
       if (normalized.startsWith('note creation undone')) {
         return {
           tone: 'undone',
-          eyebrow: 'Note',
-          title: 'Note removed',
-          detail: mainText.replace(/^note creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          eyebrow: 'Note removed',
+          statusLabel: '',
+          title: mainText.replace(/^note creation undone\s*:?\s*/i, '').replace(/[.\s]+$/g, '').trim(),
+          fallbackTitle: 'Removed note',
+          detail: 'removed',
           relatedItems: [],
         };
       }
@@ -394,11 +400,13 @@ function initAssistant() {
         return {
           tone: 'note',
           eyebrow: 'Note',
-          statusLabel: 'Note saved',
+          statusLabel: 'Note captured',
+          statusIcon: '\u270e',
           title: storedTitle,
           fallbackTitle: 'Saved note',
           detail: '',
-          metadata: notebookName ? [notebookName] : [],
+          categoryLabel: notebookName,
+          metadata: [],
           noteId: typeof matchingNote?.id === 'string' ? matchingNote.id : '',
           relatedItems,
         };
@@ -437,7 +445,7 @@ function initAssistant() {
 
       if (model.tone === 'reminder' || model.tone === 'note' || model.tone === 'review') return '';
       if (model.tone === 'clarify') return 'Needs a time.';
-      if (model.tone === 'undone') return `${model.eyebrow} removed.`;
+      if (model.tone === 'undone') return `${model.eyebrow}.`;
       return model.title;
     };
 
@@ -483,15 +491,29 @@ function initAssistant() {
         });
       }
 
+      const header = document.createElement('div');
+      header.className = 'capture-result-header';
+
       const status = document.createElement('span');
       status.className = model.statusLabel ? 'capture-result-status' : 'capture-result-eyebrow';
-      status.textContent = model.statusLabel ? `\u2713 ${model.statusLabel}` : model.eyebrow;
+      status.textContent = model.statusLabel
+        ? `${model.statusLabel}${model.statusIcon ? ` ${model.statusIcon}` : ''}`
+        : model.eyebrow;
+      header.appendChild(status);
+
+      const categoryLabel = typeof model.categoryLabel === 'string' ? model.categoryLabel.trim() : '';
+      if (categoryLabel) {
+        const category = document.createElement('span');
+        category.className = 'capture-result-category';
+        category.textContent = categoryLabel;
+        header.appendChild(category);
+      }
 
       const title = document.createElement('strong');
       title.className = 'capture-result-title';
       title.textContent = resolvedTitle;
 
-      contentSurface.append(status, title);
+      contentSurface.append(header, title);
 
       if (typeof model.detail === 'string' && model.detail.trim() && model.detail.trim() !== resolvedTitle) {
         const detail = document.createElement('span');
@@ -655,6 +677,78 @@ function initAssistant() {
       }
     };
 
+    const renderQueryResultItems = (row, resultItems = []) => {
+      if (!(row instanceof HTMLElement) || !Array.isArray(resultItems) || !resultItems.length) {
+        return;
+      }
+
+      row.classList.add('chat-message--query-answer');
+      const list = document.createElement('div');
+      list.className = 'capture-query-results';
+      list.setAttribute('aria-label', 'Matching notes and reminders');
+
+      resultItems.forEach((result) => {
+        const type = result?.type === 'reminder' ? 'reminder' : result?.type === 'note' ? 'note' : '';
+        const id = typeof result?.id === 'string' ? result.id.trim() : '';
+        const title = typeof result?.title === 'string' ? result.title.trim() : '';
+        if (!type || !id || !title) {
+          return;
+        }
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'capture-query-result';
+        button.dataset.queryResultType = type;
+        button.dataset.queryResultId = id;
+        button.setAttribute('aria-label', `Open ${type}: ${title}`);
+
+        const typeLabel = document.createElement('span');
+        typeLabel.className = 'capture-query-result-type';
+        typeLabel.textContent = type === 'reminder' ? 'Reminder' : 'Note';
+
+        const titleLabel = document.createElement('strong');
+        titleLabel.className = 'capture-query-result-title';
+        titleLabel.textContent = title;
+
+        button.append(typeLabel, titleLabel);
+
+        const dueValue = typeof result?.due === 'string' ? result.due.trim() : '';
+        if (type === 'reminder' && dueValue) {
+          const dueLabel = document.createElement('span');
+          dueLabel.className = 'capture-query-result-meta';
+          const formattedDue = formatReminderSchedule(dueValue);
+          dueLabel.textContent = formattedDue ? `Due ${formattedDue}` : 'Reminder';
+          button.appendChild(dueLabel);
+        }
+
+        button.addEventListener('click', () => {
+          if (type === 'reminder') {
+            const opened = reminderControllerApi?.openReminderById?.(id);
+            if (!opened) {
+              setThinkingBarStatus('That reminder is no longer available.');
+            }
+            return;
+          }
+
+          const notes = loadAllNotes();
+          const noteExists = Array.isArray(notes) && notes.some((note) => note?.id === id);
+          if (!noteExists) {
+            setThinkingBarStatus('That note is no longer available.');
+            return;
+          }
+          document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+            detail: { noteId: id },
+          }));
+        });
+
+        list.appendChild(button);
+      });
+
+      if (list.childElementCount) {
+        row.appendChild(list);
+      }
+    };
+
     const appendConversationMessage = (
       role,
       content,
@@ -702,6 +796,8 @@ function initAssistant() {
           timestamp.textContent = timestampLabel;
           row.appendChild(timestamp);
         }
+
+        renderQueryResultItems(row, options.resultItems);
       }
 
       if (role !== 'user' && Array.isArray(quickActions) && quickActions.length) {
@@ -897,35 +993,11 @@ function initAssistant() {
       }
 
       const visibleMessages = orderedMessages.slice(-MAX_VISIBLE_CAPTURE_MESSAGES);
-      const mergeableCaptureTones = new Set(['reminder', 'note', 'review']);
       for (let index = 0; index < visibleMessages.length; index += 1) {
         const message = visibleMessages[index];
         const content = typeof message?.content === 'string' ? message.content.trim() : '';
         if (!content) {
           continue;
-        }
-
-        const nextMessage = visibleMessages[index + 1];
-        const nextContent = typeof nextMessage?.content === 'string' ? nextMessage.content.trim() : '';
-        if (message?.role === 'user' && nextMessage?.role !== 'user' && nextContent) {
-          const captureResultModel = getCaptureResultModel(
-            nextContent,
-            nextMessage?.timestamp,
-            nextMessage?.relatedMemories,
-          );
-          if (captureResultModel && mergeableCaptureTones.has(captureResultModel.tone)) {
-            appendConversationMessage(
-              'user',
-              content,
-              [],
-              nextMessage?.timestamp,
-              nextMessage?.id,
-              nextMessage?.relatedMemories,
-              { captureResultModel, confirmedContent: content },
-            );
-            index += 1;
-            continue;
-          }
         }
 
         appendConversationMessage(
@@ -935,6 +1007,7 @@ function initAssistant() {
           message?.timestamp,
           message?.id,
           message?.relatedMemories,
+          { resultItems: message?.resultItems },
         );
       }
     };

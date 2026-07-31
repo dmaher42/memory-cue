@@ -50,7 +50,7 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-status')?.textContent).toBe('✓ Reminder set');
+    expect(document.querySelector('.capture-result-status')?.textContent).toBe('Reminder set ✓');
     expect(document.querySelector('.capture-result-title')?.textContent).toBe('Prepare the complete lesson sequence');
     expect(document.querySelector('.capture-result-detail')).toBeNull();
     expect(document.querySelector('.capture-result-meta')?.textContent).toBe('Due Tomorrow, 8:30 am');
@@ -58,7 +58,7 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelectorAll('.capture-result-related-link')).toHaveLength(0);
   });
 
-  test('turns a user capture and its confirmation into one compact confirmed bubble', () => {
+  test('keeps a user capture and its confirmation as separate conversation rows', () => {
     const messageTimestamp = Date.now();
     localStorage.setItem('memoryCue:offlineReminders', JSON.stringify([{
       id: 'paired-reminder',
@@ -88,12 +88,16 @@ describe('mobile capture result rendering', () => {
 
     const rows = document.querySelectorAll('.chat-message');
     const confirmed = document.querySelector('.chat-message--capture-confirmed');
-    expect(rows).toHaveLength(1);
-    expect(confirmed?.classList.contains('chat-message--user')).toBe(true);
-    expect(confirmed?.querySelector('.capture-result-status')?.textContent).toBe('✓ Reminder set');
+    expect(rows).toHaveLength(2);
+    expect(document.querySelector('.chat-message--user .chat-message-text')?.textContent)
+      .toBe('remind me to buy milk tomorrow at 6:15 am');
+    expect(confirmed?.classList.contains('chat-message--assistant')).toBe(true);
+    expect(confirmed?.classList.contains('chat-message--user')).toBe(false);
+    expect(confirmed?.querySelector('.capture-result-status')?.textContent).toBe('Reminder set ✓');
+    expect(confirmed?.querySelector('.capture-result-category')?.textContent).toBe('General');
     expect(confirmed?.querySelector('.capture-result-title')?.textContent).toBe('Buy milk');
     expect(confirmed?.querySelector('.capture-result-meta')?.textContent)
-      .toBe('Due Tomorrow, 6:15 amGeneral');
+      .toBe('Due Tomorrow, 6:15 am');
     expect(confirmed?.querySelectorAll('time')).toHaveLength(0);
     expect(confirmed?.querySelector('.chat-message-text')).toBeNull();
     expect(confirmed?.textContent).not.toContain('Open reminder');
@@ -205,10 +209,11 @@ describe('mobile capture result rendering', () => {
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
     expect(document.querySelector('.capture-result-title')?.textContent).toBe('Prepare the complete lesson sequence');
+    expect(document.querySelector('.capture-result-category')?.textContent).toBe('School');
     expect(Array.from(document.querySelectorAll('.capture-result-meta-item')).map((item) => item.textContent))
-      .toEqual(['Due Tomorrow, 8:30 am', 'School']);
+      .toEqual(['Due Tomorrow, 8:30 am']);
     expect(document.querySelector('.capture-result-meta')?.getAttribute('aria-label'))
-      .toBe('Reminder details: Due Tomorrow, 8:30 am, School');
+      .toBe('Reminder details: Due Tomorrow, 8:30 am');
     const related = document.querySelector('.capture-result-related');
     expect(related?.open).toBe(false);
     expect(related?.querySelector('summary')?.textContent).toBe('');
@@ -300,11 +305,11 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-status')?.textContent).toBe('✓ Note saved');
+    expect(document.querySelector('.capture-result-status')?.textContent).toBe('Note captured ✎');
     expect(document.querySelector('.capture-result-title')?.textContent).toBe('Excursion permission form checklist');
     expect(document.querySelector('.capture-result-detail')).toBeNull();
-    expect(document.querySelector('.capture-result-meta')?.textContent).toBe('School');
-    expect(document.querySelector('.capture-result-meta')?.getAttribute('aria-label')).toBe('Note details: School');
+    expect(document.querySelector('.capture-result-category')?.textContent).toBe('School');
+    expect(document.querySelector('.capture-result-meta')).toBeNull();
 
     document.querySelector('[data-capture-action="open-note"]')?.click();
     expect(openedNote).toHaveBeenCalledWith(expect.objectContaining({
@@ -333,9 +338,47 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Note removed');
-    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('Excursion permission form checklist');
+    expect(document.querySelector('.capture-result-eyebrow')?.textContent).toBe('Note removed');
+    expect(document.querySelector('.capture-result-title')?.textContent).toBe('Excursion permission form checklist');
+    expect(document.querySelector('.capture-result-detail')?.textContent).toBe('removed');
     expect(document.querySelectorAll('.capture-result-action')).toHaveLength(0);
+  });
+
+  test('renders readable tappable note and reminder answers', () => {
+    const openedNote = jest.fn();
+    document.addEventListener('thinkingBar:openNote', openedNote, { once: true });
+    window.__mobileMocks.loadAllNotes = () => [{ id: 'note-1', title: 'Excursion checklist' }];
+    window.__mobileMocks.getMessages = () => [
+      {
+        role: 'user',
+        content: 'What notes and reminders do I have about the excursion?',
+        timestamp: Date.now() - 100,
+      },
+      {
+        role: 'assistant',
+        content: 'I found 1 note and 1 reminder.',
+        timestamp: Date.now(),
+        resultItems: [
+          { id: 'note-1', type: 'note', title: 'Excursion checklist' },
+          { id: 'reminder-1', type: 'reminder', title: 'Return excursion forms', due: '2026-08-04T09:00:00.000Z' },
+        ],
+      },
+    ];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    expect(document.querySelector('.chat-message--query-answer .chat-message-text')?.textContent)
+      .toBe('I found 1 note and 1 reminder.');
+    const results = Array.from(document.querySelectorAll('.capture-query-result'));
+    expect(results).toHaveLength(2);
+    expect(results.map((item) => item.getAttribute('aria-label'))).toEqual([
+      'Open note: Excursion checklist',
+      'Open reminder: Return excursion forms',
+    ]);
+
+    results[0].click();
+    expect(openedNote).toHaveBeenCalledWith(expect.objectContaining({ detail: { noteId: 'note-1' } }));
   });
 
   test('keeps one Capture heading and renders the empty state without nested card chrome', () => {

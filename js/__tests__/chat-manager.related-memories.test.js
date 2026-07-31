@@ -99,3 +99,40 @@ test('stores exact related-note references with the assistant message', async ()
     '- Assessment ideas (Prior lesson notes)',
   ].join('\n'));
 });
+
+test('turns note and reminder query data into a readable message with tappable result references', async () => {
+  const savedMessages = [];
+  const findRelatedMemories = jest.fn(() => []);
+  const { handleChatMessage } = loadChatManager({
+    addMessage: (message) => savedMessages.push(message),
+    findRelatedMemories,
+    captureInput: async () => ({
+      message: '',
+      data: {
+        type: 'mixed_results',
+        memories: [
+          { id: 'note-1', type: 'note', title: 'Excursion checklist', text: 'Forms and medical details.' },
+        ],
+        reminders: [
+          { id: 'reminder-1', type: 'reminder', title: 'Return excursion forms', due: '2026-08-04T09:00:00.000Z' },
+        ],
+      },
+    }),
+  });
+
+  const response = await handleChatMessage('What notes and reminders mention the excursion?');
+  const assistantMessage = savedMessages[1];
+
+  expect(response.message).toBe('I found 1 note and 1 reminder.');
+  expect(response.resultItems).toEqual([
+    { id: 'note-1', type: 'note', title: 'Excursion checklist' },
+    {
+      id: 'reminder-1',
+      type: 'reminder',
+      title: 'Return excursion forms',
+      due: '2026-08-04T09:00:00.000Z',
+    },
+  ]);
+  expect(assistantMessage.resultItems).toEqual(response.resultItems);
+  expect(findRelatedMemories).not.toHaveBeenCalled();
+});
