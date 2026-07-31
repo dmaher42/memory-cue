@@ -381,6 +381,31 @@ describe('mobile capture result rendering', () => {
     expect(openedNote).toHaveBeenCalledWith(expect.objectContaining({ detail: { noteId: 'note-1' } }));
   });
 
+  test('cleans markup-only and oversized labels from previously saved query results', () => {
+    window.__mobileMocks.getMessages = () => [{
+      role: 'assistant',
+      content: 'I found matching notes.',
+      timestamp: Date.now(),
+      resultItems: [
+        { id: 'blank-note', type: 'note', title: '<br>' },
+        {
+          id: 'long-note',
+          type: 'note',
+          title: 'This is a long pre-game note about supporting teammates, showing bravery, staying connected, and playing your role for the whole match.',
+        },
+      ],
+    }];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const results = Array.from(document.querySelectorAll('.capture-query-result'));
+    expect(results).toHaveLength(1);
+    expect(results[0].textContent).not.toContain('<br>');
+    expect(results[0].querySelector('.capture-query-result-title')?.textContent.length).toBeLessThanOrEqual(80);
+    expect(results[0].querySelector('.capture-query-result-title')?.textContent.endsWith('…')).toBe(true);
+  });
+
   test('keeps one Capture heading and renders the empty state without nested card chrome', () => {
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });

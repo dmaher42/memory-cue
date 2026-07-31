@@ -66,6 +66,23 @@ test('answers a natural reminder question without treating the whole sentence as
   expect(result.items.map((item) => item.id)).toEqual(['today']);
 });
 
+test('treats a when-is question as a reminder lookup even without the word reminder', async () => {
+  const { handleQuery } = loadQueryEngine({
+    getReminderList: () => [
+      { id: 'pdp', type: 'reminder', title: 'PDP Paul', due: '2026-08-04T09:00:00.000Z' },
+      { id: 'training', type: 'reminder', title: 'Football training', due: '2026-08-05T10:00:00.000Z' },
+    ],
+    loadAllNotes: () => [
+      { id: 'unrelated-note', type: 'note', title: 'Gridiron Netball', bodyText: 'Pre-game notes.' },
+    ],
+  });
+
+  const result = await handleQuery('when is m pdp');
+
+  expect(result.type).toBe('reminder_results');
+  expect(result.items.map((item) => item.id)).toEqual(['pdp']);
+});
+
 test('searches real notebook notes with the meaningful words from a question', async () => {
   const { handleQuery } = loadQueryEngine({
     loadAllNotes: () => [
@@ -95,4 +112,17 @@ test('returns both notes and reminders for a mixed question', async () => {
   expect(result.type).toBe('mixed_results');
   expect(result.memories.map((item) => item.id)).toEqual(['football-note']);
   expect(result.reminders.map((item) => item.id)).toEqual(['football-reminder']);
+});
+
+test('does not return weak semantic note matches', async () => {
+  const { handleQuery } = loadQueryEngine({
+    semanticSearch: async () => [
+      { id: 'weak-note', type: 'note', title: 'Unrelated sport notes', score: 0.41 },
+      { id: 'strong-note', type: 'note', title: 'Coaching session', score: 0.83 },
+    ],
+  });
+
+  const result = await handleQuery('What did I write in my notes about coaching?');
+
+  expect(result.items.map((item) => item.id)).toEqual(['strong-note']);
 });

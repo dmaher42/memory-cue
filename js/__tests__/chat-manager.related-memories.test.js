@@ -136,3 +136,31 @@ test('turns note and reminder query data into a readable message with tappable r
   expect(assistantMessage.resultItems).toEqual(response.resultItems);
   expect(findRelatedMemories).not.toHaveBeenCalled();
 });
+
+test('drops blank markup-only query results and shortens raw note bodies used as titles', async () => {
+  const savedMessages = [];
+  const longBody = 'This is a long pre-game note about supporting teammates, showing bravery, staying connected, and playing your role for the whole match.';
+  const { handleChatMessage } = loadChatManager({
+    addMessage: (message) => savedMessages.push(message),
+    captureInput: async () => ({
+      message: '',
+      data: {
+        type: 'memory_results',
+        items: [
+          { id: 'blank-note', type: 'note', text: '<br>' },
+          { id: 'long-note', type: 'note', text: longBody },
+        ],
+      },
+    }),
+  });
+
+  const response = await handleChatMessage('What did I write about pre-game?');
+
+  expect(response.message).toBe('I found 1 note.');
+  expect(response.resultItems).toHaveLength(1);
+  expect(response.resultItems[0]).toEqual(expect.objectContaining({ id: 'long-note', type: 'note' }));
+  expect(response.resultItems[0].title).not.toContain('<br>');
+  expect(response.resultItems[0].title.length).toBeLessThanOrEqual(80);
+  expect(response.resultItems[0].title.endsWith('…')).toBe(true);
+  expect(savedMessages[1].resultItems).toEqual(response.resultItems);
+});

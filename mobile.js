@@ -687,10 +687,28 @@ function initAssistant() {
       list.className = 'capture-query-results';
       list.setAttribute('aria-label', 'Matching notes and reminders');
 
+      const normalizeResultTitle = (value) => {
+        if (typeof value !== 'string') {
+          return '';
+        }
+        const normalized = value
+          .replace(/<br\s*\/?\s*>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/&amp;/gi, '&')
+          .replace(/&lt;/gi, '<')
+          .replace(/&gt;/gi, '>')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return normalized.length > 80
+          ? `${normalized.slice(0, 79).trimEnd()}…`
+          : normalized;
+      };
+
       resultItems.forEach((result) => {
         const type = result?.type === 'reminder' ? 'reminder' : result?.type === 'note' ? 'note' : '';
         const id = typeof result?.id === 'string' ? result.id.trim() : '';
-        const title = typeof result?.title === 'string' ? result.title.trim() : '';
+        const title = normalizeResultTitle(result?.title);
         if (!type || !id || !title) {
           return;
         }

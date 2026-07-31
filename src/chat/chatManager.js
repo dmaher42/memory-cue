@@ -63,6 +63,29 @@ const normalizeRelatedMemoryReferences = (memories = []) => {
 };
 
 const QUERY_RESULT_TYPES = new Set(['memory_results', 'reminder_results', 'mixed_results']);
+const MAX_QUERY_RESULT_TITLE_LENGTH = 80;
+
+const normalizeQueryResultText = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const normalized = value
+    .replace(/<br\s*\/?\s*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (normalized.length <= MAX_QUERY_RESULT_TITLE_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_QUERY_RESULT_TITLE_LENGTH - 1).trimEnd()}…`;
+};
 
 const normalizeQueryResultItem = (item, typeHint = '') => {
   const source = item && typeof item === 'object' ? item : {};
@@ -74,8 +97,8 @@ const normalizeQueryResultItem = (item, typeHint = '') => {
       : '';
   const id = typeof source.id === 'string' ? source.id.trim() : '';
   const title = [source.title, source.noteTitle, source.text]
-    .find((value) => typeof value === 'string' && value.trim())
-    ?.trim() || '';
+    .map(normalizeQueryResultText)
+    .find(Boolean) || '';
   if (!type || !id || !title) {
     return null;
   }

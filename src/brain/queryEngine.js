@@ -47,6 +47,8 @@ const QUERY_STOP_WORDS = new Set([
   'wrote',
 ]);
 
+const SEMANTIC_SIMILARITY_THRESHOLD = 0.72;
+
 const extractQueryTerms = (query) =>
   normalizeText(query)
     .toLowerCase()
@@ -113,7 +115,9 @@ const cosineSimilarity = (left, right) => {
 export function detectIntent(query) {
   const text = normalizeText(query);
   const q = text.toLowerCase();
-  const hasReminderKeywords = /\b(remind|reminder|reminders|today|tomorrow|due)\b/.test(q);
+  const asksForReminderSchedule = /^(?:when(?:'s| is| are| does| do)|what (?:time|date) (?:is|are|does|do))\b/.test(q);
+  const hasReminderKeywords = asksForReminderSchedule
+    || /\b(remind|reminder|reminders|today|tomorrow|due)\b/.test(q);
   const hasMemoryKeywords = /\b(note|notes|wrote|write|ideas?|journal)\b/.test(q);
   const routedIntent = intentRouter(text, {
     source: 'query_engine',
@@ -243,7 +247,7 @@ async function searchSemanticEntries(query) {
       ...entry,
       score: cosineSimilarity(queryEmbedding, entry?.embedding),
     }))
-    .filter((entry) => Number.isFinite(entry.score) && entry.score > -1)
+    .filter((entry) => Number.isFinite(entry.score) && entry.score >= SEMANTIC_SIMILARITY_THRESHOLD)
     .sort((left, right) => right.score - left.score)
     .slice(0, 10);
 }
@@ -259,7 +263,11 @@ async function handleMemoryQuery(intent, query) {
 
   const merged = mergeResults(
     keywordResults,
-    [...semanticResults, ...semanticEntries].filter((entry) => entry?.type !== 'reminder'),
+    [...semanticResults, ...semanticEntries].filter((entry) => (
+      entry?.type !== 'reminder'
+      && Number.isFinite(entry?.score)
+      && entry.score >= SEMANTIC_SIMILARITY_THRESHOLD
+    )),
   );
 
   return {
