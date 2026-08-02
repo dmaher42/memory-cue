@@ -76,12 +76,29 @@ const rankEntriesByQuery = (entries, query, getSearchText) => {
 };
 
 const normalizeReminderDate = (reminder) => {
-  const dueAt = normalizeText(reminder?.dueAt);
-  if (dueAt) {
-    return dueAt;
+  const candidates = [reminder?.dueAt, reminder?.due, reminder?.dueDate];
+  for (const candidate of candidates) {
+    const normalized = normalizeText(candidate);
+    if (normalized) {
+      return normalized;
+    }
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      const date = new Date(candidate);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
   }
-  const due = normalizeText(reminder?.due);
-  return due;
+  return '';
+};
+
+const isActiveReminder = (reminder) => {
+  const status = normalizeText(reminder?.status).toLowerCase();
+  return reminder?.done !== true
+    && reminder?.completed !== true
+    && reminder?.isDone !== true
+    && status !== 'done'
+    && status !== 'completed';
 };
 
 const normalizeEmbedding = (value) =>
@@ -159,8 +176,16 @@ export function detectIntent(query) {
 }
 
 function filterToday(reminders) {
-  const today = new Date().toISOString().slice(0, 10);
-  return reminders.filter((reminder) => normalizeReminderDate(reminder).startsWith(today));
+  const today = new Date();
+  return reminders.filter((reminder) => {
+    const dueDate = new Date(normalizeReminderDate(reminder));
+    if (Number.isNaN(dueDate.getTime())) {
+      return false;
+    }
+    return dueDate.getFullYear() === today.getFullYear()
+      && dueDate.getMonth() === today.getMonth()
+      && dueDate.getDate() === today.getDate();
+  });
 }
 
 function filterRemindersByQuery(reminders, query) {
@@ -172,7 +197,7 @@ function filterRemindersByQuery(reminders, query) {
 }
 
 async function handleReminderQuery(intent, query) {
-  let reminders = getReminderList();
+  let reminders = getReminderList().filter(isActiveReminder);
 
   if (/\btoday\b/i.test(query)) {
     reminders = filterToday(reminders);
@@ -206,15 +231,17 @@ function getSemanticSourceEntries() {
     source: 'note',
   }));
 
-  const reminders = getReminderList().map((reminder) => ({
-    id: reminder?.id,
-    type: 'reminder',
-    title: reminder?.title || reminder?.text || '',
-    text: reminder?.notes || reminder?.text || reminder?.title || '',
-    embedding: reminder?.semanticEmbedding,
-    due: normalizeReminderDate(reminder),
-    source: 'reminder',
-  }));
+  const reminders = getReminderList()
+    .filter(isActiveReminder)
+    .map((reminder) => ({
+      id: reminder?.id,
+      type: 'reminder',
+      title: reminder?.title || reminder?.text || '',
+      text: reminder?.notes || reminder?.text || reminder?.title || '',
+      embedding: reminder?.semanticEmbedding,
+      due: normalizeReminderDate(reminder),
+      source: 'reminder',
+    }));
 
   return [...notes, ...reminders];
 }

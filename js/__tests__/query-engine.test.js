@@ -18,7 +18,7 @@ function loadQueryEngine(overrides = {}) {
     module,
     exports: module.exports,
     console,
-    Date,
+    Date: overrides.Date || Date,
     Math,
     Number,
     String,
@@ -64,6 +64,73 @@ test('answers a natural reminder question without treating the whole sentence as
 
   expect(result.type).toBe('reminder_results');
   expect(result.items.map((item) => item.id)).toEqual(['today']);
+});
+
+test('uses the local calendar date for today near a UTC date boundary', async () => {
+  const RealDate = Date;
+  const ADELAIDE_OFFSET_MINUTES = 9 * 60 + 30;
+  class AdelaideBoundaryDate extends RealDate {
+    constructor(...args) {
+      super(...(args.length ? args : ['2026-08-01T22:30:00.000Z']));
+    }
+
+    getLocalDate() {
+      return new RealDate(this.getTime() + ADELAIDE_OFFSET_MINUTES * 60 * 1000);
+    }
+
+    getFullYear() {
+      return this.getLocalDate().getUTCFullYear();
+    }
+
+    getMonth() {
+      return this.getLocalDate().getUTCMonth();
+    }
+
+    getDate() {
+      return this.getLocalDate().getUTCDate();
+    }
+  }
+
+  const { handleQuery } = loadQueryEngine({
+    Date: AdelaideBoundaryDate,
+    getReminderList: () => [
+      { id: 'today-local', type: 'reminder', title: 'Audit local date', due: '2026-08-02T06:30:00.000Z' },
+      { id: 'tomorrow-local', type: 'reminder', title: 'Late task', due: '2026-08-02T15:00:00.000Z' },
+    ],
+  });
+
+  const result = await handleQuery('What reminders do I have today?');
+
+  expect(result.items.map((item) => item.id)).toEqual(['today-local']);
+});
+
+test('excludes completed reminders from keyword and semantic results', async () => {
+  const { handleQuery } = loadQueryEngine({
+    getReminderList: () => [
+      {
+        id: 'active-excursion',
+        type: 'reminder',
+        title: 'Return excursion forms',
+        due: '2026-08-03T10:00:00.000Z',
+        completed: false,
+        semanticEmbedding: [1, 0],
+      },
+      {
+        id: 'done-excursion',
+        type: 'reminder',
+        title: 'Book excursion bus',
+        due: '2026-08-03T11:00:00.000Z',
+        done: true,
+        semanticEmbedding: [1, 0],
+      },
+    ],
+    isEmbeddingEnabled: () => true,
+    generateEmbedding: async () => [1, 0],
+  });
+
+  const result = await handleQuery('What reminders mention excursion?');
+
+  expect(result.items.map((item) => item.id)).toEqual(['active-excursion']);
 });
 
 test('treats a when-is question as a reminder lookup even without the word reminder', async () => {

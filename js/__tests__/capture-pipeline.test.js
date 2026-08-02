@@ -156,6 +156,31 @@ test('capture pipeline asks about unknown shorthand then remembers the answer', 
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
 });
 
+test('capture pipeline expands learned shorthand before running a memory query', async () => {
+  const queries = [];
+  const { captureInput } = loadCapturePipeline({
+    resolveShorthandText: (value) => String(value || '').replace(/\bPDP\b/gi, 'Professional development plan'),
+    intentRouter: (text) => ({
+      payload: {
+        decisionType: 'query_memory',
+        parsedType: 'question',
+        parsedEntry: { type: 'question', title: text },
+      },
+    }),
+    handleQuery: async (query) => {
+      queries.push(query);
+      return { type: 'reminder_results', items: [] };
+    },
+  });
+
+  await captureInput({
+    text: 'when is m pdp',
+    source: 'chat',
+  });
+
+  expect(queries).toEqual(['when is m Professional development plan']);
+});
+
 test('capture pipeline saves an unclassified capture as a visible note, not the invisible inbox', async () => {
   const savedNotes = [];
   const savedInbox = [];

@@ -999,7 +999,8 @@ export async function captureInput({
       });
     }
     case 'query_memory': {
-      const queryResults = await handleQuery(normalizedText);
+      const queryText = normalizeText(analyzedCapture?.text) || normalizedText;
+      const queryResults = await handleQuery(queryText);
       return {
         decision,
         data: queryResults,
