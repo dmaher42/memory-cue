@@ -507,6 +507,7 @@ const normalizeCoachWordRescueResult = (payload: Record<string, unknown>) => {
       ? fallbackHints[index]
       : hint
   ));
+  safeHints[2] = fallbackHints[2];
 
   return {
     reply: `Hint 1 of 3: ${safeHints[0]}`,

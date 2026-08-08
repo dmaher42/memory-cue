@@ -231,6 +231,7 @@ test('returns a three-step coach bundle while exposing only the first hint in th
   payload.wordRescue.hints.forEach((hint) => {
     expect(hint.toLowerCase()).not.toContain('equivocate');
   });
+  expect(payload.wordRescue.hints[2]).toBe('It starts with "E" and has 10 letters.');
   expect(openAiBody.max_output_tokens).toBe(1600);
   expect(openAiBody.text.format).toMatchObject({
     type: 'json_schema',
