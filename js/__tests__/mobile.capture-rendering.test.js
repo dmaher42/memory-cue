@@ -1,17 +1,19 @@
 /** @jest-environment jsdom */
 
+const fs = require('fs');
+const path = require('path');
 const { loadMobileModule } = require('./helpers/load-mobile-module');
 
 describe('mobile capture result rendering', () => {
   beforeEach(() => {
     localStorage.clear();
     document.body.innerHTML = `
+      <header id="reminders-slim-header">
+        <h1 class="header-title">Capture</h1>
+        <button id="wordRescueLauncher" type="button" aria-expanded="false">Word help</button>
+      </header>
       <main id="main">
         <section id="view-capture">
-          <header class="capture-page-header">
-            <h2>Capture</h2>
-            <button id="wordRescueLauncher" type="button" aria-expanded="false">Word help</button>
-          </header>
           <section id="chatConversationContainer"></section>
         </section>
       </main>
@@ -415,20 +417,33 @@ describe('mobile capture result rendering', () => {
     expect(results[0].querySelector('.capture-query-result-title')?.textContent.endsWith('…')).toBe(true);
   });
 
-  test('keeps one Capture heading and renders the empty state without nested card chrome', () => {
+  test('keeps the sole Capture heading in the fixed app header', () => {
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
 
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
-    const captureLabels = Array.from(document.querySelectorAll('#view-capture h2, #view-capture p'))
+    const captureLabels = Array.from(document.querySelectorAll('#reminders-slim-header h1, #view-capture h2, #view-capture p'))
       .filter((element) => element.textContent?.trim() === 'Capture');
     const home = document.querySelector('.capture-home-shell');
 
     expect(captureLabels).toHaveLength(1);
+    expect(captureLabels[0].closest('#reminders-slim-header')).not.toBeNull();
+    expect(document.querySelector('.capture-page-header')).toBeNull();
     expect(home).not.toBeNull();
     expect(home.className).toBe('capture-home-shell w-full');
+  });
+
+  test('places one Word help launcher in the fixed app header markup', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', '..', 'mobile.html'), 'utf8');
+    const parsed = new DOMParser().parseFromString(source, 'text/html');
+    const launchers = parsed.querySelectorAll('#wordRescueLauncher');
+
+    expect(launchers).toHaveLength(1);
+    expect(launchers[0].closest('#reminders-slim-header')).not.toBeNull();
+    expect(launchers[0].closest('#view-capture')).toBeNull();
+    expect(launchers[0].getAttribute('aria-controls')).toBe('chatConversationContainer');
   });
 
   test('opens Word help as an in-conversation choice while keeping one textbox', () => {

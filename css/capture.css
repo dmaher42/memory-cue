@@ -18,40 +18,61 @@
   box-shadow: none;
 }
 
-.capture-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-inline: 0.15rem;
-}
-
-.capture-page-title {
-  margin: 0;
-  color: var(--text-main, #1f2937);
-  font-size: 1.25rem;
-  font-weight: 750;
-  line-height: 1.2;
-}
-
 #wordRescueLauncher.word-rescue-launcher {
+  display: none;
+  width: auto;
   min-width: 0;
-  min-height: 2.75rem;
-  padding: 0.55rem 0.85rem;
+  height: 30px;
+  min-height: 30px;
+  padding: 0.28rem 0.58rem;
   border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 32%, var(--card-border, #e2e8f0) 68%);
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-color, #0f766e) 8%, var(--surface-elevated, #ffffff) 92%);
   color: var(--text-main, #1f2937);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
 }
 
+body[data-active-view="capture"] #reminders-slim-header {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+body[data-active-view="capture"] #reminders-slim-header #overflowMenuBtn {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+body[data-active-view="capture"] #reminders-slim-header .header-title {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+}
+
+body[data-active-view="capture"] #wordRescueLauncher.word-rescue-launcher {
+  display: inline-flex;
+  grid-column: 3;
+  grid-row: 1;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+}
+
 #wordRescueLauncher.word-rescue-launcher:hover,
-#wordRescueLauncher.word-rescue-launcher[aria-expanded="true"] {
+#wordRescueLauncher.word-rescue-launcher[aria-expanded="true"],
+#wordRescueLauncher.word-rescue-launcher[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--accent-color, #0f766e) 58%, var(--card-border, #e2e8f0) 42%);
   background: color-mix(in srgb, var(--accent-color, #0f766e) 14%, var(--surface-elevated, #ffffff) 86%);
 }
@@ -59,6 +80,18 @@
 #wordRescueLauncher.word-rescue-launcher:focus-visible {
   outline: 2px solid var(--accent-color, #0f766e);
   outline-offset: 2px;
+}
+
+@media (max-width: 340px) {
+  body[data-active-view="capture"] #reminders-slim-header {
+    gap: 0.28rem;
+    padding-inline: 0.5rem;
+  }
+
+  body[data-active-view="capture"] #wordRescueLauncher.word-rescue-launcher {
+    padding-inline: 0.5rem;
+    font-size: 0.68rem;
+  }
 }
 
 #thinkingBarContainer .word-rescue-mode-bar {

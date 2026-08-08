@@ -214,11 +214,25 @@ async function main() {
       const captureView = document.getElementById('view-capture');
       const conversation = document.getElementById('chatConversationContainer');
       const home = document.querySelector('.capture-home-shell');
-      const captureLabels = Array.from(captureView?.querySelectorAll('h2, p') || [])
+      const appHeader = document.getElementById('reminders-slim-header');
+      const headerTitle = appHeader?.querySelector('.header-title');
+      const wordHelp = document.getElementById('wordRescueLauncher');
+      const captureLabels = Array.from([
+        ...(appHeader?.querySelectorAll('h1') || []),
+        ...(captureView?.querySelectorAll('h2, p') || []),
+      ])
         .filter((element) => element.textContent?.trim() === 'Capture');
       const homeStyle = home ? getComputedStyle(home) : null;
       return {
         headingCount: captureLabels.length,
+        headerTitle: headerTitle?.textContent?.trim() || '',
+        launcherCount: document.querySelectorAll('#wordRescueLauncher').length,
+        launcherInFixedHeader: Boolean(wordHelp && appHeader?.contains(wordHelp)),
+        launcherVisible: Boolean(
+          wordHelp
+          && getComputedStyle(wordHelp).display !== 'none'
+          && wordHelp.getBoundingClientRect().width > 0
+        ),
         conversationWidth: conversation?.getBoundingClientRect().width || 0,
         viewportWidth: window.innerWidth,
         homeHasBorder: homeStyle ? Number.parseFloat(homeStyle.borderTopWidth) > 0 : true,
@@ -227,6 +241,10 @@ async function main() {
     });
     if (
       captureHomeLayout.headingCount !== 1
+      || captureHomeLayout.headerTitle !== 'Capture'
+      || captureHomeLayout.launcherCount !== 1
+      || !captureHomeLayout.launcherInFixedHeader
+      || !captureHomeLayout.launcherVisible
       || captureHomeLayout.conversationWidth < captureHomeLayout.viewportWidth * 0.88
       || captureHomeLayout.homeHasBorder
       || captureHomeLayout.homeHasShadow
@@ -341,10 +359,16 @@ async function main() {
         && !notesView.classList.contains('hidden')
         && title?.value === 'Year 8 geography curriculum map';
     });
+    if (!(await page.locator('#wordRescueLauncher').isHidden())) {
+      throw new Error('Expected Word help to hide outside Capture in Notes.');
+    }
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
     });
-    await page.waitForFunction(() => !document.getElementById('view-capture')?.classList.contains('hidden'));
+    await page.waitForFunction(() => (
+      !document.getElementById('view-capture')?.classList.contains('hidden')
+      && getComputedStyle(document.getElementById('wordRescueLauncher')).display !== 'none'
+    ));
     await page.setViewportSize({ width: 320, height: 568 });
     await page.evaluate(() => {
       document.dispatchEvent(new CustomEvent('memoryCue:chatUpdated'));
@@ -471,6 +495,9 @@ async function main() {
       const panel = document.getElementById('view-reminders');
       return panel && !panel.classList.contains('hidden');
     });
+    if (!(await page.locator('#wordRescueLauncher').isHidden())) {
+      throw new Error('Expected Word help to hide outside Capture in Reminders.');
+    }
 
     if (await page.locator('#assistantHelpBtn').count()) {
       throw new Error('Expected the header question-mark button to be removed.');

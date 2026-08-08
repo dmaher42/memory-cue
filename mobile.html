@@ -4856,7 +4856,14 @@ body, main, section, div, p, span, li {
   <div class="mobile-app">
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
-      <h1 class="header-title title">Memory Cue</h1>
+      <h1 class="header-title title">Capture</h1>
+      <button
+        id="wordRescueLauncher"
+        type="button"
+        class="word-rescue-launcher"
+        aria-expanded="false"
+        aria-controls="chatConversationContainer"
+      >Word help</button>
       <div id="remindersHeaderActions" class="reminders-header-actions" hidden aria-hidden="true">
         <button
           type="button"
@@ -4953,16 +4960,6 @@ body, main, section, div, p, span, li {
     <!-- END GPT CHANGE -->
     <section data-view="capture" id="view-capture" class="view-panel">
       <div class="capture-container capture-chat-layout">
-        <header class="capture-page-header">
-          <h2 class="capture-page-title">Capture</h2>
-          <button
-            id="wordRescueLauncher"
-            type="button"
-            class="word-rescue-launcher"
-            aria-expanded="false"
-            aria-controls="chatConversationContainer"
-          >Word help</button>
-        </header>
         <section id="chatConversationContainer" aria-label="Capture conversation" aria-live="polite"></section>
       </div>
     </section>
