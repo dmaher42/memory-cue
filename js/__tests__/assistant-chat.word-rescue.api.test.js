@@ -75,7 +75,6 @@ test('Word Rescue bypasses Help and excludes personal context from the OpenAI re
             { word: 'meticulous', meaning: 'very careful and precise', example: 'She kept meticulous records.' },
             { word: 'conscientious', meaning: 'careful because you want to do things well', example: '' },
           ],
-          clarifyingQuestion: '',
         }),
       }),
     };
@@ -107,6 +106,17 @@ test('Word Rescue bypasses Help and excludes personal context from the OpenAI re
   expect(openAiText).not.toContain('CANARY_MALICIOUS_SYSTEM');
   expect(openAiBody.store).toBe(false);
   expect(openAiBody.input).toHaveLength(2);
+  expect(openAiBody.reasoning).toEqual({ effort: 'minimal' });
+  expect(openAiBody.max_output_tokens).toBe(1200);
+  expect(openAiBody.text.format).toMatchObject({
+    type: 'json_schema',
+    name: 'word_rescue_fast',
+    strict: true,
+  });
+  expect(openAiBody.text.format.schema.properties.candidates).toMatchObject({
+    minItems: 1,
+    maxItems: 3,
+  });
 });
 
 test('rejects an invalid Word Rescue mode without calling OpenAI', async () => {
@@ -121,6 +131,29 @@ test('rejects an invalid Word Rescue mode without calling OpenAI', async () => {
 
   expect(response.status).toBe(400);
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test('gives the general assistant enough output budget to return visible text', async () => {
+  let openAiBody = null;
+  const fetchMock = jest.fn(async (_url, options) => {
+    openAiBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      json: async () => ({ output_text: 'Hello.' }),
+    };
+  });
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+
+  const response = await onRequestPost(makeContext({
+    message: 'Reply with hello.',
+  }));
+  const payload = await response.json();
+
+  expect(response.status).toBe(200);
+  expect(payload.reply).toBe('Hello.');
+  expect(openAiBody.reasoning).toEqual({ effort: 'minimal' });
+  expect(openAiBody.max_output_tokens).toBe(1200);
+  expect(openAiBody.text).toBeUndefined();
 });
 
 test('reads output text from a raw Responses API message after a reasoning item', async () => {
@@ -140,7 +173,6 @@ test('reads output text from a raw Responses API message after a reasoning item'
                 meaning: 'very careful and precise',
                 example: 'She kept meticulous records.',
               }],
-              clarifyingQuestion: '',
             }),
           }],
         },
@@ -161,24 +193,28 @@ test('reads output text from a raw Responses API message after a reasoning item'
 });
 
 test('returns a three-step coach bundle while exposing only the first hint in the reply', async () => {
-  const fetchMock = jest.fn(async () => ({
-    ok: true,
-    json: async () => ({
-      output_text: JSON.stringify({
-        hints: [
-          'It means avoiding a firm or direct commitment.',
-          'The witness continued to _____ when asked for a yes or no answer.',
-          'It begins with the sound ee and has four syllables.',
-        ],
-        answer: {
-          word: 'equivocate',
-          explanation: 'To speak ambiguously so you do not commit clearly.',
-          example: 'The spokesperson continued to equivocate.',
-        },
-        alternatives: ['prevaricate'],
+  let openAiBody = null;
+  const fetchMock = jest.fn(async (_url, options) => {
+    openAiBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      json: async () => ({
+        output_text: JSON.stringify({
+          hints: [
+            'It means avoiding a firm or direct commitment.',
+            'The witness continued to _____ when asked for a yes or no answer.',
+            'It begins with the sound ee and has four syllables.',
+          ],
+          answer: {
+            word: 'equivocate',
+            explanation: 'To speak ambiguously so you do not commit clearly.',
+            example: 'The spokesperson continued to equivocate.',
+          },
+          alternatives: ['prevaricate'],
+        }),
       }),
-    }),
-  }));
+    };
+  });
   const { onRequestPost } = loadAssistantChat(fetchMock);
 
   const response = await onRequestPost(makeContext({
@@ -195,6 +231,82 @@ test('returns a three-step coach bundle while exposing only the first hint in th
   payload.wordRescue.hints.forEach((hint) => {
     expect(hint.toLowerCase()).not.toContain('equivocate');
   });
+  expect(openAiBody.max_output_tokens).toBe(1600);
+  expect(openAiBody.text.format).toMatchObject({
+    type: 'json_schema',
+    name: 'word_rescue_coach',
+    strict: true,
+  });
+  expect(openAiBody.text.format.schema.properties.hints).toMatchObject({
+    minItems: 3,
+    maxItems: 3,
+  });
+});
+
+test('retries once when reasoning exhausts the first Word Rescue output allowance', async () => {
+  const requestBodies = [];
+  const fetchMock = jest.fn(async (_url, options) => {
+    requestBodies.push(JSON.parse(options.body));
+    if (requestBodies.length === 1) {
+      return {
+        ok: true,
+        json: async () => ({
+          status: 'incomplete',
+          incomplete_details: { reason: 'max_output_tokens' },
+          output: [{ type: 'reasoning', summary: [] }],
+          usage: {
+            output_tokens: 1200,
+            output_tokens_details: { reasoning_tokens: 1200 },
+          },
+        }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        status: 'completed',
+        output_text: JSON.stringify({
+          candidates: [{
+            word: 'meticulous',
+            meaning: 'very careful and exact',
+            example: 'She kept meticulous notes.',
+          }],
+        }),
+      }),
+    };
+  });
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+
+  const response = await onRequestPost(makeContext({
+    assistantTask: 'word_rescue',
+    mode: 'fast',
+    message: 'very careful and exact',
+  }));
+  const payload = await response.json();
+
+  expect(response.status).toBe(200);
+  expect(payload.reply).toContain('meticulous');
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(requestBodies[0].max_output_tokens).toBe(1200);
+  expect(requestBodies[1].max_output_tokens).toBe(2400);
+  expect(requestBodies[1].text.format.name).toBe('word_rescue_fast');
+});
+
+test('does not report a generic assistant success when OpenAI returns no visible text', async () => {
+  const fetchMock = jest.fn(async () => ({
+    ok: true,
+    json: async () => ({ status: 'completed', output: [] }),
+  }));
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+
+  const response = await onRequestPost(makeContext({
+    message: 'Reply with hello.',
+  }));
+  const payload = await response.json();
+
+  expect(response.status).toBe(500);
+  expect(payload.error).toBe('Assistant is temporarily unavailable. Please try again.');
+  expect(JSON.stringify(payload)).not.toContain('OpenAI returned no usable text');
 });
 
 test('fails safely when coach output reveals the answer or provider details', async () => {

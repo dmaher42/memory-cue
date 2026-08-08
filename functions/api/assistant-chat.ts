@@ -502,46 +502,153 @@ const normalizeCoachWordRescueResult = (payload: Record<string, unknown>) => {
   };
 };
 
+const buildWordRescueTextFormat = (mode: string) => {
+  if (mode === 'coach') {
+    return {
+      type: 'json_schema',
+      name: 'word_rescue_coach',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          hints: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: { type: 'string' },
+          },
+          answer: {
+            type: 'object',
+            properties: {
+              word: { type: 'string' },
+              explanation: { type: 'string' },
+              example: { type: 'string' },
+            },
+            required: ['word', 'explanation', 'example'],
+            additionalProperties: false,
+          },
+          alternatives: {
+            type: 'array',
+            maxItems: 3,
+            items: { type: 'string' },
+          },
+        },
+        required: ['hints', 'answer', 'alternatives'],
+        additionalProperties: false,
+      },
+    };
+  }
+
+  return {
+    type: 'json_schema',
+    name: 'word_rescue_fast',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        candidates: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 3,
+          items: {
+            type: 'object',
+            properties: {
+              word: { type: 'string' },
+              meaning: { type: 'string' },
+              example: { type: 'string' },
+            },
+            required: ['word', 'meaning', 'example'],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ['candidates'],
+      additionalProperties: false,
+    },
+  };
+};
+
 const getOpenAiResponse = async (
   prompt: string,
   messages: ReturnType<typeof normalizeAssistantMessages>,
   env: Record<string, unknown> = {},
-  options: { maxOutputTokens?: number } = {},
+  options: {
+    maxOutputTokens?: number;
+    reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+    textFormat?: Record<string, unknown>;
+  } = {},
 ) => {
   const apiKey = toText(env.OPENAI_API_KEY);
   if (!apiKey) {
     return 'Assistant is configured without OPENAI_API_KEY. I can still show matching context references below.';
   }
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-5-nano',
-      store: false,
-      max_output_tokens: options.maxOutputTokens || 180,
-      input: messages.length
-        ? messages
-        : [
-          {
-            role: 'user',
-            content: [{ type: 'input_text', text: prompt.slice(0, MAX_INPUT_MESSAGE_CHARS) }],
-          },
-        ],
-    }),
-  });
-
-  if (!response.ok) {
-    const details = await response.text();
-    throw new Error(`LLM request failed: ${details}`);
+  const initialMaxOutputTokens = options.maxOutputTokens || 1200;
+  const requestBody: Record<string, unknown> = {
+    model: 'gpt-5-nano',
+    store: false,
+    reasoning: { effort: options.reasoningEffort || 'minimal' },
+    max_output_tokens: initialMaxOutputTokens,
+    input: messages.length
+      ? messages
+      : [
+        {
+          role: 'user',
+          content: [{ type: 'input_text', text: prompt.slice(0, MAX_INPUT_MESSAGE_CHARS) }],
+        },
+      ],
+  };
+  if (options.textFormat) {
+    requestBody.text = { format: options.textFormat };
   }
 
-  const payload = await response.json() as Record<string, unknown>;
-  return extractOpenAiOutputText(payload)
-    || 'I could not generate a response.';
+  const requestOpenAi = async (maxOutputTokens: number) => {
+    requestBody.max_output_tokens = maxOutputTokens;
+    const response = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      console.warn('[assistant-chat] OpenAI request failed.', { status: response.status });
+      throw new Error('OpenAI request failed.');
+    }
+    return response.json() as Promise<Record<string, unknown>>;
+  };
+
+  let payload = await requestOpenAi(initialMaxOutputTokens);
+  let outputText = extractOpenAiOutputText(payload);
+  const incompleteDetails = payload.incomplete_details && typeof payload.incomplete_details === 'object'
+    ? payload.incomplete_details as Record<string, unknown>
+    : {};
+  const incompleteReason = toText(incompleteDetails.reason);
+
+  if (!outputText && payload.status === 'incomplete' && incompleteReason === 'max_output_tokens') {
+    const usage = payload.usage && typeof payload.usage === 'object'
+      ? payload.usage as Record<string, unknown>
+      : {};
+    const outputDetails = usage.output_tokens_details && typeof usage.output_tokens_details === 'object'
+      ? usage.output_tokens_details as Record<string, unknown>
+      : {};
+    console.warn('[assistant-chat] OpenAI response exhausted its output allowance; retrying once.', {
+      status: payload.status,
+      reason: incompleteReason,
+      outputTokens: Number(usage.output_tokens) || 0,
+      reasoningTokens: Number(outputDetails.reasoning_tokens) || 0,
+    });
+    const retryMaxOutputTokens = Math.min(initialMaxOutputTokens * 2, 3200);
+    payload = await requestOpenAi(retryMaxOutputTokens);
+    outputText = extractOpenAiOutputText(payload);
+  }
+
+  if (!outputText) {
+    throw new Error('OpenAI returned no usable text.');
+  }
+  return outputText;
 };
 
 const runWordRescue = async (
@@ -553,7 +660,11 @@ const runWordRescue = async (
     '',
     buildWordRescueMessages(message, mode),
     env,
-    { maxOutputTokens: mode === 'coach' ? 360 : 260 },
+    {
+      maxOutputTokens: mode === 'coach' ? 1600 : 1200,
+      reasoningEffort: 'minimal',
+      textFormat: buildWordRescueTextFormat(mode),
+    },
   );
   const payload = parseWordRescueJson(rawReply);
   return mode === 'coach'
@@ -641,9 +752,9 @@ export const onRequestPost = async (context: { request: Request; env: Record<str
       contextUsed: selectedContext,
     }, 200, corsHeaders);
   } catch (error) {
+    console.warn('[assistant-chat] Assistant request failed safely.', error instanceof Error ? error.message : 'Unknown error');
     return jsonResponse({
-      error: 'Failed to process assistant request',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: 'Assistant is temporarily unavailable. Please try again.',
     }, 500, corsHeaders);
   }
 };
