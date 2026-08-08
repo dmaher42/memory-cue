@@ -389,6 +389,13 @@ const clampWordRescueText = (value: unknown, maxChars: number) => (
   toText(value).slice(0, maxChars)
 );
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const maskWordRescueAnswer = (text: string, answer: string) => {
+  if (!text || !answer) return text;
+  return text.replace(new RegExp(escapeRegExp(answer), 'gi'), '_____');
+};
+
 const parseWordRescueJson = (rawReply: string) => {
   const normalized = toText(rawReply)
     .replace(/^```(?:json)?\s*/i, '')
@@ -487,15 +494,25 @@ const normalizeCoachWordRescueResult = (payload: Record<string, unknown>) => {
   if (hints.length !== 3 || !answer.word || !answer.explanation) {
     throw new Error('Word Rescue returned an incomplete coach result.');
   }
-  if (hints.some((hint) => hint.toLowerCase().includes(answer.word.toLowerCase()))) {
-    throw new Error('Word Rescue revealed the answer inside a hint.');
-  }
+  const lowerAnswer = answer.word.toLowerCase();
+  const fallbackHints = [
+    `Meaning: ${maskWordRescueAnswer(answer.explanation, answer.word)}`,
+    answer.example
+      ? `Complete the sentence: ${maskWordRescueAnswer(answer.example, answer.word)}`
+      : 'Think about how this word would complete the situation you described.',
+    `It starts with "${answer.word.charAt(0).toUpperCase()}" and has ${Array.from(answer.word).length} letters.`,
+  ];
+  const safeHints = hints.map((hint, index) => (
+    hint.toLowerCase().includes(lowerAnswer)
+      ? fallbackHints[index]
+      : hint
+  ));
 
   return {
-    reply: `Hint 1 of 3: ${hints[0]}`,
+    reply: `Hint 1 of 3: ${safeHints[0]}`,
     wordRescue: {
       mode: 'coach',
-      hints,
+      hints: safeHints,
       answer,
       alternatives,
     },
@@ -672,6 +689,16 @@ const runWordRescue = async (
     : normalizeFastWordRescueResult(payload);
 };
 
+const getWordRescueFailureCode = (error: unknown) => {
+  const message = error instanceof Error ? error.message : '';
+  if (message === 'OpenAI request failed.') return 'provider_request_failed';
+  if (message === 'OpenAI returned no usable text.') return 'provider_no_output';
+  if (error instanceof SyntaxError || message.startsWith('Word Rescue returned')) {
+    return 'invalid_model_output';
+  }
+  return 'word_rescue_validation_failed';
+};
+
 export const onRequestOptions = async (context: { request: Request; env: Record<string, unknown> }) => (
   new Response(null, {
     status: 200,
@@ -711,6 +738,7 @@ export const onRequestPost = async (context: { request: Request; env: Record<str
       console.warn('[assistant-chat] Word Rescue request failed safely.', error instanceof Error ? error.message : 'Unknown error');
       return jsonResponse({
         error: 'Word help is temporarily unavailable. Please try again.',
+        code: getWordRescueFailureCode(error),
       }, 502, corsHeaders);
     }
   }

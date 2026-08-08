@@ -309,7 +309,7 @@ test('does not report a generic assistant success when OpenAI returns no visible
   expect(JSON.stringify(payload)).not.toContain('OpenAI returned no usable text');
 });
 
-test('fails safely when coach output reveals the answer or provider details', async () => {
+test('replaces a coach hint that accidentally reveals the answer', async () => {
   const fetchMock = jest.fn(async () => ({
     ok: true,
     json: async () => ({
@@ -329,7 +329,31 @@ test('fails safely when coach output reveals the answer or provider details', as
   }));
   const payload = await response.json();
 
+  expect(response.status).toBe(200);
+  expect(payload.wordRescue.answer.word).toBe('equivocate');
+  expect(payload.wordRescue.hints).toHaveLength(3);
+  payload.wordRescue.hints.forEach((hint) => {
+    expect(hint.toLowerCase()).not.toContain('equivocate');
+  });
+  expect(payload.wordRescue.hints[0]).toContain('Avoid a direct answer.');
+});
+
+test('keeps provider failure details out of a Word Rescue error', async () => {
+  const fetchMock = jest.fn(async () => ({
+    ok: false,
+    status: 429,
+  }));
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+
+  const response = await onRequestPost(makeContext({
+    assistantTask: 'word_rescue',
+    mode: 'fast',
+    message: 'careful and exact',
+  }));
+  const payload = await response.json();
+
   expect(response.status).toBe(502);
   expect(payload.error).toBe('Word help is temporarily unavailable. Please try again.');
-  expect(JSON.stringify(payload)).not.toContain('equivocate');
+  expect(payload.code).toBe('provider_request_failed');
+  expect(JSON.stringify(payload)).not.toContain('429');
 });
