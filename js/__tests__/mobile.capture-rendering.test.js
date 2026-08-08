@@ -9,8 +9,12 @@ describe('mobile capture result rendering', () => {
     localStorage.clear();
     document.body.innerHTML = `
       <header id="reminders-slim-header">
+        <button id="overflowMenuBtn" type="button">Menu</button>
         <h1 class="header-title">Capture</h1>
-        <button id="wordRescueLauncher" type="button" aria-expanded="false">Word help</button>
+        <div class="capture-header-actions" role="group" aria-label="Capture tools">
+          <button id="memoryCoachLauncher" type="button" aria-expanded="false">Memory coach</button>
+          <button id="wordRescueLauncher" type="button" aria-expanded="false">Word help</button>
+        </div>
       </header>
       <main id="main">
         <section id="view-capture">
@@ -21,6 +25,10 @@ describe('mobile capture result rendering', () => {
         <div id="wordRescueModeBar" class="hidden">
           <span>Word help: <strong id="wordRescueModeLabel">Find it now</strong></span>
           <button id="wordRescueExitButton" type="button">Back to Capture</button>
+        </div>
+        <div id="memoryCoachModeBar" class="hidden">
+          <span>Memory coach: <strong id="memoryCoachModeLabel">Practice</strong></span>
+          <button id="memoryCoachExitButton" type="button">Back to Capture</button>
         </div>
         <form id="thinkingBarForm">
           <label for="thinkingBarInput">Add a reminder, note, or ask anything</label>
@@ -464,6 +472,7 @@ describe('mobile capture result rendering', () => {
 
   test('runs Coach me through the existing capture path and reveals hints locally', async () => {
     const messages = [];
+    const saveVocabulary = jest.fn(() => ({ status: 'created', note: { title: 'equivocate' } }));
     const handleChatMessage = jest.fn(async (text) => {
       messages.push(
         { role: 'user', content: text, timestamp: Date.now() - 1 },
@@ -490,6 +499,14 @@ describe('mobile capture result rendering', () => {
     window.__mobileMocks.getMessages = () => messages;
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
     window.__mobileMocks.handleChatMessage = handleChatMessage;
+    window.__mobileMocks.createMemoryCoachUi = () => ({
+      activate() {},
+      deactivate() {},
+      render() {},
+      isActive: () => false,
+      saveVocabulary,
+      hasSavedWord: () => false,
+    });
 
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
@@ -525,6 +542,73 @@ describe('mobile capture result rendering', () => {
     expect(document.body.textContent).toContain('prevaricate');
     expect(handleChatMessage).toHaveBeenCalledTimes(1);
     expect(document.activeElement?.getAttribute('data-word-rescue-action')).toBe('restart');
+
+    document.querySelector('[data-word-rescue-learn="coach-answer"]').click();
+    expect(saveVocabulary).toHaveBeenCalledWith({
+      word: 'equivocate',
+      cue: 'someone who avoids giving a direct answer',
+      explanation: 'To speak ambiguously so you do not commit clearly.',
+      example: 'The spokesperson continued to equivocate.',
+      hints: [
+        'It means avoiding a direct commitment.',
+        'The witness continued to _____ instead of saying yes or no.',
+        'It begins with the sound ee and has four syllables.',
+      ],
+      alternatives: ['prevaricate'],
+    });
+  });
+
+  test('offers each fast Word Rescue candidate as an explicit practice choice', async () => {
+    const messages = [];
+    const saveVocabulary = jest.fn(() => ({ status: 'created', note: { title: 'precise' } }));
+    window.__mobileMocks.getMessages = () => messages;
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.createMemoryCoachUi = () => ({
+      activate() {},
+      deactivate() {},
+      render() {},
+      isActive: () => false,
+      saveVocabulary,
+      hasSavedWord: () => false,
+    });
+    window.__mobileMocks.handleChatMessage = jest.fn(async (text) => {
+      messages.push(
+        { role: 'user', content: text, timestamp: Date.now() - 1 },
+        { role: 'assistant', content: '1. precise\n2. meticulous', timestamp: Date.now() },
+      );
+      return {
+        message: '1. precise\n2. meticulous',
+        wordRescue: {
+          mode: 'fast',
+          candidates: [
+            { word: 'precise', meaning: 'Exact and accurate.', example: 'Use precise language.' },
+            { word: 'meticulous', meaning: 'Very careful about details.', example: 'She kept meticulous notes.' },
+          ],
+        },
+      };
+    });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.getElementById('wordRescueLauncher').click();
+    document.querySelector('[data-word-rescue-action="find"]').click();
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'a word for careful and exact';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(document.querySelectorAll('[data-word-rescue-learn]')).toHaveLength(2);
+    document.querySelector('[data-word-rescue-learn="fast-0"]').click();
+    expect(saveVocabulary).toHaveBeenCalledWith({
+      word: 'precise',
+      cue: 'a word for careful and exact',
+      explanation: 'Exact and accurate.',
+      example: 'Use precise language.',
+      alternatives: ['meticulous'],
+    });
   });
 
   test('leaving Capture cancels Word help before the universal composer is used elsewhere', () => {

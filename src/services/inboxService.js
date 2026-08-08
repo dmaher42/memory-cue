@@ -42,6 +42,11 @@ const normalizeTags = (tags) => {
     .filter(Boolean);
 };
 
+export const isMemoryCoachInboxEntry = (entry) => Boolean(
+  entry
+  && typeof entry === 'object'
+  && entry?.metadata?.type === 'memory-card'
+);
 
 const normalizeInboxEntry = (entryInput = {}) => {
   const canonical = normalizeMemory({
@@ -55,6 +60,7 @@ const normalizeInboxEntry = (entryInput = {}) => {
   });
 
   return {
+    ...entryInput,
     id: canonical.id,
     text: canonical.text,
     type: canonical.type,
@@ -68,7 +74,7 @@ const normalizeInboxEntry = (entryInput = {}) => {
     entryPoint: canonical.entryPoint,
   };
 };
-export const getInboxEntries = () => {
+export const getInboxEntries = (options = {}) => {
   if (typeof localStorage === 'undefined') {
     return [];
   }
@@ -84,15 +90,20 @@ export const getInboxEntries = () => {
           const normalizedLegacy = legacyParsed.map((entry) => normalizeInboxEntry(entry)).filter((entry) => entry.text);
           localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(normalizedLegacy));
           localStorage.removeItem(legacyKey);
-          return normalizedLegacy;
+          return options.includeMemoryCoach === true
+            ? normalizedLegacy
+            : normalizedLegacy.filter((entry) => !isMemoryCoachInboxEntry(entry));
         }
       }
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
+    const entries = Array.isArray(parsed)
       ? parsed.map((entry) => normalizeInboxEntry(entry)).filter((entry) => entry.text)
       : [];
+    return options.includeMemoryCoach === true
+      ? entries
+      : entries.filter((entry) => !isMemoryCoachInboxEntry(entry));
   } catch (error) {
     console.warn('[inbox-service] Failed to load inbox entries', error);
     return [];
@@ -101,13 +112,15 @@ export const getInboxEntries = () => {
 
 const persistInboxEntries = (entries) => {
   if (typeof localStorage === 'undefined') {
-    return;
+    return false;
   }
 
   try {
     localStorage.setItem(INBOX_STORAGE_KEY, JSON.stringify(entries));
+    return true;
   } catch (error) {
     console.warn('[inbox-service] Failed to persist inbox entries', error);
+    return false;
   }
 };
 
@@ -148,36 +161,79 @@ export const saveInboxEntry = (entryInput = {}) => {
     entryPoint: entryInput?.entryPoint,
   });
 
-  const entries = getInboxEntries();
+  const entries = getInboxEntries({ includeMemoryCoach: true });
   entries.unshift(entry);
-  persistInboxEntries(entries);
+  if (!persistInboxEntries(entries)) {
+    return null;
+  }
   dispatchInboxUpdated();
   upsertInboxEntry(entry).catch((error) => {
     console.warn('[inbox-service] Firebase inbox sync failed', error);
   });
 
-  indexSourceEmbedding({
-    text: entry.text,
-    sourceType: 'inbox',
-    sourceId: entry.id,
-  }).catch((error) => {
-    console.warn('[embedding] Failed to index inbox embedding', error);
-  });
+  if (!isMemoryCoachInboxEntry(entry)) {
+    indexSourceEmbedding({
+      text: entry.text,
+      sourceType: 'inbox',
+      sourceId: entry.id,
+    }).catch((error) => {
+      console.warn('[embedding] Failed to index inbox embedding', error);
+    });
 
-  saveMemory({
-    id: entry.id,
-    text: entry.text,
-    type: 'inbox',
-    createdAt: entry.createdAt,
-    updatedAt: entry.updatedAt,
-    source: entry.source,
-    entryPoint: entry.entryPoint,
-    tags: entry.tags,
-  }).catch((error) => {
-    console.warn('[memory-service] Failed to save inbox memory', error);
-  });
+    saveMemory({
+      id: entry.id,
+      text: entry.text,
+      type: 'inbox',
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+      source: entry.source,
+      entryPoint: entry.entryPoint,
+      tags: entry.tags,
+    }).catch((error) => {
+      console.warn('[memory-service] Failed to save inbox memory', error);
+    });
+  }
 
   return entry;
+};
+
+export const updateMemoryCoachInboxEntry = (entryInput = {}) => {
+  const targetId = typeof entryInput?.id === 'string' ? entryInput.id.trim() : '';
+  if (!targetId) {
+    return null;
+  }
+
+  const entries = getInboxEntries({ includeMemoryCoach: true });
+  const index = entries.findIndex((entry) => entry?.id === targetId);
+  if (index < 0) {
+    return null;
+  }
+
+  const existing = entries[index];
+  if (!isMemoryCoachInboxEntry(existing) || !isMemoryCoachInboxEntry(entryInput)) {
+    return null;
+  }
+  const timestamp = Date.now();
+  const updated = normalizeInboxEntry({
+    ...existing,
+    ...entryInput,
+    id: targetId,
+    text: sanitizeText(entryInput?.text) || existing.text,
+    createdAt: existing.createdAt,
+    updatedAt: Number.isFinite(entryInput?.updatedAt) ? entryInput.updatedAt : timestamp,
+    pendingSync: true,
+    entryPoint: entryInput?.entryPoint || existing.entryPoint || 'inboxService.updateMemoryCoachInboxEntry',
+  });
+
+  entries[index] = updated;
+  if (!persistInboxEntries(entries)) {
+    return null;
+  }
+  dispatchInboxUpdated();
+  upsertInboxEntry(updated).catch((error) => {
+    console.warn('[inbox-service] Firebase inbox update sync failed', error);
+  });
+  return updated;
 };
 
 export const removeInboxEntry = (id) => {
@@ -186,13 +242,15 @@ export const removeInboxEntry = (id) => {
     return false;
   }
 
-  const entries = getInboxEntries();
+  const entries = getInboxEntries({ includeMemoryCoach: true });
   const nextEntries = entries.filter((entry) => String(entry?.id || '') !== targetId);
   if (nextEntries.length === entries.length) {
     return false;
   }
 
-  persistInboxEntries(nextEntries);
+  if (!persistInboxEntries(nextEntries)) {
+    return false;
+  }
   dispatchInboxUpdated();
   deleteInboxEntry(targetId).catch((error) => {
     console.warn('[inbox-service] Firebase inbox deletion sync failed', error);
@@ -200,14 +258,55 @@ export const removeInboxEntry = (id) => {
   return true;
 };
 
-export const replaceInboxEntries = (entriesInput = []) => {
-  const entries = Array.isArray(entriesInput)
+export const replaceInboxEntries = (entriesInput = [], options = {}) => {
+  const incomingEntries = Array.isArray(entriesInput)
     ? entriesInput
         .map((entry) => normalizeInboxEntry(entry))
         .filter((entry) => entry.text)
     : [];
+  const preservedMemoryCoachEntries = options.includeMemoryCoach === true
+    ? []
+    : getInboxEntries({ includeMemoryCoach: true }).filter(isMemoryCoachInboxEntry);
+  let entries = options.includeMemoryCoach === true
+    ? incomingEntries
+    : [
+        ...incomingEntries.filter((entry) => !isMemoryCoachInboxEntry(entry)),
+        ...preservedMemoryCoachEntries,
+      ];
 
-  persistInboxEntries(entries);
+  if (options.syncMemoryCoach === true) {
+    const timestamp = Date.now();
+    const updatedAt = new Date(timestamp).toISOString();
+    entries = entries.map((entry) => {
+      if (!isMemoryCoachInboxEntry(entry)) {
+        return entry;
+      }
+      return {
+        ...entry,
+        updatedAt: timestamp,
+        pendingSync: true,
+        metadata: {
+          ...entry.metadata,
+          memoryCoach: entry.metadata?.memoryCoach && typeof entry.metadata.memoryCoach === 'object'
+            ? { ...entry.metadata.memoryCoach, updatedAt }
+            : entry.metadata?.memoryCoach,
+        },
+      };
+    });
+  }
+
+  if (!persistInboxEntries(entries)) {
+    return [];
+  }
   dispatchInboxUpdated();
-  return entries;
+  if (options.syncMemoryCoach === true) {
+    entries.filter(isMemoryCoachInboxEntry).forEach((entry) => {
+      upsertInboxEntry(entry).catch((error) => {
+        console.warn('[inbox-service] Firebase Memory Coach restore sync failed', error);
+      });
+    });
+  }
+  return options.includeMemoryCoach === true
+    ? entries
+    : entries.filter((entry) => !isMemoryCoachInboxEntry(entry));
 };

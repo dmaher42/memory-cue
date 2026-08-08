@@ -26,6 +26,8 @@ const buildDashboard = window.__mobileMocks?.buildDashboard || (() => ({}));
 const generateWeeklySummary = window.__mobileMocks?.generateWeeklySummary || (async () => null);
 const getRecallItems = window.__mobileMocks?.getRecallItems || (() => []);
 const getInboxEntries = window.__mobileMocks?.getInboxEntries || (() => []);
+const saveInboxEntry = window.__mobileMocks?.saveInboxEntry || ((entry) => entry || null);
+const updateMemoryCoachInboxEntry = window.__mobileMocks?.updateMemoryCoachInboxEntry || ((entry) => entry || null);
 const executeCommand = window.__mobileMocks?.executeCommand || (async () => ({ message: '', data: null }));
 const ENABLE_CHAT_INTERFACE = window.__mobileMocks?.ENABLE_CHAT_INTERFACE ?? true;
 const handleChatMessage = window.__mobileMocks?.handleChatMessage || (async () => ({ reply: '' }));
@@ -43,6 +45,15 @@ const initMobileNotesFolderManager = window.__mobileMocks?.initMobileNotesFolder
 const initMobileNotesBrowserUi = window.__mobileMocks?.initMobileNotesBrowserUi || (() => ({}));
 const initMobileNotesEditorUi = window.__mobileMocks?.initMobileNotesEditorUi || (() => ({}));
 const createDailyTasksManager = window.__mobileMocks?.createDailyTasksManager || (() => ({}));
+const createMemoryCoachUi = window.__mobileMocks?.createMemoryCoachUi || (() => ({
+  activate() {},
+  deactivate() {},
+  render() {},
+  isActive: () => false,
+  saveVocabulary: () => ({ status: 'unavailable', entry: null }),
+  hasSavedWord: () => false,
+  getVocabularyState: () => 'new',
+}));
 `;
 
   source = preamble + source;

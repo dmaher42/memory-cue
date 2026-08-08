@@ -1,13 +1,20 @@
 import {
   getInboxEntries,
   saveInboxEntry,
+  updateMemoryCoachInboxEntry,
   removeInboxEntry,
   INBOX_STORAGE_KEY,
 } from '../../src/services/inboxService.js';
 import { captureInput as captureFromPipeline } from '../../src/core/capturePipeline.js';
 import { saveMemory } from '../../src/services/memoryService.js';
 
-export { INBOX_STORAGE_KEY, getInboxEntries, removeInboxEntry, saveInboxEntry };
+export {
+  INBOX_STORAGE_KEY,
+  getInboxEntries,
+  removeInboxEntry,
+  saveInboxEntry,
+  updateMemoryCoachInboxEntry,
+};
 
 const normalizeCaptureArgs = (textOrPayload, source = 'capture') => {
   if (textOrPayload && typeof textOrPayload === 'object' && !Array.isArray(textOrPayload)) {
@@ -67,6 +74,7 @@ if (typeof window !== 'undefined') {
     captureInput,
     getInboxEntries,
     saveInboxEntry,
+    updateMemoryCoachInboxEntry,
     removeInboxEntry,
     convertInboxToNote,
   };

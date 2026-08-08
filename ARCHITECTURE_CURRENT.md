@@ -27,11 +27,15 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 2. Notes are stored in `memoryCueNotes` (notebook domain).
 3. Reminders are stored separately in reminder storage (`memoryCue:offlineReminders`).
 4. Retrieval/assistant recall uses existing assistant/recall services (`js/services/assistant-service.js`, `js/services/recall-service.js`) plus UI readers.
+5. A Word Help result becomes practice only after the user chooses `Learn`. The app creates a hidden Inbox entry with `metadata.type = "memory-card"` and `metadata.memoryCoach`.
+6. `src/ui/mobileMemoryCoachUi.js` runs retrieval, clue, reveal, and self-rating inside Capture. `js/services/recall-service.js` calculates due items and the next interval without another AI call.
+7. Review state is updated through `src/services/inboxService.js` and the existing Firestore Inbox sync. Normal Inbox readers, assistant recall, daily planning, Notes, and Reminders exclude memory-card entries.
 
 ## Current source of truth by domain
 - **Inbox / raw capture:** `memoryCueInbox`, owned by `src/services/inboxService.js` (`memoryEntries` is migration-only).
 - **Reminders:** `memoryCue:offlineReminders` + reminder module state/render path.
 - **Notes / notebook memory:** `memoryCueNotes`.
+- **Memory Coach cards and schedules:** opt-in hidden records inside `memoryCueInbox`; no separate storage key.
 - **Folders/taxonomy for notes:** `memoryCueFolders`.
 - **Historical local keys with no active readers or writers:** `memoryCueState`, `memoryCueDB`, `brainDumpItems`, and `reminderEntries`. Do not reintroduce these parallel stores.
 

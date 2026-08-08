@@ -263,6 +263,12 @@ const migrateLegacyEntries = () => {
       }
 
       parsed.forEach((item) => {
+        if (
+          key === 'memoryCueInbox'
+          && item?.metadata?.type === 'memory-card'
+        ) {
+          return;
+        }
         const memory = toMemoryShape({
           id: item?.id,
           text: item?.text || item?.bodyText || item?.body || item?.title,

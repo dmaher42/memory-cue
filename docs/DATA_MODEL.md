@@ -38,6 +38,39 @@
 }
 ```
 
+## MemoryCoachInboxEntry metadata
+Memory Coach does not introduce a separate record store. A card is a hidden deferred-review Inbox entry with this additional metadata:
+
+```json
+{
+  "metadata": {
+    "type": "memory-card",
+    "source": "word-rescue",
+    "memoryCoach": {
+      "schemaVersion": 1,
+      "kind": "vocabulary",
+      "prompt": "retrieval prompt without the answer",
+      "answer": "word",
+      "explanation": "short meaning",
+      "example": "example sentence",
+      "hints": [],
+      "alternatives": [],
+      "enabled": true,
+      "dueAt": "ISO-8601",
+      "lastReviewedAt": "ISO-8601|null",
+      "lastRating": "forgot|hard|got_it|null",
+      "stage": 0,
+      "reviewCount": 0,
+      "streak": 0,
+      "lapses": 0,
+      "history": []
+    }
+  }
+}
+```
+
+Only an explicit `Learn` action creates this metadata. Review ratings update the single Inbox entry. Normal Inbox readers filter these cards, while full Inbox sync and backup retain them.
+
 ## AssistantConversation
 ```json
 {
@@ -56,6 +89,7 @@
 ## Storage authority
 - Inbox entries are persisted in `localStorage.memoryCueInbox`.
 - Notes are persisted in `localStorage.memoryCueNotes` through `js/modules/notes-storage.js`.
+- Memory Coach cards and schedules are opt-in hidden Inbox metadata inside `localStorage.memoryCueInbox`; there is no separate practice key and no Memory Coach write to Notes or Reminders.
 - Reminders are persisted in the reminders module, mirrored in `localStorage.scheduledReminders`, and synced to service worker IndexedDB.
 - Assistant conversation history is persisted in `sessionStorage.memoryCueAssistantConversation`.
 - Legacy key `memoryEntries` is migrated to `memoryCueInbox` when inbox is first read.

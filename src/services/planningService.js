@@ -1,4 +1,5 @@
 import { pullChanges } from './firestoreSyncService.js';
+import { isMemoryCoachInboxEntry } from './inboxService.js';
 
 const resolveUid = async (uid) => {
   if (typeof uid === 'string' && uid.trim()) {
@@ -93,7 +94,8 @@ export const loadNotes = async (uid) => {
 
 export const loadInbox = async (uid) => {
   const resolvedUid = await resolveUid(uid);
-  return loadCollection(resolvedUid, 'inbox');
+  const entries = await loadCollection(resolvedUid, 'inbox');
+  return entries.filter((entry) => !isMemoryCoachInboxEntry(entry));
 };
 
 const toPlanItem = (entry, dueDate = null) => ({

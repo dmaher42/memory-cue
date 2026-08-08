@@ -5,7 +5,7 @@
 | Storage key | Data structure | Writers | Readers |
 |---|---|---|---|
 | `memoryCueState` | Historical desktop-shell object `{ schemaVersion, entries[], settings, ui }` | No active writer remains (`state.js` has been removed) | No active reader remains |
-| `memoryCueInbox` | Array of canonical Inbox/capture entries | `src/services/inboxService.js` through the capture-service wrapper and trusted reminder conversion helpers | Inbox service consumers, reminder recall, daily log, Firestore sync |
+| `memoryCueInbox` | Array of canonical Inbox/capture entries; opt-in Memory Coach cards use `metadata.type = "memory-card"` and `metadata.memoryCoach` | `src/services/inboxService.js` through the capture-service wrapper, trusted reminder conversion helpers, and `src/ui/mobileMemoryCoachUi.js` | Normal Inbox consumers receive filtered entries; Memory Coach, Firestore sync, and backup explicitly read the full array |
 | `memoryEntries` | Legacy Inbox array or `{ entries }` wrapper | Historical writers only | `src/services/inboxService.js` for one-time migration when `memoryCueInbox` is empty |
 | `memoryCueNotes` | Array of note objects `{ id,title,body,bodyHtml,bodyText,updatedAt,... }` | `js/modules/notes-storage.js` (`saveAllNotes`), `mobile.js`, `src/reminders/reminderController.js`, `js/modules/ai-capture-save.js` | `js/modules/notes-storage.js` (`loadAllNotes`), `mobile.js`, reminder recall |
 | `memoryCueFolders` | Array of folder objects `{ id,name,order }` | `js/modules/notes-storage.js`, `js/reminders.js` (reflection folder helper) | `js/modules/notes-storage.js`, `mobile.js`, `js/reminders.js` |
@@ -28,7 +28,7 @@
 ## Specific requested identifiers
 
 - `memoryCueState`: historical desktop-shell key with no active reader or writer.
-- `memoryCueInbox`: canonical Inbox/capture store.
+- `memoryCueInbox`: canonical Inbox/capture store, including hidden opt-in Memory Coach cards. There is no separate practice key.
 - `memoryEntries`: legacy input migrated into `memoryCueInbox`; no active writers remain.
-- `memoryCueNotes`: main notes model used by notes-storage and multiple conversion paths.
+- `memoryCueNotes`: main notes model used by notes-storage and multiple conversion paths; Memory Coach does not write here.
 - `offlineReminders`: implemented as key `memoryCue:offlineReminders` in `js/reminders.js`.

@@ -147,7 +147,7 @@ const REMINDER_BOARD_COLUMNS = Object.freeze([
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
 const LEGACY_DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 const ORDER_INDEX_GAP = 1024;
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 const locale = typeof navigator !== 'undefined' && navigator.language ? navigator.language : undefined;
 const TZ = (() => {
   try {
@@ -4526,7 +4526,7 @@ export async function initReminders(sel = {}) {
       reminders: items.map((item) => normalizeReminderRecord(item, { fallbackId: item?.id || uid() })),
       notes: loadAllNotes(),
       folders: getFolders(),
-      inbox: getInboxEntries(),
+      inbox: getInboxEntries({ includeMemoryCoach: true }),
       chatHistory: getMessages(),
     };
   }
@@ -4541,7 +4541,11 @@ export async function initReminders(sel = {}) {
 
     saveFolders(nextFolders);
     saveAllNotes(nextNotes);
-    replaceInboxEntries(nextInbox);
+    const restoresMemoryCoach = Number(backup.version) >= 2;
+    replaceInboxEntries(nextInbox, {
+      includeMemoryCoach: restoresMemoryCoach,
+      syncMemoryCoach: restoresMemoryCoach,
+    });
     replaceMessages(nextChatHistory);
 
     pendingDeletionItems.clear();

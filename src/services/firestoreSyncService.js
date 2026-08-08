@@ -37,7 +37,8 @@ const toTimestamp = (value) => {
 // Merge a remote snapshot into the locally-cached items WITHOUT dropping unsynced local
 // edits. A live snapshot or pull that hasn't caught up to a just-written local item would
 // otherwise erase it (e.g. a chat message vanishing right after you type it).
-//   - present in both: remote wins, unless the local copy is pendingSync and at least as new
+//   - present in both: remote wins on an equal timestamp (the remote copy acknowledges the
+//     write), unless the pending local copy is strictly newer
 //   - remote only: added
 //   - local only: kept ONLY if pendingSync (otherwise it was deleted remotely)
 export const mergeRemoteWithLocal = (localItems, remoteItems, orderField = 'updatedAt') => {
@@ -60,7 +61,7 @@ export const mergeRemoteWithLocal = (localItems, remoteItems, orderField = 'upda
     if (
       localItem
       && localItem.pendingSync
-      && toTimestamp(localItem[orderField]) >= toTimestamp(remoteItem[orderField])
+      && toTimestamp(localItem[orderField]) > toTimestamp(remoteItem[orderField])
     ) {
       merged.push(localItem);
     } else {
@@ -312,7 +313,6 @@ const reconcileCollection = async ({
 const deleteCollectionItem = async ({
   localKey,
   collectionName,
-  normalizeItem,
   id,
   uid,
 }) => {
@@ -321,12 +321,11 @@ const deleteCollectionItem = async ({
     return false;
   }
 
-  const remainingItems = mergeById(
-    readLocal(localKey)
-      .map((item) => normalizeItem(item))
-      .filter(Boolean)
-      .filter((item) => String(item.id) !== normalizedId)
-  );
+  // Deleting one item must not re-normalize the remaining local cache. In
+  // particular, pending Inbox entries need to keep pendingSync until their own
+  // remote write is acknowledged.
+  const remainingItems = readLocal(localKey)
+    .filter((item) => String(item?.id || '').trim() !== normalizedId);
 
   writeLocal(localKey, remainingItems);
   dispatchSyncEvent(localKey, remainingItems);
@@ -513,14 +512,62 @@ export const subscribeToNotesChanges = async (options = {}) => subscribeToCollec
   onItems: options.onItems,
 });
 
-export const subscribeToInboxChanges = async (options = {}) => subscribeToCollection({
-  localKey: INBOX_KEY,
-  collectionName: COLLECTIONS.inbox,
-  normalizeItem: normalizeInboxEntry,
-  uid: options.uid,
-  orderField: 'updatedAt',
-  onItems: options.onItems,
-});
+const flushPendingInboxEntries = async (options = {}) => {
+  const pendingEntries = readLocal(INBOX_KEY)
+    .filter((entry) => entry?.pendingSync === true)
+    .map((entry) => normalizeInboxEntry(entry))
+    .filter(Boolean);
+  if (!pendingEntries.length) {
+    return;
+  }
+
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(options.uid);
+  if (!firebase || !resolvedUid) {
+    return;
+  }
+
+  const remoteEntries = await readRemoteCollection(COLLECTIONS.inbox, {
+    uid: resolvedUid,
+    orderField: 'updatedAt',
+  });
+  const remoteById = new Map(
+    (Array.isArray(remoteEntries) ? remoteEntries : [])
+      .map((entry) => normalizeInboxEntry(entry))
+      .filter(Boolean)
+      .map((entry) => [String(entry.id), entry]),
+  );
+  const entriesToPush = pendingEntries.filter((entry) => {
+    const remote = remoteById.get(String(entry.id));
+    return !remote || toTimestamp(entry.updatedAt) > toTimestamp(remote.updatedAt);
+  });
+
+  await Promise.all(entriesToPush.map((entry) => firebase.setDoc(
+    firebase.doc(firebase.db, 'users', resolvedUid, COLLECTIONS.inbox, requireUid(entry.id)),
+    entry,
+    { merge: true },
+  )));
+};
+
+export const subscribeToInboxChanges = async (options = {}) => {
+  // Flush entries captured while signed out/offline before listening. This includes hidden
+  // Memory Coach cards and keeps the raw Inbox cache complete even though normal readers
+  // filter those cards from the visible product surfaces.
+  try {
+    await flushPendingInboxEntries(options);
+  } catch (error) {
+    console.warn('[firestore-sync] Failed to flush pending Inbox entries before subscribing', error);
+  }
+
+  return subscribeToCollection({
+    localKey: INBOX_KEY,
+    collectionName: COLLECTIONS.inbox,
+    normalizeItem: normalizeInboxEntry,
+    uid: options.uid,
+    orderField: 'updatedAt',
+    onItems: options.onItems,
+  });
+};
 
 export const subscribeToChatHistoryChanges = async (options = {}) => subscribeToCollection({
   localKey: CHAT_KEY,
@@ -547,11 +594,20 @@ export const upsertInboxEntry = async (entry, options = {}) => {
   const normalizedEntry = normalizeInboxEntry(entry);
   if (!normalizedEntry?.id) return;
 
-  const cached = mergeById([
+  // Push only this entry. The caller already cached its local pendingSync copy, which must
+  // remain pending until a Firestore snapshot confirms the remote write. Bulk reconciliation
+  // here can clear that flag too early and makes a later pull treat the local entry as deleted.
+  const firebase = await getFirebaseContext();
+  const resolvedUid = resolveUid(options.uid);
+  if (!firebase || !resolvedUid) {
+    return;
+  }
+
+  await firebase.setDoc(
+    firebase.doc(firebase.db, 'users', resolvedUid, COLLECTIONS.inbox, requireUid(normalizedEntry.id)),
     normalizedEntry,
-    ...readLocal(INBOX_KEY).map((item) => normalizeInboxEntry(item)).filter(Boolean),
-  ]);
-  await syncInbox(cached, options);
+    { merge: true },
+  );
 };
 
 export const upsertReminder = async (reminder) => {
@@ -569,7 +625,6 @@ export const deleteReminder = async (id) => {
 export const deleteNote = async (id, options = {}) => deleteCollectionItem({
   localKey: NOTES_KEY,
   collectionName: COLLECTIONS.notes,
-  normalizeItem: normalizeNote,
   id,
   uid: options.uid,
 });
@@ -577,7 +632,6 @@ export const deleteNote = async (id, options = {}) => deleteCollectionItem({
 export const deleteInboxEntry = async (id, options = {}) => deleteCollectionItem({
   localKey: INBOX_KEY,
   collectionName: COLLECTIONS.inbox,
-  normalizeItem: normalizeInboxEntry,
   id,
   uid: options.uid,
 });

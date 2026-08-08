@@ -4856,14 +4856,25 @@ body, main, section, div, p, span, li {
   <div class="mobile-app">
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
+      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
       <h1 class="header-title title">Capture</h1>
-      <button
-        id="wordRescueLauncher"
-        type="button"
-        class="word-rescue-launcher"
-        aria-expanded="false"
-        aria-controls="chatConversationContainer"
-      >Word help</button>
+      <div class="capture-header-actions" role="group" aria-label="Capture tools">
+        <button
+          id="memoryCoachLauncher"
+          type="button"
+          class="memory-coach-launcher"
+          aria-expanded="false"
+          aria-pressed="false"
+          aria-controls="chatConversationContainer"
+        >Memory coach</button>
+        <button
+          id="wordRescueLauncher"
+          type="button"
+          class="word-rescue-launcher"
+          aria-expanded="false"
+          aria-controls="chatConversationContainer"
+        >Word help</button>
+      </div>
       <div id="remindersHeaderActions" class="reminders-header-actions" hidden aria-hidden="true">
         <button
           type="button"
@@ -4887,7 +4898,6 @@ body, main, section, div, p, span, li {
           + New
         </button>
       </div>
-      <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
     <div id="overflowMenu" class="overflow-menu quick-actions-panel hidden" role="menu" aria-hidden="true">
         <div class="overflow-menu-section">
           <div class="overflow-menu-section-label">Quick actions</div>
@@ -5506,6 +5516,10 @@ body, main, section, div, p, span, li {
     <div id="wordRescueModeBar" class="word-rescue-mode-bar hidden" aria-live="polite">
       <span>Word help: <strong id="wordRescueModeLabel">Find it now</strong></span>
       <button id="wordRescueExitButton" type="button" class="word-rescue-exit-button">Back to Capture</button>
+    </div>
+    <div id="memoryCoachModeBar" class="memory-coach-mode-bar hidden" aria-live="polite">
+      <span>Memory coach: <strong id="memoryCoachModeLabel">Practice</strong></span>
+      <button id="memoryCoachExitButton" type="button" class="memory-coach-exit-button">Back to Capture</button>
     </div>
     <form id="thinkingBarForm" class="capture-form">
       <label for="thinkingBarInput" class="sr-only">Add a reminder, note, or ask anything</label>

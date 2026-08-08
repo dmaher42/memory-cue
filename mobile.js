@@ -14,7 +14,11 @@ import { saveFolders } from './js/modules/notes-storage.js';
 import { buildDashboard } from './js/modules/dashboard-data.js';
 import { generateWeeklySummary } from './js/modules/weekly-summary.js';
 import { getRecallItems } from './js/services/recall-service.js';
-import { getInboxEntries } from './js/services/capture-service.js?v=20260323a';
+import {
+  getInboxEntries,
+  saveInboxEntry,
+  updateMemoryCoachInboxEntry,
+} from './js/services/capture-service.js?v=20260323a';
 import { executeCommand } from './src/core/commandEngine.js';
 import { ENABLE_CHAT_INTERFACE, handleChatMessage } from './src/chat/chatManager.js';
 import { clearMessages, getMessages, updateMessage } from './src/chat/messageStore.js';
@@ -26,6 +30,7 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
+import { createMemoryCoachUi } from './src/ui/mobileMemoryCoachUi.js';
 
 let reminderControllerApi = null;
 
@@ -104,6 +109,10 @@ function initAssistant() {
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarLabel = document.querySelector('label[for="thinkingBarInput"]');
+    const memoryCoachLauncher = document.getElementById('memoryCoachLauncher');
+    const memoryCoachModeBar = document.getElementById('memoryCoachModeBar');
+    const memoryCoachModeLabel = document.getElementById('memoryCoachModeLabel');
+    const memoryCoachExitButton = document.getElementById('memoryCoachExitButton');
     const wordRescueLauncher = document.getElementById('wordRescueLauncher');
     const wordRescueModeBar = document.getElementById('wordRescueModeBar');
     const wordRescueModeLabel = document.getElementById('wordRescueModeLabel');
@@ -122,6 +131,7 @@ function initAssistant() {
     let isWordRescueChoiceOpen = false;
     let activeWordRescueMode = '';
     let activeWordRescueSession = null;
+    let memoryCoachUi = null;
     let wordRescueRequestGeneration = 0;
     const MAX_VISIBLE_CAPTURE_MESSAGES = 12;
     const CAPTURE_UNDO_WINDOW_MS = 10000;
@@ -862,7 +872,7 @@ function initAssistant() {
       return !activeView || activeView === 'capture';
     };
 
-    const normalizeWordRescueCoachSession = (value) => {
+    const normalizeWordRescueCoachSession = (value, cue = '') => {
       if (!value || typeof value !== 'object' || value.mode !== 'coach') {
         return null;
       }
@@ -890,11 +900,36 @@ function initAssistant() {
       }
       return {
         mode: 'coach',
+        cue: typeof cue === 'string' ? cue.trim() : '',
         hints,
         answer,
         alternatives,
         hintIndex: 0,
         revealed: false,
+      };
+    };
+
+    const normalizeWordRescueFastSession = (value, cue = '') => {
+      if (!value || typeof value !== 'object' || value.mode !== 'fast') {
+        return null;
+      }
+      const candidates = Array.isArray(value.candidates)
+        ? value.candidates
+          .map((candidate) => ({
+            word: typeof candidate?.word === 'string' ? candidate.word.trim() : '',
+            meaning: typeof candidate?.meaning === 'string' ? candidate.meaning.trim() : '',
+            example: typeof candidate?.example === 'string' ? candidate.example.trim() : '',
+          }))
+          .filter((candidate) => candidate.word && candidate.meaning)
+          .slice(0, 3)
+        : [];
+      if (!candidates.length) {
+        return null;
+      }
+      return {
+        mode: 'fast',
+        cue: typeof cue === 'string' ? cue.trim() : '',
+        candidates,
       };
     };
 
@@ -1001,9 +1036,97 @@ function initAssistant() {
       chatConversationContainer.appendChild(region);
     };
 
+    const createLearnWordButton = (payload, actionId) => {
+      const word = typeof payload?.word === 'string' ? payload.word.trim() : '';
+      if (!word) {
+        return null;
+      }
+      const saveState = typeof memoryCoachUi?.getVocabularyState === 'function'
+        ? memoryCoachUi.getVocabularyState(word)
+        : memoryCoachUi?.hasSavedWord?.(word)
+          ? 'saved'
+          : 'new';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'word-rescue-learn-button';
+      button.dataset.wordRescueLearn = actionId;
+      if (saveState === 'saved') {
+        button.setAttribute('aria-disabled', 'true');
+      }
+      button.textContent = saveState === 'saved'
+        ? `${word} — Saved for practice`
+        : saveState === 'paused'
+          ? `Resume “${word}”`
+          : `Learn “${word}”`;
+      button.addEventListener('click', () => {
+        if (saveState === 'saved') {
+          setThinkingBarStatus(`${word} is already saved for practice.`);
+          return;
+        }
+        const result = memoryCoachUi?.saveVocabulary?.(payload);
+        if (!result || result.status === 'invalid' || result.status === 'save_failed') {
+          setThinkingBarStatus('That word could not be saved for practice.');
+          return;
+        }
+        renderConversationHistory();
+        const nextButton = Array.from(
+          chatConversationContainer?.querySelectorAll('[data-word-rescue-learn]') || [],
+        ).find((candidate) => candidate.dataset.wordRescueLearn === actionId);
+        nextButton?.focus();
+        revealLatestCaptureMessage();
+      });
+      return button;
+    };
+
+    const renderWordRescueFastPractice = () => {
+      const session = activeWordRescueSession;
+      if (
+        !session
+        || session.mode !== 'fast'
+        || !isCaptureViewActive()
+        || !(chatConversationContainer instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      const region = document.createElement('section');
+      region.className = 'word-rescue-coach-controls word-rescue-fast-save';
+      region.setAttribute('role', 'region');
+      region.setAttribute('aria-label', 'Save a word for memory practice');
+      const title = document.createElement('h3');
+      title.className = 'word-rescue-coach-title';
+      title.textContent = 'Keep one for later';
+      const copy = document.createElement('p');
+      copy.className = 'word-rescue-coach-copy';
+      copy.textContent = 'Save only the word you want Memory Coach to bring back for retrieval practice.';
+      const actions = document.createElement('div');
+      actions.className = 'word-rescue-learn-actions';
+      session.candidates.forEach((candidate, index) => {
+        const button = createLearnWordButton({
+          word: candidate.word,
+          cue: session.cue,
+          explanation: candidate.meaning,
+          example: candidate.example,
+          alternatives: session.candidates
+            .filter((_, candidateIndex) => candidateIndex !== index)
+            .map((item) => item.word),
+        }, `fast-${index}`);
+        if (button) {
+          actions.appendChild(button);
+        }
+      });
+      region.append(title, copy, actions);
+      chatConversationContainer.appendChild(region);
+    };
+
     const renderWordRescueCoachProgress = () => {
       const session = activeWordRescueSession;
-      if (!session || !isCaptureViewActive() || !(chatConversationContainer instanceof HTMLElement)) {
+      if (
+        !session
+        || session.mode !== 'coach'
+        || !isCaptureViewActive()
+        || !(chatConversationContainer instanceof HTMLElement)
+      ) {
         return;
       }
 
@@ -1092,6 +1215,17 @@ function initAssistant() {
         });
         actions.appendChild(revealButton);
       } else {
+        const learnButton = createLearnWordButton({
+          word: session.answer.word,
+          cue: session.cue,
+          explanation: session.answer.explanation,
+          example: session.answer.example,
+          hints: session.hints,
+          alternatives: session.alternatives,
+        }, 'coach-answer');
+        if (learnButton) {
+          actions.appendChild(learnButton);
+        }
         const restartButton = document.createElement('button');
         restartButton.type = 'button';
         restartButton.className = 'word-rescue-coach-button word-rescue-coach-button--primary';
@@ -1110,7 +1244,12 @@ function initAssistant() {
     };
 
     const renderWordRescueSupplementalUi = () => {
+      if (memoryCoachUi?.isActive?.()) {
+        memoryCoachUi.render();
+        return;
+      }
       renderWordRescueChoice();
+      renderWordRescueFastPractice();
       renderWordRescueCoachProgress();
     };
 
@@ -1317,6 +1456,37 @@ function initAssistant() {
       }
     };
 
+    memoryCoachUi = createMemoryCoachUi({
+      container: chatConversationContainer,
+      launcher: memoryCoachLauncher,
+      controlsRegion: thinkingBarContainer,
+      modeBar: memoryCoachModeBar,
+      modeLabel: memoryCoachModeLabel,
+      exitButton: memoryCoachExitButton,
+      loadEntries: () => getInboxEntries({ includeMemoryCoach: true }),
+      createEntry: saveInboxEntry,
+      updateEntry: updateMemoryCoachInboxEntry,
+      setStatus: setThinkingBarStatus,
+      requestRender: () => {
+        renderConversationHistory();
+        revealLatestCaptureMessage();
+      },
+      beforeActivate: () => {
+        if (activeWordRescueMode || isWordRescueChoiceOpen) {
+          closeWordRescue({ keepFocus: false });
+        }
+      },
+      onFindWord: () => {
+        isWordRescueChoiceOpen = true;
+        updateWordRescueModeUi();
+        renderConversationHistory();
+        chatConversationContainer
+          ?.querySelector('[data-word-rescue-action="find"]')
+          ?.focus();
+        revealLatestCaptureMessage();
+      },
+    });
+
     const revealLatestCaptureMessage = () => {
       const appContent = document.getElementById('main');
       const latestMessage = chatConversationContainer?.lastElementChild;
@@ -1328,6 +1498,7 @@ function initAssistant() {
           || latestMessage.classList.contains('word-rescue-choice')
           || latestMessage.classList.contains('word-rescue-coach-controls')
           || latestMessage.classList.contains('word-rescue-reveal')
+          || latestMessage.classList.contains('memory-coach-card')
         )
       ) {
         return;
@@ -1711,7 +1882,8 @@ function initAssistant() {
         const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
           ? reply.message.trim()
           : 'Saved to Inbox';
-        const coachSession = normalizeWordRescueCoachSession(reply?.wordRescue);
+        const coachSession = normalizeWordRescueCoachSession(reply?.wordRescue, trimmedMessage);
+        const fastSession = normalizeWordRescueFastSession(reply?.wordRescue, trimmedMessage);
         const canApplyWordRescueResponse = isCaptureViewActive()
           && (!wordRescueModeForRequest || (
             wordRescueRequestToken === wordRescueRequestGeneration
@@ -1722,8 +1894,9 @@ function initAssistant() {
           activeWordRescueSession = coachSession;
           isWordRescueChoiceOpen = false;
           updateWordRescueModeUi();
-        } else if (reply?.wordRescue?.mode === 'fast' && canApplyWordRescueResponse) {
+        } else if (fastSession && canApplyWordRescueResponse) {
           activeWordRescueMode = 'fast';
+          activeWordRescueSession = fastSession;
           isWordRescueChoiceOpen = false;
           updateWordRescueModeUi();
         }
@@ -1752,6 +1925,9 @@ function initAssistant() {
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
 
     wordRescueLauncher?.addEventListener('click', () => {
+      if (memoryCoachUi?.isActive?.()) {
+        memoryCoachUi.deactivate({ restoreFocus: false });
+      }
       if (activeWordRescueMode || isWordRescueChoiceOpen) {
         closeWordRescue({ keepFocus: false });
         wordRescueLauncher.focus();
