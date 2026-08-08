@@ -26,7 +26,7 @@ function loadChatManager(overrides = {}) {
     executeCommand: async () => ({}),
     saveInboxEntry: () => ({}),
     suggestNotebookAndTags: async () => ({}),
-    classifyIntentLocally: () => ({}),
+    classifyIntentLocally: overrides.classifyIntentLocally || (() => ({})),
     createChatIntentInput: () => ({}),
     routeIntent: () => ({}),
     semanticSearch: async () => [],
@@ -36,8 +36,8 @@ function loadChatManager(overrides = {}) {
     renderDailyPlan: () => '',
     buildMemoryAssistantRequest: () => ({}),
     requestAssistantChat: async () => '',
-    answerFromActiveLesson: async () => '',
-    looksLikeActiveLessonPrompt: () => false,
+    answerFromActiveLesson: overrides.answerFromActiveLesson || (async () => ''),
+    looksLikeActiveLessonPrompt: overrides.looksLikeActiveLessonPrompt || (() => false),
     findRelatedMemories: overrides.findRelatedMemories || (() => []),
   });
 
@@ -163,4 +163,87 @@ test('drops blank markup-only query results and shortens raw note bodies used as
   expect(response.resultItems[0].title.length).toBeLessThanOrEqual(80);
   expect(response.resultItems[0].title.endsWith('…')).toBe(true);
   expect(savedMessages[1].resultItems).toEqual(response.resultItems);
+});
+
+test('passes Word Rescue mode through the canonical capture path without adding related notes', async () => {
+  const savedMessages = [];
+  const captureInput = jest.fn(async () => ({
+    decision: { decisionType: 'assistant_query' },
+    message: '1. meticulous - very careful and precise',
+    wordRescue: { mode: 'fast', candidates: [] },
+  }));
+  const findRelatedMemories = jest.fn(() => [{ noteId: 'private-note', title: 'Private note', score: 3 }]);
+  const { handleChatMessage } = loadChatManager({
+    addMessage: (message) => savedMessages.push(message),
+    captureInput,
+    findRelatedMemories,
+  });
+
+  const response = await handleChatMessage('a stronger word for careful', {
+    assistantTask: 'word_rescue',
+    assistantMode: 'fast',
+  });
+
+  expect(captureInput).toHaveBeenCalledWith({
+    text: 'a stronger word for careful',
+    source: 'chat',
+    metadata: {
+      entryPoint: 'chat.handleChatMessage.wordRescue',
+      uid: undefined,
+      assistantTask: 'word_rescue',
+      assistantMode: 'fast',
+    },
+  });
+  expect(response.wordRescue).toEqual({ mode: 'fast', candidates: [] });
+  expect(findRelatedMemories).not.toHaveBeenCalled();
+  expect(savedMessages).toHaveLength(2);
+  expect(savedMessages[1].content).not.toContain('Related from your memory');
+});
+
+test('explicit Word Rescue bypasses active-lesson question handling', async () => {
+  const captureInput = jest.fn(async () => ({
+    decision: { decisionType: 'assistant_query' },
+    message: '1. eloquent - fluent and persuasive in expression',
+    wordRescue: { mode: 'fast', candidates: [] },
+  }));
+  const answerFromActiveLesson = jest.fn(async () => 'Active lesson answer');
+  const { handleChatMessage } = loadChatManager({
+    captureInput,
+    answerFromActiveLesson,
+    looksLikeActiveLessonPrompt: () => true,
+  });
+
+  const response = await handleChatMessage('a word for a persuasive sentence', {
+    assistantTask: 'word_rescue',
+    assistantMode: 'fast',
+  });
+
+  expect(response.message).toContain('eloquent');
+  expect(answerFromActiveLesson).not.toHaveBeenCalled();
+  expect(captureInput).toHaveBeenCalledTimes(1);
+});
+
+test('naturally detected Word Rescue also bypasses active-lesson handling', async () => {
+  const captureInput = jest.fn(async () => ({
+    decision: { decisionType: 'assistant_query' },
+    message: '1. phrasing - the way something is expressed',
+    wordRescue: { mode: 'fast', candidates: [] },
+  }));
+  const answerFromActiveLesson = jest.fn(async () => 'Active lesson answer');
+  const { handleChatMessage } = loadChatManager({
+    captureInput,
+    answerFromActiveLesson,
+    looksLikeActiveLessonPrompt: () => true,
+    classifyIntentLocally: () => ({
+      decisionType: 'assistant_query',
+      assistantTask: 'word_rescue',
+      mode: 'fast',
+    }),
+  });
+
+  const response = await handleChatMessage('I need another word for this sentence');
+
+  expect(response.message).toContain('phrasing');
+  expect(answerFromActiveLesson).not.toHaveBeenCalled();
+  expect(captureInput).toHaveBeenCalledTimes(1);
 });

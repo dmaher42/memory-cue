@@ -37,7 +37,13 @@ function loadCapturePipeline(overrides = {}) {
     handleQuery: overrides.handleQuery || (async () => ({})),
     saveInboxEntry: overrides.saveInboxEntry || (async (payload) => payload),
     buildMemoryAssistantRequest: overrides.buildMemoryAssistantRequest || (() => ({})),
-    requestAssistantChat: overrides.requestAssistantChat || (async () => ({ reply: '' })),
+    buildWordRescueAssistantRequest: overrides.buildWordRescueAssistantRequest || ((message, options = {}) => ({
+      assistantTask: 'word_rescue',
+      mode: options.mode || 'fast',
+      message,
+    })),
+    requestAssistantChat: overrides.requestAssistantChat || (async () => ''),
+    requestAssistantChatResult: overrides.requestAssistantChatResult || (async () => ({ reply: '' })),
     resolveShorthandText: overrides.resolveShorthandText || ((value) => value),
     getUnknownShorthandToken: overrides.getUnknownShorthandToken || (() => null),
     rememberShorthand: overrides.rememberShorthand || (() => null),
@@ -246,4 +252,118 @@ test('capture pipeline keeps an explicit time alongside a four-digit year', asyn
 
   expect(createdReminders).toHaveLength(1);
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+});
+
+test('explicit Word Rescue mode calls the assistant without reading or writing saved memories', async () => {
+  const createAndSaveNote = jest.fn();
+  const createReminder = jest.fn();
+  const handleQuery = jest.fn();
+  const semanticSearch = jest.fn();
+  const requestAssistantChatResult = jest.fn(async () => ({
+    reply: 'Hint 1 of 3: It means avoiding a direct commitment.',
+    wordRescue: {
+      mode: 'coach',
+      hints: ['Meaning clue', 'Context clue', 'Letter clue'],
+      answer: { word: 'equivocate', explanation: 'Avoid committing clearly.', example: '' },
+      alternatives: ['prevaricate'],
+    },
+  }));
+  const { captureInput } = loadCapturePipeline({
+    createAndSaveNote,
+    createReminder,
+    handleQuery,
+    semanticSearch,
+    requestAssistantChatResult,
+    intentRouter: (text, hints = {}) => ({
+      payload: {
+        decisionType: 'assistant_query',
+        parsedType: 'word_rescue',
+        parsedEntry: { type: 'word_rescue', title: text },
+        assistantTask: 'word_rescue',
+        mode: hints.assistantMode,
+      },
+    }),
+  });
+
+  const result = await captureInput({
+    text: 'someone who avoids giving a direct answer',
+    source: 'chat',
+    metadata: {
+      entryPoint: 'chat.handleChatMessage.wordRescue',
+      assistantTask: 'word_rescue',
+      assistantMode: 'coach',
+    },
+  });
+
+  expect(result.decision.decisionType).toBe('assistant_query');
+  expect(result.message).toContain('Hint 1 of 3');
+  expect(result.wordRescue.answer.word).toBe('equivocate');
+  expect(requestAssistantChatResult).toHaveBeenCalledWith({
+    assistantTask: 'word_rescue',
+    mode: 'coach',
+    message: 'someone who avoids giving a direct answer',
+  }, expect.any(Object));
+  expect(semanticSearch).not.toHaveBeenCalled();
+  expect(handleQuery).not.toHaveBeenCalled();
+  expect(createAndSaveNote).not.toHaveBeenCalled();
+  expect(createReminder).not.toHaveBeenCalled();
+});
+
+test('natural fast Word Rescue decisions preserve task and mode through execution', async () => {
+  const requestAssistantChatResult = jest.fn(async () => ({
+    reply: '1. meticulous - very careful and precise',
+    wordRescue: { mode: 'fast', candidates: [] },
+  }));
+  const { captureInput } = loadCapturePipeline({
+    requestAssistantChatResult,
+    intentRouter: (text) => ({
+      payload: {
+        decisionType: 'assistant_query',
+        parsedType: 'word_rescue',
+        parsedEntry: { type: 'word_rescue', title: text },
+        assistantTask: 'word_rescue',
+        mode: 'fast',
+      },
+    }),
+  });
+
+  const result = await captureInput({
+    text: 'another word for very careful',
+    source: 'chat',
+  });
+
+  expect(result.message).toContain('meticulous');
+  expect(requestAssistantChatResult).toHaveBeenCalledWith(expect.objectContaining({
+    assistantTask: 'word_rescue',
+    mode: 'fast',
+  }), expect.any(Object));
+});
+
+test('general assistant questions still work when personal-memory lookup is unavailable', async () => {
+  const requestAssistantChat = jest.fn(async () => 'Spaced retrieval revisits information over increasing intervals.');
+  const { captureInput } = loadCapturePipeline({
+    semanticSearch: async () => { throw new Error('offline'); },
+    requestAssistantChat,
+    buildMemoryAssistantRequest: (question, snippets) => ({ question, snippets }),
+    intentRouter: (text) => ({
+      payload: {
+        decisionType: 'assistant_query',
+        parsedType: 'question',
+        parsedEntry: { type: 'question', title: text },
+        assistantTask: 'general',
+        mode: null,
+      },
+    }),
+  });
+
+  const result = await captureInput({
+    text: 'What is spaced retrieval practice?',
+    source: 'chat',
+  });
+
+  expect(result.message).toContain('increasing intervals');
+  expect(requestAssistantChat).toHaveBeenCalledWith({
+    question: 'What is spaced retrieval practice?',
+    snippets: [],
+  }, expect.any(Object));
 });

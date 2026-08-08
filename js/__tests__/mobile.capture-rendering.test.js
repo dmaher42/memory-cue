@@ -8,18 +8,27 @@ describe('mobile capture result rendering', () => {
     document.body.innerHTML = `
       <main id="main">
         <section id="view-capture">
-          <h2>Capture</h2>
+          <header class="capture-page-header">
+            <h2>Capture</h2>
+            <button id="wordRescueLauncher" type="button" aria-expanded="false">Word help</button>
+          </header>
           <section id="chatConversationContainer"></section>
         </section>
       </main>
       <section id="thinkingBarContainer">
+        <div id="wordRescueModeBar" class="hidden">
+          <span>Word help: <strong id="wordRescueModeLabel">Find it now</strong></span>
+          <button id="wordRescueExitButton" type="button">Back to Capture</button>
+        </div>
         <form id="thinkingBarForm">
-          <textarea id="thinkingBarInput"></textarea>
+          <label for="thinkingBarInput">Add a reminder, note, or ask anything</label>
+          <textarea id="thinkingBarInput" placeholder="Add a reminder, note, or askâ€¦"></textarea>
           <button id="thinkingBarSubmit" type="submit">Send</button>
         </form>
         <div id="thinkingBarStatus" class="hidden"></div>
       </section>
     `;
+    document.body.dataset.activeView = 'capture';
 
     const messageTimestamp = Date.now();
     window.__mobileMocks = {
@@ -420,5 +429,151 @@ describe('mobile capture result rendering', () => {
     expect(captureLabels).toHaveLength(1);
     expect(home).not.toBeNull();
     expect(home.className).toBe('capture-home-shell w-full');
+  });
+
+  test('opens Word help as an in-conversation choice while keeping one textbox', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.getElementById('wordRescueLauncher').click();
+
+    expect(document.querySelectorAll('textarea')).toHaveLength(1);
+    expect(document.querySelector('.word-rescue-choice-title')?.textContent)
+      .toBe('How would you like help?');
+    expect(Array.from(document.querySelectorAll('.word-rescue-choice-button')).map((button) => button.textContent))
+      .toEqual(['Find it now', 'Coach me']);
+    expect(document.getElementById('wordRescueLauncher')?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  test('runs Coach me through the existing capture path and reveals hints locally', async () => {
+    const messages = [];
+    const handleChatMessage = jest.fn(async (text) => {
+      messages.push(
+        { role: 'user', content: text, timestamp: Date.now() - 1 },
+        { role: 'assistant', content: 'Hint 1 of 3: It means avoiding a direct commitment.', timestamp: Date.now() },
+      );
+      return {
+        message: 'Hint 1 of 3: It means avoiding a direct commitment.',
+        wordRescue: {
+          mode: 'coach',
+          hints: [
+            'It means avoiding a direct commitment.',
+            'The witness continued to _____ instead of saying yes or no.',
+            'It begins with the sound ee and has four syllables.',
+          ],
+          answer: {
+            word: 'equivocate',
+            explanation: 'To speak ambiguously so you do not commit clearly.',
+            example: 'The spokesperson continued to equivocate.',
+          },
+          alternatives: ['prevaricate'],
+        },
+      };
+    });
+    window.__mobileMocks.getMessages = () => messages;
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.getElementById('wordRescueLauncher').click();
+    document.querySelector('[data-word-rescue-action="coach"]').click();
+
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'someone who avoids giving a direct answer';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(handleChatMessage).toHaveBeenCalledWith(
+      'someone who avoids giving a direct answer',
+      { assistantTask: 'word_rescue', assistantMode: 'coach' },
+    );
+    expect(document.getElementById('wordRescueModeLabel')?.textContent).toBe('Coach me');
+    expect(document.querySelector('[data-word-rescue-action="hint"]')?.textContent).toBe('Another hint');
+    expect(document.querySelector('[data-word-rescue-action="reveal"]')?.textContent).toBe('Show word');
+    expect(document.body.textContent).not.toContain('equivocate');
+
+    document.querySelector('[data-word-rescue-action="hint"]').focus();
+    document.querySelector('[data-word-rescue-action="hint"]').click();
+    expect(document.body.textContent).toContain('The witness continued to _____');
+    expect(handleChatMessage).toHaveBeenCalledTimes(1);
+    expect(document.activeElement?.getAttribute('data-word-rescue-action')).toBe('hint');
+
+    document.querySelector('[data-word-rescue-action="reveal"]').focus();
+    document.querySelector('[data-word-rescue-action="reveal"]').click();
+    expect(document.querySelector('.word-rescue-reveal-word')?.textContent).toBe('equivocate');
+    expect(document.body.textContent).toContain('prevaricate');
+    expect(handleChatMessage).toHaveBeenCalledTimes(1);
+    expect(document.activeElement?.getAttribute('data-word-rescue-action')).toBe('restart');
+  });
+
+  test('leaving Capture cancels Word help before the universal composer is used elsewhere', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.getElementById('wordRescueLauncher').click();
+    document.querySelector('[data-word-rescue-action="find"]').click();
+
+    document.body.dataset.activeView = 'reminders';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'reminders' },
+    }));
+
+    expect(document.getElementById('wordRescueModeBar')?.classList.contains('hidden')).toBe(true);
+    expect(document.getElementById('thinkingBarInput')?.placeholder).toBe('Add a reminder, note, or askâ€¦');
+    expect(document.body.classList.contains('word-rescue-mode-active')).toBe(false);
+  });
+
+  test('a late coach response cannot reactivate Word help after navigation', async () => {
+    let resolveAssistant;
+    const handleChatMessage = jest.fn(() => new Promise((resolve) => {
+      resolveAssistant = resolve;
+    }));
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.getElementById('wordRescueLauncher').click();
+    document.querySelector('[data-word-rescue-action="coach"]').click();
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'someone who avoids giving a direct answer';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await Promise.resolve();
+
+    document.body.dataset.activeView = 'reminders';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'reminders' },
+    }));
+    resolveAssistant({
+      message: 'Hint 1 of 3: meaning clue',
+      wordRescue: {
+        mode: 'coach',
+        hints: ['meaning clue', 'context clue', 'letter clue'],
+        answer: { word: 'equivocate', explanation: 'Avoid a direct answer.', example: '' },
+        alternatives: [],
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    document.body.dataset.activeView = 'capture';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+
+    expect(document.getElementById('wordRescueModeBar')?.classList.contains('hidden')).toBe(true);
+    expect(document.body.classList.contains('word-rescue-mode-active')).toBe(false);
+    expect(document.querySelector('.word-rescue-coach-controls')).toBeNull();
   });
 });

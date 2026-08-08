@@ -183,7 +183,15 @@ const createMessage = (role, content, quickActions = [], relatedMemories = [], r
 
 const normalizeRouteResult = (result) => {
   if (typeof result === 'string') {
-    return { message: result, quickActions: [], status: null, resultItems: [], isQueryResult: false };
+    return {
+      message: result,
+      quickActions: [],
+      status: null,
+      resultItems: [],
+      isQueryResult: false,
+      decisionType: '',
+      wordRescue: null,
+    };
   }
 
   const isQueryResult = QUERY_RESULT_TYPES.has(result?.data?.type);
@@ -195,6 +203,14 @@ const normalizeRouteResult = (result) => {
     status: result?.status && typeof result.status === 'object' ? result.status : null,
     resultItems,
     isQueryResult,
+    decisionType: typeof result?.decision?.decisionType === 'string'
+      ? result.decision.decisionType
+      : '',
+    wordRescue: result?.wordRescue && typeof result.wordRescue === 'object'
+      ? result.wordRescue
+      : result?.data?.wordRescue && typeof result.data.wordRescue === 'object'
+        ? result.data.wordRescue
+        : null,
   };
 };
 
@@ -492,7 +508,19 @@ export const handleChatMessage = async (text, dependencies = {}) => {
 
   addMessage(createMessage('user', message));
 
-  if (looksLikeActiveLessonPrompt(message)) {
+  const isExplicitWordRescue = dependencies?.assistantTask === 'word_rescue'
+    || dependencies?.assistantMode === 'fast'
+    || dependencies?.assistantMode === 'coach';
+  const localWordRescueDecision = isExplicitWordRescue
+    ? null
+    : classifyIntentLocally(message, { source: 'chat', entryPoint: 'chat.handleChatMessage' });
+  const isWordRescue = isExplicitWordRescue
+    || (
+      localWordRescueDecision?.decisionType === 'assistant_query'
+      && localWordRescueDecision?.assistantTask === 'word_rescue'
+    );
+
+  if (!isWordRescue && looksLikeActiveLessonPrompt(message)) {
     const lessonReply = await answerFromActiveLesson(message);
     if (typeof lessonReply === 'string' && lessonReply.trim()) {
       const lessonResponse = { message: lessonReply.trim(), quickActions: [], status: null };
@@ -505,15 +533,19 @@ export const handleChatMessage = async (text, dependencies = {}) => {
     text: message,
     source: 'chat',
     metadata: {
-      entryPoint: 'chat.handleChatMessage',
+      entryPoint: dependencies?.assistantTask === 'word_rescue' || dependencies?.assistantMode
+        ? 'chat.handleChatMessage.wordRescue'
+        : 'chat.handleChatMessage',
       uid: dependencies?.uid,
+      assistantTask: dependencies?.assistantTask,
+      assistantMode: dependencies?.assistantMode,
     },
   });
 
   const response = normalizeRouteResult(routeResult);
   
   // Keep note IDs beside the readable fallback text so the UI can open exact matches.
-  if (!response.isQueryResult) {
+  if (!response.isQueryResult && response.decisionType !== 'assistant_query') {
     try {
       const related = findRelatedMemories(message);
       const relatedMemories = normalizeRelatedMemoryReferences(related);

@@ -1,4 +1,6 @@
 const DEFAULT_SYSTEM_PROMPT = 'You are Memory Cue, a personal assistant. Use provided memories when they are relevant, and be concise.';
+const WORD_RESCUE_TASK = 'word_rescue';
+const WORD_RESCUE_MODES = new Set(['fast', 'coach']);
 
 const trimText = (value, maxChars) => {
   if (typeof value !== 'string') {
@@ -51,6 +53,16 @@ export const buildMemoryAssistantRequest = (question, memorySnippets = [], optio
   };
 };
 
+export const buildWordRescueAssistantRequest = (message, options = {}) => {
+  const requestedMode = typeof options?.mode === 'string' ? options.mode.trim().toLowerCase() : '';
+  const mode = WORD_RESCUE_MODES.has(requestedMode) ? requestedMode : 'fast';
+  return {
+    assistantTask: WORD_RESCUE_TASK,
+    mode,
+    message: trimText(message, 500),
+  };
+};
+
 export const buildRagAssistantRequest = ({ question, contextText, entries = [], schemaVersion = 2 } = {}) => ({
   question: trimText(question),
   contextText: trimText(contextText),
@@ -71,7 +83,7 @@ export const formatAssistantReply = (payload, fallbackReply = 'Here is what I fo
   return normalizedReply || fallbackReply;
 };
 
-export const requestAssistantChat = async (body, options = {}) => {
+export const requestAssistantChatResult = async (body, options = {}) => {
   const response = await fetch('/api/assistant-chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -83,5 +95,12 @@ export const requestAssistantChat = async (body, options = {}) => {
   }
 
   const payload = await response.json();
-  return formatAssistantReply(payload, options.fallbackReply);
+  return {
+    ...(payload && typeof payload === 'object' ? payload : {}),
+    reply: formatAssistantReply(payload, options.fallbackReply),
+  };
 };
+
+export const requestAssistantChat = async (body, options = {}) => (
+  (await requestAssistantChatResult(body, options)).reply
+);

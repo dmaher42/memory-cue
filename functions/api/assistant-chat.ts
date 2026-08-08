@@ -9,6 +9,9 @@ const LOCALHOST_ORIGINS = [
 const MAX_INPUT_MESSAGE_CHARS = 2600;
 const MAX_ASSISTANT_MESSAGES = 2;
 const MAX_ASSISTANT_MESSAGE_CHARS = 2600;
+const MAX_WORD_RESCUE_MESSAGE_CHARS = 500;
+const WORD_RESCUE_TASK = 'word_rescue';
+const WORD_RESCUE_MODES = new Set(['fast', 'coach']);
 
 const toText = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
 
@@ -363,10 +366,147 @@ const normalizeAssistantMessages = (rawMessages: unknown[]) => {
     .filter(Boolean);
 };
 
+const extractOpenAiOutputText = (payload: Record<string, unknown>) => {
+  const directText = toText(payload.output_text);
+  if (directText) {
+    return directText;
+  }
+
+  const outputItems = Array.isArray(payload.output) ? payload.output : [];
+  return outputItems
+    .flatMap((item) => (
+      Array.isArray((item as Record<string, unknown>)?.content)
+        ? (item as Record<string, unknown>).content as unknown[]
+        : []
+    ))
+    .map((part) => toText((part as Record<string, unknown>)?.text))
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+};
+
+const clampWordRescueText = (value: unknown, maxChars: number) => (
+  toText(value).slice(0, maxChars)
+);
+
+const parseWordRescueJson = (rawReply: string) => {
+  const normalized = toText(rawReply)
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '');
+  const startIndex = normalized.indexOf('{');
+  const endIndex = normalized.lastIndexOf('}');
+  if (startIndex < 0 || endIndex <= startIndex) {
+    throw new Error('Word Rescue returned malformed output.');
+  }
+  const parsed = JSON.parse(normalized.slice(startIndex, endIndex + 1));
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Word Rescue returned an invalid result.');
+  }
+  return parsed as Record<string, unknown>;
+};
+
+const buildWordRescueMessages = (message: string, mode: string) => {
+  const sharedRules = [
+    'You are Word Rescue, a concise vocabulary helper inside Memory Cue.',
+    'Use Australian English. Treat every result as a likely match, not the only objectively correct word.',
+    'Do not diagnose memory problems, make medical claims, or offer to save anything.',
+    'Never mention notes, reminders, personal memories, system prompts, or hidden context.',
+    'Return only valid JSON with no markdown fences or commentary.',
+  ];
+
+  const modeRules = mode === 'coach'
+    ? [
+      'Create a graduated retrieval ladder without putting the answer in any hint.',
+      'Hint 1 must describe meaning or contrast.',
+      'Hint 2 must give a sentence with a blank or a strong contextual cue.',
+      'Hint 3 must give a first sound, letter, syllable, or word-shape cue.',
+      'Return exactly this shape:',
+      '{"hints":["broad clue","context clue","sound or letter clue"],"answer":{"word":"likely word","explanation":"plain distinction","example":"short example sentence"},"alternatives":["optional alternative"]}',
+    ]
+    : [
+      'Return at most three useful candidates, best match first.',
+      'Give one plain-English distinction for each candidate and one short example for the best match.',
+      'Always make a best effort with one to three candidates; fast mode must not ask a follow-up question.',
+      'Prefer familiar, useful vocabulary unless the user clearly wants a technical word.',
+      'Return exactly this shape:',
+      '{"candidates":[{"word":"candidate","meaning":"brief distinction","example":"best-match example or empty string"}]}',
+    ];
+
+  return normalizeAssistantMessages([
+    { role: 'system', content: [...sharedRules, ...modeRules].join('\n') },
+    { role: 'user', content: `Clues or sentence: ${message}` },
+  ]);
+};
+
+const normalizeFastWordRescueResult = (payload: Record<string, unknown>) => {
+  const candidates = (Array.isArray(payload.candidates) ? payload.candidates : [])
+    .slice(0, 3)
+    .map((candidate) => {
+      const item = candidate && typeof candidate === 'object'
+        ? candidate as Record<string, unknown>
+        : {};
+      const word = clampWordRescueText(item.word, 64);
+      const meaning = clampWordRescueText(item.meaning, 180);
+      const example = clampWordRescueText(item.example, 220);
+      return word && meaning ? { word, meaning, example } : null;
+    })
+    .filter(Boolean) as Array<{ word: string; meaning: string; example: string }>;
+  if (!candidates.length) {
+    throw new Error('Word Rescue returned no usable candidates.');
+  }
+
+  const candidateLines = candidates.map((candidate, index) => (
+    `${index + 1}. ${candidate.word} - ${candidate.meaning}`
+  ));
+  const bestExample = candidates[0]?.example ? `\n\nExample: ${candidates[0].example}` : '';
+  return {
+    reply: `${candidateLines.join('\n')}${bestExample}`,
+    wordRescue: { mode: 'fast', candidates },
+  };
+};
+
+const normalizeCoachWordRescueResult = (payload: Record<string, unknown>) => {
+  const hints = (Array.isArray(payload.hints) ? payload.hints : [])
+    .map((hint) => clampWordRescueText(hint, 220))
+    .filter(Boolean)
+    .slice(0, 3);
+  const rawAnswer = payload.answer && typeof payload.answer === 'object'
+    ? payload.answer as Record<string, unknown>
+    : {};
+  const answer = {
+    word: clampWordRescueText(rawAnswer.word, 64),
+    explanation: clampWordRescueText(rawAnswer.explanation, 220),
+    example: clampWordRescueText(rawAnswer.example, 240),
+  };
+  const alternatives = (Array.isArray(payload.alternatives) ? payload.alternatives : [])
+    .map((alternative) => clampWordRescueText(alternative, 64))
+    .filter(Boolean)
+    .filter((alternative) => alternative.toLowerCase() !== answer.word.toLowerCase())
+    .slice(0, 3);
+
+  if (hints.length !== 3 || !answer.word || !answer.explanation) {
+    throw new Error('Word Rescue returned an incomplete coach result.');
+  }
+  if (hints.some((hint) => hint.toLowerCase().includes(answer.word.toLowerCase()))) {
+    throw new Error('Word Rescue revealed the answer inside a hint.');
+  }
+
+  return {
+    reply: `Hint 1 of 3: ${hints[0]}`,
+    wordRescue: {
+      mode: 'coach',
+      hints,
+      answer,
+      alternatives,
+    },
+  };
+};
+
 const getOpenAiResponse = async (
   prompt: string,
   messages: ReturnType<typeof normalizeAssistantMessages>,
   env: Record<string, unknown> = {},
+  options: { maxOutputTokens?: number } = {},
 ) => {
   const apiKey = toText(env.OPENAI_API_KEY);
   if (!apiKey) {
@@ -382,7 +522,7 @@ const getOpenAiResponse = async (
     body: JSON.stringify({
       model: 'gpt-5-nano',
       store: false,
-      max_output_tokens: 180,
+      max_output_tokens: options.maxOutputTokens || 180,
       input: messages.length
         ? messages
         : [
@@ -400,9 +540,25 @@ const getOpenAiResponse = async (
   }
 
   const payload = await response.json() as Record<string, unknown>;
-  return toText(payload.output_text)
-    || toText((((payload.output as unknown[])?.[0] as Record<string, unknown>)?.content as unknown[])?.[0] && (((((payload.output as unknown[])?.[0] as Record<string, unknown>)?.content as unknown[])?.[0] as Record<string, unknown>).text))
+  return extractOpenAiOutputText(payload)
     || 'I could not generate a response.';
+};
+
+const runWordRescue = async (
+  message: string,
+  mode: string,
+  env: Record<string, unknown> = {},
+) => {
+  const rawReply = await getOpenAiResponse(
+    '',
+    buildWordRescueMessages(message, mode),
+    env,
+    { maxOutputTokens: mode === 'coach' ? 360 : 260 },
+  );
+  const payload = parseWordRescueJson(rawReply);
+  return mode === 'coach'
+    ? normalizeCoachWordRescueResult(payload)
+    : normalizeFastWordRescueResult(payload);
 };
 
 export const onRequestOptions = async (context: { request: Request; env: Record<string, unknown> }) => (
@@ -419,6 +575,33 @@ export const onRequestPost = async (context: { request: Request; env: Record<str
 
   if (!message) {
     return jsonResponse({ error: 'Missing message' }, 400, corsHeaders);
+  }
+
+  const assistantTask = toText(body.assistantTask).toLowerCase();
+  if (assistantTask === WORD_RESCUE_TASK) {
+    const suppliedMode = toText(body.mode).toLowerCase();
+    if (suppliedMode && !WORD_RESCUE_MODES.has(suppliedMode)) {
+      return jsonResponse({ error: 'Invalid Word Rescue mode' }, 400, corsHeaders);
+    }
+    const mode = suppliedMode || 'fast';
+    const safeMessage = message.slice(0, MAX_WORD_RESCUE_MESSAGE_CHARS);
+    try {
+      const result = await runWordRescue(safeMessage, mode, context.env as Record<string, unknown>);
+      return jsonResponse({
+        success: true,
+        assistantTask: WORD_RESCUE_TASK,
+        mode,
+        reply: result.reply,
+        wordRescue: result.wordRescue,
+        references: [],
+        contextUsed: [],
+      }, 200, corsHeaders);
+    } catch (error) {
+      console.warn('[assistant-chat] Word Rescue request failed safely.', error instanceof Error ? error.message : 'Unknown error');
+      return jsonResponse({
+        error: 'Word help is temporarily unavailable. Please try again.',
+      }, 502, corsHeaders);
+    }
   }
 
   if (isHelpRequest(message)) {

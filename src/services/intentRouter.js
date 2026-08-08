@@ -4,10 +4,80 @@ const NOTEBOOK_CAPTURE_PATTERN = /(meeting notes|lesson idea|remember\b|notes?\s
 const REMINDER_KEYWORDS = ['remind', 'reminder', 'tomorrow', 'tonight', 'later', 'buy', 'pick up'];
 const NOTE_KEYWORDS = ['idea', 'note', 'remember', 'lesson'];
 const DRILL_KEYWORDS = ['drill', 'training', 'coaching'];
-const QUESTION_PREFIXES = ['what', 'when', 'how', 'where'];
+const QUESTION_PREFIXES = ['what', 'when', 'how', 'where', 'why', 'who', 'which'];
 const PLAN_DAY_PHRASES = ['plan my day', 'what should i do today', 'daily plan', 'schedule my day'];
 
-export const DECISION_TYPES = ['query_memory', 'learn_pattern', 'plan_day', 'persist_reminder', 'persist_note', 'persist_inbox'];
+const WORD_RESCUE_PATTERN = /(?:\bword\s+for\b|\b(?:another|better|right|correct|different)\s+word\b|\b(?:synonym|antonym|thesaurus)\b|\b(?:can(?:not|'t)|could(?:not|'t))\s+(?:think of|find|remember)\s+(?:the|a)\s+word\b|\btip of (?:my|the) tongue\b|\bwhat do you call\b|\bhelp me (?:find|discover|remember) (?:the|a) word\b)/i;
+const WORD_COACH_PATTERN = /\b(?:coach me|quiz me|test me|give me (?:a )?(?:clue|hint)|help me discover|work it out|do not tell me|don't tell me)\b/i;
+const PERSONAL_MEMORY_QUERY_PATTERNS = [
+  /\bwhat did i (?:write|save|note|capture|record)\b/i,
+  /\bwhat did i (?:need|have) to do\b/i,
+  /\bwhat (?:have|had) i (?:written|saved|noted|captured|recorded)\b/i,
+  /\b(?:show|find|list) (?:me )?(?:my )?(?:notes?|reminders?|ideas?|drills?|captures?)\b/i,
+  /\bwhat (?:notes?|reminders?|ideas?|drills?|captures?) (?:do|did) i have\b/i,
+  /\bdo i have (?:any )?(?:notes?|reminders?|ideas?|drills?|captures?)\b/i,
+  /\bwhat (?:notes?|reminders?) (?:mention|match|are about)\b/i,
+  /^(?:which|where (?:is|are)|what(?:'s| is) (?:on|in))\b.*\b(?:the |my )?(?:notes?|reminders?|ideas?|drills?|captures?|inbox)\b/i,
+  /^(?:what|when|where|which|who)(?:'s| is| are)?\b.*\bmy\b/i,
+  /^when is (?:my|m)\b/i,
+];
+const GENERAL_ASSISTANT_PREFIX_PATTERN = /^(?:define|explain|compare|tell me|help me|can you|could you|would you|should i|is |are |do |does |what |when |where |why |who |which |how )/i;
+const EXPLICIT_CAPTURE_PREFIX_PATTERN = /^(?:(?:please|could you|can you|would you)\s+)*(?:remind(?:er)?\b|note\b|save (?:this )?(?:as )?(?:a )?note\b|add (?:this )?to (?:my )?notes?\b)/i;
+const STRONG_CAPTURE_COMMAND_PATTERN = /\b(?:remind me|set (?:me )?a reminder|save this as (?:a )?note|add this to (?:my )?notes?)\b/i;
+
+export const DECISION_TYPES = ['query_memory', 'assistant_query', 'learn_pattern', 'plan_day', 'persist_reminder', 'persist_note', 'persist_inbox'];
+
+const normalizeWordRescueMode = (value) => {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (normalized === 'coach' || normalized === 'word_coach') {
+    return 'coach';
+  }
+  if (normalized === 'fast' || normalized === 'find' || normalized === 'word_fast') {
+    return 'fast';
+  }
+  return '';
+};
+
+const isPersonalMemoryQuery = (text) => PERSONAL_MEMORY_QUERY_PATTERNS
+  .some((pattern) => pattern.test(text));
+
+const isExplicitCaptureRequest = (text) => (
+  EXPLICIT_CAPTURE_PREFIX_PATTERN.test(text) || STRONG_CAPTURE_COMMAND_PATTERN.test(text)
+);
+
+const getWordRescueMode = (text, hints = {}) => {
+  const explicitMode = normalizeWordRescueMode(hints?.assistantMode || hints?.mode);
+  if (explicitMode) {
+    return explicitMode;
+  }
+  return WORD_COACH_PATTERN.test(text) ? 'coach' : 'fast';
+};
+
+const createAssistantDecision = (text, hints = {}, options = {}) => {
+  const assistantTask = options.assistantTask === 'word_rescue' ? 'word_rescue' : 'general';
+  const parsedType = assistantTask === 'word_rescue' ? 'word_rescue' : 'question';
+  const mode = assistantTask === 'word_rescue' ? getWordRescueMode(text, hints) : null;
+  return {
+    decisionType: 'assistant_query',
+    parsedType,
+    assistantTask,
+    mode,
+    text,
+    parsedEntry: createHeuristicParsedEntry(parsedType, text, hints),
+    hints,
+  };
+};
+
+const getExplicitAssistantDecision = (text, hints = {}) => {
+  const explicitMode = normalizeWordRescueMode(hints?.assistantMode || hints?.mode);
+  const explicitTask = typeof hints?.assistantTask === 'string'
+    ? hints.assistantTask.trim().toLowerCase()
+    : '';
+  if (explicitTask === 'word_rescue' || explicitMode) {
+    return createAssistantDecision(text, hints, { assistantTask: 'word_rescue' });
+  }
+  return null;
+};
 
 const countKeywordMatches = (normalizedText, keywords) => keywords.reduce((count, keyword) => (
   normalizedText.includes(keyword) ? count + 1 : count
@@ -39,6 +109,41 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const normalized = text.toLowerCase();
   if (!normalized) {
     return null;
+  }
+
+  const explicitAssistantDecision = getExplicitAssistantDecision(text, hints);
+  if (explicitAssistantDecision) {
+    return logRoutingDecision('classifyIntentLocally.explicitAssistant', text, explicitAssistantDecision);
+  }
+
+  if (WORD_RESCUE_PATTERN.test(text) && !isExplicitCaptureRequest(text)) {
+    return logRoutingDecision('classifyIntentLocally.wordRescue', text, createAssistantDecision(
+      text,
+      hints,
+      { assistantTask: 'word_rescue' },
+    ));
+  }
+
+  if (isPersonalMemoryQuery(text)) {
+    return logRoutingDecision('classifyIntentLocally.personalMemory', text, {
+      decisionType: 'query_memory',
+      parsedType: 'question',
+      text,
+      parsedEntry: createHeuristicParsedEntry('question', text, hints),
+      hints,
+    });
+  }
+
+  if (isExplicitCaptureRequest(text)) {
+    const isReminderCapture = /\b(?:remind|reminder)\b/i.test(text);
+    const parsedType = isReminderCapture ? 'reminder' : 'note';
+    return logRoutingDecision('classifyIntentLocally.explicitCapture', text, {
+      decisionType: isReminderCapture ? 'persist_reminder' : 'persist_note',
+      parsedType,
+      text,
+      parsedEntry: createHeuristicParsedEntry(parsedType, text, hints),
+      hints,
+    });
   }
 
   const patternMatch = predictIntent(text);
@@ -73,6 +178,9 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   }
 
   if (patternMatch?.predictedIntent === 'query' || patternMatch?.predictedIntent === 'query_memory') {
+    if (!isPersonalMemoryQuery(text)) {
+      return logRoutingDecision('classifyIntentLocally.patternAssistant', text, createAssistantDecision(text, hints));
+    }
     return logRoutingDecision('classifyIntentLocally.pattern', text, {
       decisionType: 'query_memory',
       parsedType: 'question',
@@ -108,7 +216,8 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
   const reminderScore = countKeywordMatches(normalized, REMINDER_KEYWORDS);
   const noteScore = countKeywordMatches(normalized, NOTE_KEYWORDS);
   const drillScore = countKeywordMatches(normalized, DRILL_KEYWORDS);
-  const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion ? 1 : 0);
+  const looksLikeAssistantRequest = GENERAL_ASSISTANT_PREFIX_PATTERN.test(text);
+  const questionScore = (text.endsWith('?') ? 2 : 0) + (startsWithQuestion || looksLikeAssistantRequest ? 1 : 0);
 
   const scored = [
     { kind: 'reminder', score: reminderScore },
@@ -148,14 +257,15 @@ export const classifyIntentLocally = (rawText, hints = {}) => {
     return logRoutingDecision('classifyIntentLocally', text, decision);
   }
 
-  const parsedEntry = createHeuristicParsedEntry('question', text, hints);
-  const decision = {
-    decisionType: 'query_memory',
-    parsedType: 'question',
-    text,
-    parsedEntry,
-    hints,
-  };
+  const decision = isPersonalMemoryQuery(text)
+    ? {
+      decisionType: 'query_memory',
+      parsedType: 'question',
+      text,
+      parsedEntry: createHeuristicParsedEntry('question', text, hints),
+      hints,
+    }
+    : createAssistantDecision(text, hints);
   return logRoutingDecision('classifyIntentLocally', text, decision);
 };
 
@@ -198,6 +308,25 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   const parsedType = normalizeType(parsed?.type, text);
   const notebookHeuristic = looksLikeNotebookCapture(text);
   const isQuestion = parsedType === 'question' || text.endsWith('?');
+
+  const explicitAssistantDecision = getExplicitAssistantDecision(text, hints);
+  if (explicitAssistantDecision) {
+    return logRoutingDecision('routeIntent.explicitAssistant', text, explicitAssistantDecision);
+  }
+
+  if (
+    WORD_RESCUE_PATTERN.test(text)
+    && parsedType !== 'reminder'
+    && !['note', 'drill', 'idea', 'task'].includes(parsedType)
+    && !notebookHeuristic
+    && !isExplicitCaptureRequest(text)
+  ) {
+    return logRoutingDecision('routeIntent.wordRescue', text, createAssistantDecision(
+      text,
+      hints,
+      { assistantTask: 'word_rescue' },
+    ));
+  }
 
   if (parsedType === 'learn_pattern') {
     const decision = {
@@ -264,13 +393,18 @@ export const routeIntent = (parsedEntry, rawText, hints = {}) => {
   }
 
   if (isQuestion) {
-    const decision = {
-      decisionType: 'query_memory',
-      parsedType,
-      text,
-      parsedEntry: parsed,
-      hints,
-    };
+    const decision = isPersonalMemoryQuery(text)
+      ? {
+        decisionType: 'query_memory',
+        parsedType,
+        text,
+        parsedEntry: parsed,
+        hints,
+      }
+      : {
+        ...createAssistantDecision(text, hints),
+        parsedEntry: parsed,
+      };
     recordPattern(text, { predictedIntent: decision.decisionType, predictedNotebook: '' });
     return logRoutingDecision('routeIntent', text, decision);
   }
@@ -356,6 +490,8 @@ export const intentRouter = (query, context = {}) => {
       decisionType: decision.decisionType,
       parsedType: decision.parsedType || 'unknown',
       parsedEntry: decision.parsedEntry || null,
+      assistantTask: decision.assistantTask || null,
+      mode: decision.mode || null,
       intentType: mapDecisionTypeToIntentType(decision.decisionType),
       hints,
     },

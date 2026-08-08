@@ -3,7 +3,12 @@ import { createAndSaveNote } from '../../js/modules/notes-storage.js';
 import { createReminder } from '../services/reminderService.js';
 import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';
-import { buildMemoryAssistantRequest, requestAssistantChat } from '../services/assistantOrchestrator.js';
+import {
+  buildMemoryAssistantRequest,
+  buildWordRescueAssistantRequest,
+  requestAssistantChat,
+  requestAssistantChatResult,
+} from '../services/assistantOrchestrator.js';
 import {
   getUnknownShorthandToken,
   rememberShorthand,
@@ -29,6 +34,22 @@ const normalizeSource = (value) => {
   const normalized = value.trim();
   return normalized || 'unknown';
 };
+
+const normalizeWordRescueMode = (value) => {
+  const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (normalized === 'coach' || normalized === 'word_coach') {
+    return 'coach';
+  }
+  if (normalized === 'fast' || normalized === 'find' || normalized === 'word_fast') {
+    return 'fast';
+  }
+  return '';
+};
+
+const hasExplicitWordRescueMode = (hints = {}) => (
+  normalizeWordRescueMode(hints?.assistantMode || hints?.mode)
+  || (typeof hints?.assistantTask === 'string' && hints.assistantTask.trim().toLowerCase() === 'word_rescue')
+);
 
 const getPendingChannelKey = (context = {}) => {
   const source = normalizeSource(context?.source);
@@ -580,6 +601,8 @@ const resolveDecision = async (text, hints) => {
       text,
       parsedEntry: initialIntent.payload.parsedEntry,
       missing: Array.isArray(initialIntent?.payload?.missing) ? initialIntent.payload.missing : [],
+      assistantTask: initialIntent.payload.assistantTask || null,
+      mode: initialIntent.payload.mode || null,
       hints,
     };
   }
@@ -599,6 +622,8 @@ const resolveDecision = async (text, hints) => {
     text,
     parsedEntry: routedIntent?.payload?.parsedEntry || parsedEntry,
     missing: Array.isArray(routedIntent?.payload?.missing) ? routedIntent.payload.missing : [],
+    assistantTask: routedIntent?.payload?.assistantTask || null,
+    mode: routedIntent?.payload?.mode || null,
     hints,
   };
 };
@@ -758,11 +783,35 @@ const saveNoteMemory = async (text, decision, context) => {
   });
 };
 
-const runAssistantQuery = async (text, metadata = {}) => {
-  const matches = await semanticSearch(text, metadata.uid);
-  const snippets = matches.map((memory) => memory?.text).filter(Boolean);
+const runAssistantQuery = async (text, decision = {}, metadata = {}) => {
+  const assistantTask = decision?.assistantTask === 'word_rescue'
+    || metadata?.assistantTask === 'word_rescue'
+    || normalizeWordRescueMode(metadata?.assistantMode)
+    ? 'word_rescue'
+    : 'general';
+
+  if (assistantTask === 'word_rescue') {
+    const mode = normalizeWordRescueMode(
+      decision?.mode || metadata?.assistantMode || metadata?.mode,
+    ) || 'fast';
+    const body = buildWordRescueAssistantRequest(text, { mode });
+    return requestAssistantChatResult(body, {
+      fallbackReply: mode === 'coach'
+        ? 'Let us work towards the word one clue at a time.'
+        : 'Here are the closest words I found.',
+    });
+  }
+
+  let snippets = [];
+  try {
+    const matches = await semanticSearch(text, metadata.uid);
+    snippets = matches.map((memory) => memory?.text).filter(Boolean);
+  } catch (error) {
+    console.warn('[capture] assistant memory lookup failed; continuing without saved context', error);
+  }
   const body = buildMemoryAssistantRequest(text, snippets);
-  return requestAssistantChat(body, { fallbackReply: 'Here is what I found.' });
+  const reply = await requestAssistantChat(body, { fallbackReply: 'Here is what I found.' });
+  return { reply };
 };
 
 export async function analyzeCaptureInput({
@@ -789,6 +838,16 @@ export async function analyzeCaptureInput({
     capturedAt: context.capturedAt,
     ...metadata,
   };
+
+  if (hasExplicitWordRescueMode(hints)) {
+    const decision = await resolveDecision(normalizedText, hints);
+    return {
+      text: normalizedText,
+      context,
+      hints,
+      decision,
+    };
+  }
 
   const quickCapture = parseQuickCapturePrefix(normalizedText);
   if (quickCapture?.kind && quickCapture.text) {
@@ -1008,11 +1067,16 @@ export async function captureInput({
       };
     }
     case 'assistant_query': {
-      const reply = await runAssistantQuery(normalizedText, metadata);
+      const assistantResult = await runAssistantQuery(normalizedText, decision, metadata);
+      const reply = typeof assistantResult?.reply === 'string' ? assistantResult.reply : '';
       return {
         decision,
-        data: { reply },
+        data: {
+          reply,
+          ...(assistantResult?.wordRescue ? { wordRescue: assistantResult.wordRescue } : {}),
+        },
         message: reply,
+        ...(assistantResult?.wordRescue ? { wordRescue: assistantResult.wordRescue } : {}),
       };
     }
     case 'persist_inbox':
