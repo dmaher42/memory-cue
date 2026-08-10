@@ -75,6 +75,7 @@ describe('mobile capture result rendering', () => {
         recognition = this;
         this.start = jest.fn(() => this.onstart?.());
         this.stop = jest.fn(() => this.onend?.());
+        this.abort = jest.fn(() => this.onend?.());
       }
     }
 
@@ -142,6 +143,7 @@ describe('mobile capture result rendering', () => {
         recognition = this;
         this.start = jest.fn(() => this.onstart?.());
         this.stop = jest.fn(() => this.onend?.());
+        this.abort = jest.fn(() => this.onend?.());
       }
     }
 
@@ -160,8 +162,15 @@ describe('mobile capture result rendering', () => {
       detail: { view: 'notebooks' },
     }));
 
-    expect(recognition.stop).toHaveBeenCalledTimes(1);
+    recognition.onresult({
+      results: [[{ transcript: 'late transcript after leaving' }]],
+    });
+
+    expect(recognition.abort).toHaveBeenCalledTimes(1);
+    expect(recognition.stop).not.toHaveBeenCalled();
     expect(voiceButton.getAttribute('aria-pressed')).toBe('false');
+    expect(document.getElementById('thinkingBarInput')?.value).toBe('');
+    expect(document.getElementById('thinkingBarStatus')?.textContent).toBe('');
     expect(document.getElementById('thinkingBarStatus')?.classList.contains('hidden')).toBe(true);
   });
 

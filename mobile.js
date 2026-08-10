@@ -1498,6 +1498,8 @@ function initAssistant() {
 
       let isListening = false;
       let hasVoiceOutcome = false;
+      let ignoreRecognitionEvents = false;
+      let isCancelling = false;
 
       const updateListeningState = (listening) => {
         isListening = Boolean(listening);
@@ -1512,15 +1514,24 @@ function initAssistant() {
           : 'Add a reminder, note, or question with voice';
       };
 
-      const stopListening = ({ announce = true } = {}) => {
+      const stopListening = ({ announce = true, cancel = false } = {}) => {
         if (!isListening) {
           return;
         }
         hasVoiceOutcome = true;
+        if (cancel) {
+          ignoreRecognitionEvents = true;
+          isCancelling = true;
+        }
         try {
-          recognition.stop();
+          if (cancel && typeof recognition.abort === 'function') {
+            recognition.abort();
+          } else {
+            recognition.stop();
+          }
         } catch (error) {
           console.warn('[capture] failed to stop voice input', error);
+          isCancelling = false;
         }
         updateListeningState(false);
         if (announce) {
@@ -1529,12 +1540,18 @@ function initAssistant() {
       };
 
       recognition.onstart = () => {
+        if (ignoreRecognitionEvents) {
+          return;
+        }
         hasVoiceOutcome = false;
         updateListeningState(true);
         setThinkingBarStatus('Listening… Speak your reminder, note, or question.');
       };
 
       recognition.onresult = (event) => {
+        if (ignoreRecognitionEvents) {
+          return;
+        }
         const transcript = Array.from(event?.results || [])
           .map((result) => result?.[0]?.transcript || '')
           .join(' ')
@@ -1556,6 +1573,9 @@ function initAssistant() {
       };
 
       recognition.onerror = (event) => {
+        if (ignoreRecognitionEvents) {
+          return;
+        }
         hasVoiceOutcome = true;
         updateListeningState(false);
         const errorCode = typeof event?.error === 'string' ? event.error : '';
@@ -1571,6 +1591,11 @@ function initAssistant() {
       };
 
       recognition.onend = () => {
+        if (ignoreRecognitionEvents) {
+          isCancelling = false;
+          updateListeningState(false);
+          return;
+        }
         const shouldAnnounceEnd = isListening && !hasVoiceOutcome;
         updateListeningState(false);
         if (shouldAnnounceEnd) {
@@ -1580,6 +1605,10 @@ function initAssistant() {
 
       thinkingBarVoiceButton.removeAttribute('aria-disabled');
       thinkingBarVoiceButton.addEventListener('click', () => {
+        if (isCancelling) {
+          setThinkingBarStatus('Voice capture is stopping. Try again in a moment.');
+          return;
+        }
         if (isListening) {
           stopListening();
           return;
@@ -1587,6 +1616,7 @@ function initAssistant() {
 
         try {
           hasVoiceOutcome = false;
+          ignoreRecognitionEvents = false;
           recognition.start();
           updateListeningState(true);
           setThinkingBarStatus('Listening… Speak your reminder, note, or question.');
@@ -1599,17 +1629,17 @@ function initAssistant() {
 
       thinkingBarForm?.addEventListener('submit', () => {
         if (isListening) {
-          stopListening({ announce: false });
+          stopListening({ announce: false, cancel: true });
         }
       });
       window.addEventListener('pagehide', () => {
         if (isListening) {
-          stopListening({ announce: false });
+          stopListening({ announce: false, cancel: true });
         }
       });
       window.addEventListener('memorycue:navigation:changed', (event) => {
         if (event?.detail?.view === 'notebooks' && isListening) {
-          stopListening({ announce: false });
+          stopListening({ announce: false, cancel: true });
           setThinkingBarStatus('');
         }
       });
