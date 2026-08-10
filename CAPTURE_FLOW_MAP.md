@@ -5,6 +5,7 @@
 | Feature | File location | Handler / function | User input | Created object / payload |
 |---|---|---|---|---|
 | Universal capture bar (sole visible freeform capture) | `mobile.html` (`#thinkingBarForm`, `#thinkingBarInput`), `mobile.js`, `src/chat/chatManager.js`, `src/core/capturePipeline.js` | `sendAssistantMessage()` -> `handleChatMessage()` -> canonical `captureInput()` | Freeform reminder, note, or question text | A reminder, note, Inbox record, clarification, or assistant response selected by the canonical capture decision |
+| Universal voice capture | `mobile.html` (`#thinkingBarVoiceButton`, `#thinkingBarInput`), `mobile.js` | `setupThinkingBarVoiceCapture()` -> speech transcript in `#thinkingBarInput`; Send uses the same `sendAssistantMessage()` path | Spoken reminder, note, or question, reviewed as text before submission | The same reminder, note, Inbox, clarification, or assistant result as typed universal capture |
 | Programmatic reminder compatibility seam | `src/reminders/reminderController.js` (exported through `js/reminders.js`) | `memoryCueQuickAddNow({ forceText, ...options })` | Text supplied by automated coverage or a trusted internal caller | Reminder object plus its existing mirrored Inbox provenance; prefix routes can create a reflection note |
 | Programmatic prefix route: `reflection:` | `src/reminders/reminderController.js` | `parseQuickAddPrefixRoute()` -> `saveReflectionQuickNote()` | Internal conversion text prefixed with `reflection:` | A **note-like** record written directly to `memoryCueNotes` (reflection folder) |
 | Programmatic prefix route: `task:` / `footy drill:` | `src/reminders/reminderController.js` | `parseQuickAddPrefixRoute()` -> `buildQuickReminder()` -> reminder creation | Internal conversion text prefixed with task/drill route | Reminder object with forced category (`Tasks` / `Footy – Drills`) |
@@ -41,7 +42,7 @@
 
 ### A) Universal capture (default text)
 
-User enters text in the fixed `#thinkingBarInput`
+User types in `#thinkingBarInput`, or taps `#thinkingBarVoiceButton` and reviews the transcript placed in that same input
 ↓
 `mobile.js` calls `handleChatMessage()`, which routes through the canonical capture pipeline
 ↓

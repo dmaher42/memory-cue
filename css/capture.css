@@ -239,6 +239,83 @@ body.memory-coach-mode-active #thinkingBarForm {
   font-weight: var(--button-font-weight, 650);
 }
 
+#thinkingBarVoiceButton {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 24%, var(--card-border, #e2e8f0));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated, #f8fafc) 90%, var(--accent-color, #0f766e) 10%);
+  color: var(--accent-color, #0f766e);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+#thinkingBarVoiceButton svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#thinkingBarVoiceButton:hover,
+#thinkingBarVoiceButton:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-color, #0f766e) 46%, var(--card-border, #e2e8f0));
+  background: color-mix(in srgb, var(--surface-elevated, #f8fafc) 82%, var(--accent-color, #0f766e) 18%);
+  outline: 2px solid color-mix(in srgb, var(--accent-color, #0f766e) 24%, transparent);
+  outline-offset: 2px;
+}
+
+#thinkingBarVoiceButton:active {
+  transform: scale(0.96);
+}
+
+#thinkingBarVoiceButton.is-listening {
+  border-color: color-mix(in srgb, #dc2626 50%, var(--card-border, #e2e8f0));
+  background: color-mix(in srgb, #fee2e2 88%, #ffffff 12%);
+  color: #b91c1c;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #ef4444 16%, transparent);
+}
+
+#thinkingBarVoiceButton[aria-disabled="true"] {
+  color: var(--text-muted, #94a3b8);
+  border-color: var(--card-border, #e2e8f0);
+  background: var(--surface-elevated, #f8fafc);
+  cursor: help;
+  opacity: 0.72;
+}
+
+[data-theme="dark"] #thinkingBarVoiceButton,
+[data-theme="professional-dark"] #thinkingBarVoiceButton,
+html.dark #thinkingBarVoiceButton {
+  background: color-mix(in srgb, var(--surface-elevated, #1f2937) 86%, var(--accent-color, #5eead4) 14%);
+}
+
+[data-theme="dark"] #thinkingBarVoiceButton.is-listening,
+[data-theme="professional-dark"] #thinkingBarVoiceButton.is-listening,
+html.dark #thinkingBarVoiceButton.is-listening {
+  border-color: color-mix(in srgb, #f87171 56%, #374151);
+  background: color-mix(in srgb, #7f1d1d 58%, var(--surface-elevated, #1f2937));
+  color: #fecaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #thinkingBarVoiceButton {
+    transition: none;
+  }
+}
+
 .thinking-conversation {
   display: flex;
   flex-direction: column;

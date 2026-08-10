@@ -33,6 +33,7 @@ describe('mobile capture result rendering', () => {
         <form id="thinkingBarForm">
           <label for="thinkingBarInput">Add a reminder, note, or ask anything</label>
           <textarea id="thinkingBarInput" placeholder="Add a reminder, note, or askâ€¦"></textarea>
+          <button id="thinkingBarVoiceButton" type="button" aria-label="Add with voice" aria-pressed="false">Voice</button>
           <button id="thinkingBarSubmit" type="submit">Send</button>
         </form>
         <div id="thinkingBarStatus" class="hidden"></div>
@@ -63,6 +64,105 @@ describe('mobile capture result rendering', () => {
     document.body.innerHTML = '';
     delete document.body.dataset.memoryCueAssistantInit;
     delete window.__mobileMocks;
+    delete window.SpeechRecognition;
+    delete window.webkitSpeechRecognition;
+  });
+
+  test('captures speech into the universal input before using the canonical submit path', async () => {
+    let recognition;
+    class FakeSpeechRecognition {
+      constructor() {
+        recognition = this;
+        this.start = jest.fn(() => this.onstart?.());
+        this.stop = jest.fn(() => this.onend?.());
+      }
+    }
+
+    const handleChatMessage = jest.fn(async () => ({
+      message: 'Reminder created for tomorrow at 8:30 am: Print the lesson plan.',
+    }));
+    window.SpeechRecognition = FakeSpeechRecognition;
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+    window.__mobileMocks.getMessages = () => [];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const voiceButton = document.getElementById('thinkingBarVoiceButton');
+    const input = document.getElementById('thinkingBarInput');
+    voiceButton.click();
+
+    expect(recognition.start).toHaveBeenCalledTimes(1);
+    expect(recognition.lang).toBe('en-AU');
+    expect(voiceButton.getAttribute('aria-pressed')).toBe('true');
+    expect(document.getElementById('thinkingBarStatus')?.textContent).toContain('Listening');
+
+    recognition.onresult({
+      results: [[{ transcript: 'Remind me to print the lesson plan tomorrow at 8:30 am' }]],
+    });
+
+    expect(input.value).toBe('Remind me to print the lesson plan tomorrow at 8:30 am');
+    expect(voiceButton.getAttribute('aria-pressed')).toBe('false');
+    expect(document.getElementById('thinkingBarStatus')?.textContent)
+      .toBe('Voice captured. Review it, then tap Send.');
+    expect(handleChatMessage).not.toHaveBeenCalled();
+
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(handleChatMessage).toHaveBeenCalledWith(
+      'Remind me to print the lesson plan tomorrow at 8:30 am',
+      {},
+    );
+    expect(input.value).toBe('');
+  });
+
+  test('keeps the microphone visible with a clear message when speech input is unavailable', () => {
+    window.__mobileMocks.getMessages = () => [];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const voiceButton = document.getElementById('thinkingBarVoiceButton');
+    voiceButton.click();
+
+    expect(voiceButton.getAttribute('aria-disabled')).toBe('true');
+    expect(voiceButton.getAttribute('title')).toBe('Voice input is not available in this browser.');
+    expect(document.getElementById('thinkingBarStatus')?.textContent)
+      .toBe('Voice input is not available in this browser.');
+  });
+
+  test('stops listening when Notes hides the universal capture bar', () => {
+    let recognition;
+    class FakeSpeechRecognition {
+      constructor() {
+        recognition = this;
+        this.start = jest.fn(() => this.onstart?.());
+        this.stop = jest.fn(() => this.onend?.());
+      }
+    }
+
+    window.SpeechRecognition = FakeSpeechRecognition;
+    window.__mobileMocks.getMessages = () => [];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const voiceButton = document.getElementById('thinkingBarVoiceButton');
+    voiceButton.click();
+    expect(voiceButton.getAttribute('aria-pressed')).toBe('true');
+
+    document.body.dataset.activeView = 'notebooks';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'notebooks' },
+    }));
+
+    expect(recognition.stop).toHaveBeenCalledTimes(1);
+    expect(voiceButton.getAttribute('aria-pressed')).toBe('false');
+    expect(document.getElementById('thinkingBarStatus')?.classList.contains('hidden')).toBe(true);
   });
 
   test('keeps a time colon out of the displayed reminder title', () => {

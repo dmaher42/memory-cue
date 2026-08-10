@@ -10,7 +10,7 @@ Examples of capture entry points:
 * Quick Add
 * Floating Action Button (FAB)
 * Assistant capture
-* Voice capture (future)
+* Voice capture
 
 All of these must run through the same canonical capture logic.
 

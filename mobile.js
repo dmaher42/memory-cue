@@ -107,6 +107,7 @@ function initAssistant() {
     const thinkingBarInput = document.getElementById('thinkingBarInput');
     const thinkingBarForm = document.getElementById('thinkingBarForm');
     const thinkingBarSubmit = document.getElementById('thinkingBarSubmit');
+    const thinkingBarVoiceButton = document.getElementById('thinkingBarVoiceButton');
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarLabel = document.querySelector('label[for="thinkingBarInput"]');
     const memoryCoachLauncher = document.getElementById('memoryCoachLauncher');
@@ -1456,6 +1457,166 @@ function initAssistant() {
       }
     };
 
+    const setupThinkingBarVoiceCapture = () => {
+      if (
+        !(thinkingBarVoiceButton instanceof HTMLElement)
+        || !isTextEntryElement(thinkingBarInput)
+        || typeof window === 'undefined'
+      ) {
+        return;
+      }
+
+      const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const unavailableMessage = 'Voice input is not available in this browser.';
+
+      if (typeof SpeechRecognitionCtor !== 'function') {
+        thinkingBarVoiceButton.setAttribute('aria-disabled', 'true');
+        thinkingBarVoiceButton.title = unavailableMessage;
+        thinkingBarVoiceButton.addEventListener('click', () => {
+          setThinkingBarStatus(unavailableMessage);
+        });
+        return;
+      }
+
+      let recognition;
+      try {
+        recognition = new SpeechRecognitionCtor();
+      } catch (error) {
+        console.warn('[capture] failed to initialise voice input', error);
+        thinkingBarVoiceButton.setAttribute('aria-disabled', 'true');
+        thinkingBarVoiceButton.title = unavailableMessage;
+        thinkingBarVoiceButton.addEventListener('click', () => {
+          setThinkingBarStatus(unavailableMessage);
+        });
+        return;
+      }
+
+      recognition.lang = 'en-AU';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+
+      let isListening = false;
+      let hasVoiceOutcome = false;
+
+      const updateListeningState = (listening) => {
+        isListening = Boolean(listening);
+        thinkingBarVoiceButton.classList.toggle('is-listening', isListening);
+        thinkingBarVoiceButton.setAttribute('aria-pressed', isListening ? 'true' : 'false');
+        thinkingBarVoiceButton.setAttribute(
+          'aria-label',
+          isListening ? 'Stop listening' : 'Add with voice',
+        );
+        thinkingBarVoiceButton.title = isListening
+          ? 'Stop listening'
+          : 'Add a reminder, note, or question with voice';
+      };
+
+      const stopListening = ({ announce = true } = {}) => {
+        if (!isListening) {
+          return;
+        }
+        hasVoiceOutcome = true;
+        try {
+          recognition.stop();
+        } catch (error) {
+          console.warn('[capture] failed to stop voice input', error);
+        }
+        updateListeningState(false);
+        if (announce) {
+          setThinkingBarStatus('Voice capture stopped.');
+        }
+      };
+
+      recognition.onstart = () => {
+        hasVoiceOutcome = false;
+        updateListeningState(true);
+        setThinkingBarStatus('Listening… Speak your reminder, note, or question.');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event?.results || [])
+          .map((result) => result?.[0]?.transcript || '')
+          .join(' ')
+          .trim();
+
+        hasVoiceOutcome = true;
+        updateListeningState(false);
+
+        if (!transcript) {
+          setThinkingBarStatus('I did not catch that. Tap the microphone to try again.');
+          return;
+        }
+
+        const existingText = thinkingBarInput.value.trim();
+        thinkingBarInput.value = existingText ? `${existingText} ${transcript}` : transcript;
+        thinkingBarInput.dispatchEvent(new Event('input', { bubbles: true }));
+        setThinkingBarStatus('Voice captured. Review it, then tap Send.');
+        thinkingBarInput.focus();
+      };
+
+      recognition.onerror = (event) => {
+        hasVoiceOutcome = true;
+        updateListeningState(false);
+        const errorCode = typeof event?.error === 'string' ? event.error : '';
+        if (errorCode === 'not-allowed' || errorCode === 'service-not-allowed') {
+          setThinkingBarStatus('Microphone access was blocked. Allow microphone access and try again.');
+        } else if (errorCode === 'no-speech') {
+          setThinkingBarStatus('I did not hear anything. Tap the microphone to try again.');
+        } else if (errorCode === 'audio-capture') {
+          setThinkingBarStatus('No microphone was found on this device.');
+        } else {
+          setThinkingBarStatus('Voice capture stopped. Tap the microphone to try again.');
+        }
+      };
+
+      recognition.onend = () => {
+        const shouldAnnounceEnd = isListening && !hasVoiceOutcome;
+        updateListeningState(false);
+        if (shouldAnnounceEnd) {
+          setThinkingBarStatus('Listening stopped. Tap the microphone to try again.');
+        }
+      };
+
+      thinkingBarVoiceButton.removeAttribute('aria-disabled');
+      thinkingBarVoiceButton.addEventListener('click', () => {
+        if (isListening) {
+          stopListening();
+          return;
+        }
+
+        try {
+          hasVoiceOutcome = false;
+          recognition.start();
+          updateListeningState(true);
+          setThinkingBarStatus('Listening… Speak your reminder, note, or question.');
+        } catch (error) {
+          console.warn('[capture] failed to start voice input', error);
+          updateListeningState(false);
+          setThinkingBarStatus('Voice capture could not start. Tap the microphone to try again.');
+        }
+      });
+
+      thinkingBarForm?.addEventListener('submit', () => {
+        if (isListening) {
+          stopListening({ announce: false });
+        }
+      });
+      window.addEventListener('pagehide', () => {
+        if (isListening) {
+          stopListening({ announce: false });
+        }
+      });
+      window.addEventListener('memorycue:navigation:changed', (event) => {
+        if (event?.detail?.view === 'notebooks' && isListening) {
+          stopListening({ announce: false });
+          setThinkingBarStatus('');
+        }
+      });
+
+      updateListeningState(false);
+    };
+
     memoryCoachUi = createMemoryCoachUi({
       container: chatConversationContainer,
       launcher: memoryCoachLauncher,
@@ -1923,6 +2084,7 @@ function initAssistant() {
     });
 
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
+    setupThinkingBarVoiceCapture();
 
     wordRescueLauncher?.addEventListener('click', () => {
       if (memoryCoachUi?.isActive?.()) {
