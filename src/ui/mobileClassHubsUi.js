@@ -94,6 +94,7 @@ export function initMobileClassHubsUi(options = {}) {
     openReminder = () => false,
     openNote = () => false,
     startFullNote = () => false,
+    startAiOrganize = () => false,
   } = options;
 
   if (!(rootElement instanceof HTMLElement)) {
@@ -149,8 +150,14 @@ export function initMobileClassHubsUi(options = {}) {
     }
   };
 
-  const focusSoon = (selector) => {
+  const focusSoon = (selector, { resetMainScroll = false } = {}) => {
     setTimeout(() => {
+      if (resetMainScroll) {
+        const mainElement = rootElement.closest('main');
+        if (mainElement instanceof HTMLElement) {
+          mainElement.scrollTop = 0;
+        }
+      }
       const target = rootElement.querySelector(selector);
       if (target instanceof HTMLElement) {
         try { target.focus({ preventScroll: true }); } catch { target.focus(); }
@@ -488,6 +495,27 @@ export function initMobileClassHubsUi(options = {}) {
     header.append(back, titleCopy);
     rootElement.append(header, buildStatus());
 
+    const aiSection = createElement('section', 'class-hub-ai-organize');
+    const aiCopy = createElement('div', 'class-hub-ai-organize-copy');
+    aiCopy.append(
+      createElement('h4', 'class-hub-ai-organize-title', 'Organise a class thought'),
+      createElement(
+        'p',
+        'class-hub-ai-organize-privacy',
+        'Your thought is sent to AI to suggest a note and follow-ups. Avoid student names or sensitive details. You review everything before it is added.',
+      ),
+    );
+    const organizeThought = createElement(
+      'button',
+      'class-hub-action class-hub-action--primary class-hub-ai-organize-button',
+      'Organise a thought',
+    );
+    organizeThought.type = 'button';
+    organizeThought.dataset.classHubAiOrganize = 'true';
+    organizeThought.setAttribute('aria-label', `Organise a thought for ${hub.name}`);
+    aiSection.append(aiCopy, organizeThought);
+    rootElement.appendChild(aiSection);
+
     const followSection = createElement('section', 'class-hub-section');
     const followHeading = createElement('div', 'class-hub-section-heading');
     followHeading.appendChild(createElement('h4', 'class-hub-section-title', 'Follow-ups'));
@@ -590,6 +618,19 @@ export function initMobileClassHubsUi(options = {}) {
       openFollowUpDialog('cue');
       return;
     }
+    if (button.dataset.classHubAiOrganize) {
+      const hub = getActiveHub();
+      if (!hub) return;
+      try {
+        const started = startAiOrganize({ ...hub });
+        if (started === false) {
+          updateStatus('Finish the current Capture first, then try again.');
+        }
+      } catch {
+        updateStatus('Class thought could not start. Try again.');
+      }
+      return;
+    }
     if (button.dataset.classHubReminderOpen) {
       openReminder(button.dataset.classHubReminderOpen);
       return;
@@ -633,6 +674,16 @@ export function initMobileClassHubsUi(options = {}) {
       render();
     }
   };
+  const handleClassHubOpen = (event) => {
+    const hubId = normalizeText(event?.detail?.hubId);
+    if (!hubId) return;
+    activeHubId = hubId;
+    statusMessage = normalizeText(event?.detail?.status);
+    render();
+    if (getActiveHub()) {
+      focusSoon('[data-class-hub-heading]', { resetMainScroll: true });
+    }
+  };
 
   rootElement.addEventListener('click', handleRootClick);
   rootElement.addEventListener('change', handleRootChange);
@@ -641,6 +692,7 @@ export function initMobileClassHubsUi(options = {}) {
   document.addEventListener('memoryCue:remindersReady', handleDataUpdate);
   document.addEventListener('memoryCue:foldersUpdated', handleDataUpdate);
   document.addEventListener('memoryCue:notesModeChanged', handleNotesModeChanged);
+  document.addEventListener('memoryCue:classHubOpen', handleClassHubOpen);
 
   render();
 
@@ -664,6 +716,7 @@ export function initMobileClassHubsUi(options = {}) {
       document.removeEventListener('memoryCue:remindersReady', handleDataUpdate);
       document.removeEventListener('memoryCue:foldersUpdated', handleDataUpdate);
       document.removeEventListener('memoryCue:notesModeChanged', handleNotesModeChanged);
+      document.removeEventListener('memoryCue:classHubOpen', handleClassHubOpen);
       createDialog?.remove();
       followUpDialog?.remove();
       rootElement.closest('#notesOverviewPanel')?.classList.remove('class-hub-is-open');

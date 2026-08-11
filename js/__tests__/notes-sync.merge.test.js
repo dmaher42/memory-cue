@@ -82,6 +82,64 @@ test('a local-only note with unsynced edits is kept (not yet pushed)', () => {
   expect(merged.a.bodyText).toBe('new note not pushed yet');
 });
 
+test('a signed-out programmatic note survives sign-in and is pushed beside existing remote notes', async () => {
+  let localNotes = [{
+    id: 'class-ai-note',
+    bodyText: 'Speak to the students next lesson.',
+    folderId: 'class-year-8-hpe',
+    updatedAt: '2026-01-03T00:00:00.000Z',
+    pendingSync: true,
+  }];
+  const remoteNotes = [{
+    id: 'existing-remote-note',
+    bodyText: 'Existing remote content',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+    pendingSync: false,
+  }];
+  const pushedSnapshots = [];
+  const syncNotes = jest.fn(async (notes) => {
+    if (!Array.isArray(notes)) {
+      return remoteNotes;
+    }
+    pushedSnapshots.push(notes.map((note) => ({ ...note })));
+    localNotes = notes.map((note) => ({ ...note, pendingSync: false }));
+    return localNotes;
+  });
+  const windowStub = {
+    addEventListener: jest.fn(),
+    requestIdleCallback: jest.fn(() => 31),
+    cancelIdleCallback: jest.fn(),
+  };
+  const { initNotesSync } = loadNotesSync({
+    window: windowStub,
+    loadAllNotes: jest.fn(() => localNotes),
+    saveAllNotes: jest.fn((notes) => {
+      localNotes = notes.map((note) => ({ ...note }));
+      return true;
+    }),
+    setRemoteSyncHandler: jest.fn(),
+    syncNotes,
+    subscribeToNotesChanges: jest.fn(async () => () => {}),
+  });
+  const sync = initNotesSync();
+
+  await sync.handleSessionChange({ id: 'user-a' });
+
+  expect(pushedSnapshots).toHaveLength(1);
+  expect(pushedSnapshots[0]).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      id: 'class-ai-note',
+      folderId: 'class-year-8-hpe',
+      pendingSync: true,
+    }),
+    expect.objectContaining({ id: 'existing-remote-note' }),
+  ]));
+  expect(localNotes).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: 'class-ai-note', pendingSync: false }),
+    expect.objectContaining({ id: 'existing-remote-note' }),
+  ]));
+});
+
 test('a synced local note absent from remote is treated as deleted and not resurrected', () => {
   const local = [{ id: 'a', bodyText: 'deleted elsewhere', updatedAt: '2026-01-01T00:00:00.000Z', pendingSync: false }];
   const remote = [];

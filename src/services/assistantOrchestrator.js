@@ -1,6 +1,7 @@
 const DEFAULT_SYSTEM_PROMPT = 'You are Memory Cue, a personal assistant. Use provided memories when they are relevant, and be concise.';
 const WORD_RESCUE_TASK = 'word_rescue';
 const WORD_RESCUE_MODES = new Set(['fast', 'coach']);
+const CLASS_THOUGHT_TASK = 'organise_class_thought';
 
 const trimText = (value, maxChars) => {
   if (typeof value !== 'string') {
@@ -62,6 +63,12 @@ export const buildWordRescueAssistantRequest = (message, options = {}) => {
     message: trimText(message, 500),
   };
 };
+
+export const buildClassThoughtAssistantRequest = (message, options = {}) => ({
+  assistantTask: CLASS_THOUGHT_TASK,
+  message: trimText(message),
+  classHubName: trimText(options?.classHubName),
+});
 
 export const buildRagAssistantRequest = ({ question, contextText, entries = [], schemaVersion = 2 } = {}) => ({
   question: trimText(question),

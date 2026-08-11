@@ -247,3 +247,46 @@ test('naturally detected Word Rescue also bypasses active-lesson handling', asyn
   expect(answerFromActiveLesson).not.toHaveBeenCalled();
   expect(captureInput).toHaveBeenCalledTimes(1);
 });
+
+test('passes an explicit class thought task through capture without adding related memories', async () => {
+  const classThoughtDraft = {
+    note: { title: 'Outdoor lesson', body: 'Two students left the lesson.', tags: [] },
+    followUps: [{ text: 'Speak to the students next lesson' }],
+  };
+  const addMessage = jest.fn();
+  const captureInput = jest.fn(async () => ({
+    decision: { decisionType: 'assistant_query' },
+    message: 'Draft ready. Review it before saving.',
+    classThoughtDraft,
+  }));
+  const findRelatedMemories = jest.fn(() => [{ noteId: 'private-note', title: 'Private note', score: 3 }]);
+  const answerFromActiveLesson = jest.fn(async () => 'Active lesson answer');
+  const { handleChatMessage } = loadChatManager({
+    addMessage,
+    captureInput,
+    findRelatedMemories,
+    answerFromActiveLesson,
+    looksLikeActiveLessonPrompt: () => true,
+  });
+
+  const response = await handleChatMessage('Two students left during the outdoor lesson.', {
+    assistantTask: 'organise_class_thought',
+    classHubName: 'Year 8 HPE',
+  });
+
+  expect(captureInput).toHaveBeenCalledWith({
+    text: 'Two students left during the outdoor lesson.',
+    source: 'chat',
+    metadata: {
+      entryPoint: 'chat.handleChatMessage.classThought',
+      uid: undefined,
+      assistantTask: 'organise_class_thought',
+      assistantMode: undefined,
+      classHubName: 'Year 8 HPE',
+    },
+  });
+  expect(response.classThoughtDraft).toEqual(classThoughtDraft);
+  expect(findRelatedMemories).not.toHaveBeenCalled();
+  expect(answerFromActiveLesson).not.toHaveBeenCalled();
+  expect(addMessage).not.toHaveBeenCalled();
+});

@@ -196,7 +196,9 @@ export const createMemoryCoachUi = (options = {}) => {
     if (active) {
       return;
     }
-    beforeActivate();
+    if (beforeActivate() === false) {
+      return;
+    }
     active = true;
     setStatus('');
     startSession();

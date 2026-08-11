@@ -37,6 +37,11 @@ function loadCapturePipeline(overrides = {}) {
     handleQuery: overrides.handleQuery || (async () => ({})),
     saveInboxEntry: overrides.saveInboxEntry || (async (payload) => payload),
     buildMemoryAssistantRequest: overrides.buildMemoryAssistantRequest || (() => ({})),
+    buildClassThoughtAssistantRequest: overrides.buildClassThoughtAssistantRequest || ((message, options = {}) => ({
+      assistantTask: 'organise_class_thought',
+      message,
+      classHubName: options.classHubName || '',
+    })),
     buildWordRescueAssistantRequest: overrides.buildWordRescueAssistantRequest || ((message, options = {}) => ({
       assistantTask: 'word_rescue',
       mode: options.mode || 'fast',
@@ -307,6 +312,67 @@ test('explicit Word Rescue mode calls the assistant without reading or writing s
   expect(handleQuery).not.toHaveBeenCalled();
   expect(createAndSaveNote).not.toHaveBeenCalled();
   expect(createReminder).not.toHaveBeenCalled();
+});
+
+test('explicit class thought organisation returns a review draft without reading or writing saved memories', async () => {
+  const createAndSaveNote = jest.fn();
+  const createReminder = jest.fn();
+  const handleQuery = jest.fn();
+  const semanticSearch = jest.fn();
+  const resolveShorthandText = jest.fn(() => 'This should not replace the class thought.');
+  const classThoughtDraft = {
+    note: {
+      title: 'Outdoor lesson follow-up',
+      body: 'Two students left during the outdoor lesson.',
+      tags: ['behaviour'],
+    },
+    followUps: [{ text: 'Speak to the two students next lesson' }],
+  };
+  const requestAssistantChatResult = jest.fn(async () => ({
+    reply: 'Draft ready. Review it before saving.',
+    classThoughtDraft,
+  }));
+  const { captureInput } = loadCapturePipeline({
+    createAndSaveNote,
+    createReminder,
+    handleQuery,
+    semanticSearch,
+    resolveShorthandText,
+    requestAssistantChatResult,
+    intentRouter: (text, hints = {}) => ({
+      payload: {
+        decisionType: 'assistant_query',
+        parsedType: 'class_thought',
+        parsedEntry: { type: 'class_thought', title: text },
+        assistantTask: hints.assistantTask,
+        mode: null,
+      },
+    }),
+  });
+
+  const result = await captureInput({
+    text: 'Two students left during the outdoor lesson.\nI need to speak to them next lesson.',
+    source: 'class_hub',
+    metadata: {
+      entryPoint: 'class-hub.organise-thought',
+      assistantTask: 'organise_class_thought',
+      classHubName: 'Year 8 HPE',
+    },
+  });
+
+  expect(result.decision.decisionType).toBe('assistant_query');
+  expect(result.message).toBe('Draft ready. Review it before saving.');
+  expect(result.classThoughtDraft).toEqual(classThoughtDraft);
+  expect(requestAssistantChatResult).toHaveBeenCalledWith({
+    assistantTask: 'organise_class_thought',
+    message: 'Two students left during the outdoor lesson.\nI need to speak to them next lesson.',
+    classHubName: 'Year 8 HPE',
+  }, expect.any(Object));
+  expect(semanticSearch).not.toHaveBeenCalled();
+  expect(handleQuery).not.toHaveBeenCalled();
+  expect(createAndSaveNote).not.toHaveBeenCalled();
+  expect(createReminder).not.toHaveBeenCalled();
+  expect(resolveShorthandText).not.toHaveBeenCalled();
 });
 
 test('natural fast Word Rescue decisions preserve task and mode through execution', async () => {

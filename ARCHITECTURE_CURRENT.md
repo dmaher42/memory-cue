@@ -27,6 +27,9 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 2. `src/ui/mobileClassHubsUi.js` lists hubs in Saved notes and opens the existing Notes editor with the hub folder already selected.
 3. Class follow-ups are existing Reminder records linked by `metadata.classHubId` and shown in both the hub and Reminders.
 4. Untimed class-list items set `metadata.suppressNotification = true`. A separate, explicitly dated `class-list-cue` reminder can prompt the user to check the hub.
+5. `Organise a thought` reuses the universal `#thinkingBarInput` and the explicit `organise_class_thought` assistant task. Only the submitted thought and class name are sent to the existing `/api/assistant-chat` endpoint.
+6. The assistant returns a runtime-only draft. No Note or Reminder is written until the user chooses `Save note and selected follow-ups`; confirmed Notes use the hub `folderId`, and confirmed follow-ups use the normal linked Reminder path with schedule parsing disabled.
+7. Confirmed Notes enter the existing Notes search, memory mirror, embedding, and sync paths. This improves later retrieval; it is not model training and creates no new storage key.
 
 ## Main memory flow
 1. Raw captures are stored in the canonical Inbox store (`memoryCueInbox`); legacy `memoryEntries` data is migrated by the Inbox service.

@@ -30,6 +30,10 @@ describe('mobile capture result rendering', () => {
           <span>Memory coach: <strong id="memoryCoachModeLabel">Practice</strong></span>
           <button id="memoryCoachExitButton" type="button">Back to Capture</button>
         </div>
+        <div id="classThoughtModeBar" class="hidden">
+          <span>Class thought: <strong id="classThoughtModeLabel">Class</strong></span>
+          <button id="classThoughtExitButton" type="button">Back to class</button>
+        </div>
         <form id="thinkingBarForm">
           <label for="thinkingBarInput">Add a reminder, note, or ask anything</label>
           <textarea id="thinkingBarInput" placeholder="Add a reminder, note, or askâ€¦"></textarea>
@@ -60,6 +64,7 @@ describe('mobile capture result rendering', () => {
   });
 
   afterEach(() => {
+    window.dispatchEvent(new window.Event('pagehide'));
     localStorage.clear();
     document.body.innerHTML = '';
     delete document.body.dataset.memoryCueAssistantInit;
@@ -783,5 +788,286 @@ describe('mobile capture result rendering', () => {
     expect(document.getElementById('wordRescueModeBar')?.classList.contains('hidden')).toBe(true);
     expect(document.body.classList.contains('word-rescue-mode-active')).toBe(false);
     expect(document.querySelector('.word-rescue-coach-controls')).toBeNull();
+  });
+
+  test('starts the Class Hub organiser in the one universal input and restores an existing Capture draft', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Unsent ordinary Capture draft';
+    document.body.dataset.activeView = 'notebooks';
+    const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
+
+    expect(detail.accepted).toBe(true);
+    expect(input.value).toBe('Unsent ordinary Capture draft');
+    expect(document.querySelectorAll('textarea')).toHaveLength(1);
+
+    document.body.dataset.activeView = 'capture';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('classThoughtModeLabel')?.textContent).toBe('Year 8 HPE');
+    expect(input.placeholder).toBe('Dump anything about Year 8 HPE…');
+    expect(input.maxLength).toBe(2400);
+    expect(input.value).toBe('');
+
+    document.getElementById('classThoughtExitButton').click();
+    expect(input.value).toBe('Unsent ordinary Capture draft');
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(true);
+    expect(document.body.classList.contains('class-thought-mode-active')).toBe(false);
+  });
+
+  test('reviews a class thought before saving one linked Note and only selected untimed follow-ups', async () => {
+    const createAndSaveNote = jest.fn((payload) => ({ id: 'note-ai', ...payload }));
+    const createReminderFromPayload = jest.fn((payload) => ({ id: `reminder-${payload.text}`, ...payload }));
+    const handleChatMessage = jest.fn(async () => ({
+      message: 'Draft ready. Review it before saving.',
+      classThoughtDraft: {
+        note: {
+          title: 'Students leaving an outdoor HPE lesson',
+          body: 'Two students left the outdoor lesson without permission. <script>unsafe</script>',
+          tags: ['behaviour', 'follow-up'],
+        },
+        followUps: [
+          { text: 'Speak to the two students next lesson' },
+          { text: 'Call the parent tomorrow' },
+        ],
+      },
+    }));
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+    window.__mobileMocks.createAndSaveNote = createAndSaveNote;
+    window.__mobileMocks.initReminders = jest.fn().mockResolvedValue({
+      createReminderFromPayload,
+      getReminders: () => [],
+    });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Two students disappeared during my outdoor HPE lesson. I need to speak to them next lesson.';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(handleChatMessage).toHaveBeenCalledWith(
+      'Two students disappeared during my outdoor HPE lesson. I need to speak to them next lesson.',
+      {
+        assistantTask: 'organise_class_thought',
+        classHubId: 'hub-hpe',
+        classHubName: 'Year 8 HPE',
+      },
+    );
+    expect(createAndSaveNote).not.toHaveBeenCalled();
+    expect(createReminderFromPayload).not.toHaveBeenCalled();
+    expect(document.querySelector('.class-thought-review-card')).not.toBeNull();
+    const reviewHeading = document.querySelector('[data-class-thought-review-heading]');
+    expect(document.activeElement).toBe(reviewHeading);
+    expect(reviewHeading?.tabIndex).toBe(-1);
+    expect(document.querySelector('.class-thought-review-note-body')?.textContent).toContain('<script>unsafe</script>');
+    expect(input.readOnly).toBe(true);
+
+    const followUpChecks = document.querySelectorAll('[data-class-thought-follow-up]');
+    expect(followUpChecks).toHaveLength(2);
+    followUpChecks[1].click();
+    document.querySelector('[data-class-thought-save]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(createAndSaveNote).toHaveBeenCalledTimes(1);
+    expect(createAndSaveNote).toHaveBeenCalledWith(expect.objectContaining({
+      folderId: 'hub-hpe',
+      title: 'Students leaving an outdoor HPE lesson',
+      source: 'assistant',
+      entryPoint: 'class-hub-ai-organiser',
+      bodyHtml: expect.stringContaining('&lt;script&gt;unsafe&lt;/script&gt;'),
+    }));
+    expect(createReminderFromPayload).toHaveBeenCalledTimes(1);
+    expect(createReminderFromPayload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: 'Speak to the two students next lesson',
+        dueAt: null,
+        notifyAt: null,
+        metadata: expect.objectContaining({
+          type: 'class-follow-up',
+          classHubId: 'hub-hpe',
+          suppressNotification: true,
+        }),
+      }),
+      expect.objectContaining({ parseSchedule: false }),
+    );
+    expect(document.querySelector('.class-thought-review-card')).toBeNull();
+  });
+
+  test('Back to class pauses an unsent organiser thought and resumes it without losing the ordinary Capture draft', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Ordinary Capture draft';
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    input.value = 'Unsent class thought that must survive';
+
+    document.getElementById('classThoughtExitButton').click();
+    expect(input.value).toBe('Ordinary Capture draft');
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(true);
+
+    const resumeDetail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail: resumeDetail }));
+    expect(resumeDetail.accepted).toBe(true);
+    document.body.dataset.activeView = 'capture';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+
+    expect(input.value).toBe('Unsent class thought that must survive');
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
+  });
+
+  test('keeps the original class thought available when AI fails and writes nothing', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const createAndSaveNote = jest.fn();
+    const createReminderFromPayload = jest.fn();
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = jest.fn().mockRejectedValue(new Error('provider failed'));
+    window.__mobileMocks.createAndSaveNote = createAndSaveNote;
+    window.__mobileMocks.initReminders = jest.fn().mockResolvedValue({ createReminderFromPayload, getReminders: () => [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'I need to remember to speak to the students next lesson.';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(input.value).toBe('I need to remember to speak to the students next lesson.');
+    expect(input.readOnly).toBe(false);
+    expect(document.getElementById('thinkingBarStatus')?.textContent).toContain('Nothing was added');
+    expect(document.querySelector('.class-thought-review-card')).toBeNull();
+    expect(createAndSaveNote).not.toHaveBeenCalled();
+    expect(createReminderFromPayload).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  test('retries only failed class follow-ups without duplicating the saved Note or successful rows', async () => {
+    const createAndSaveNote = jest.fn((payload) => ({ id: 'note-ai', ...payload }));
+    const createReminderFromPayload = jest.fn()
+      .mockResolvedValueOnce({ id: 'reminder-1' })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'reminder-2' });
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.createAndSaveNote = createAndSaveNote;
+    window.__mobileMocks.initReminders = jest.fn().mockResolvedValue({
+      createReminderFromPayload,
+      getReminders: () => [],
+    });
+    window.__mobileMocks.handleChatMessage = jest.fn().mockResolvedValue({
+      message: 'Draft ready. Review it before saving.',
+      classThoughtDraft: {
+        note: { title: 'Class note', body: 'Organised note body', tags: [] },
+        followUps: [{ text: 'First follow-up' }, { text: 'Second follow-up' }],
+      },
+    });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    document.getElementById('thinkingBarInput').value = 'Thought to organise';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    document.querySelector('[data-class-thought-save]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(createAndSaveNote).toHaveBeenCalledTimes(1);
+    expect(createReminderFromPayload).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('.class-thought-review-card')?.textContent).toContain('1 follow-up could not be saved');
+
+    document.querySelector('[data-class-thought-save]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(createAndSaveNote).toHaveBeenCalledTimes(1);
+    expect(createReminderFromPayload).toHaveBeenCalledTimes(3);
+    expect(createReminderFromPayload.mock.calls[2][0].text).toBe('Second follow-up');
+    expect(document.querySelector('.class-thought-review-card')).toBeNull();
+  });
+
+  test('does not apply a late class organiser response after the user leaves Capture', async () => {
+    let resolveAssistant;
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = jest.fn(() => new Promise((resolve) => {
+      resolveAssistant = resolve;
+    }));
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Original Capture draft';
+    const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
+    input.value = 'Class thought waiting for AI';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await Promise.resolve();
+
+    document.body.dataset.activeView = 'reminders';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'reminders' },
+    }));
+    expect(input.value).toBe('Original Capture draft');
+
+    resolveAssistant({
+      message: 'Draft ready. Review it before saving.',
+      classThoughtDraft: {
+        note: { title: 'Late draft', body: 'Should not appear', tags: [] },
+        followUps: [{ text: 'Should not save' }],
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    document.body.dataset.activeView = 'capture';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    expect(document.querySelector('.class-thought-review-card')).toBeNull();
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
+    expect(input.value).toBe('Class thought waiting for AI');
   });
 });

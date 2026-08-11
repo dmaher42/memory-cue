@@ -381,6 +381,10 @@ export const createAndSaveNote = (payload = {}, options = {}) => {
   const note = createNote(title, bodyHtml, {
     bodyHtml,
     bodyText: text,
+    // Programmatic captures can be created while signed out or offline. Keep them pending
+    // until the canonical Firestore sync path confirms the write, otherwise a later remote
+    // snapshot can treat a local-only note as deleted and remove it.
+    pendingSync: true,
     folderId:
       typeof normalizedPayload.folderId === 'string' && normalizedPayload.folderId.trim()
         ? normalizedPayload.folderId.trim()

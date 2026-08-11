@@ -369,7 +369,10 @@ const parseReminderSchedule = (payload = {}) => {
 };
 
 export function createReminder(payload = {}, options = {}) {
-  const schedule = parseReminderSchedule(payload);
+  const shouldParseSchedule = options.parseSchedule !== false;
+  const schedule = shouldParseSchedule
+    ? parseReminderSchedule(payload)
+    : { cleanedText: '', dueAt: null, notifyAt: null };
   const reminderText = schedule.cleanedText || (typeof payload.text === 'string' && payload.text.trim()
     ? payload.text.trim()
     : typeof payload.title === 'string'

@@ -5,6 +5,7 @@ import {
   loadAllNotes,
   saveAllNotes,
   createNote,
+  createAndSaveNote,
   NOTES_STORAGE_KEY,
 } from './js/modules/notes-storage.js';
 import {
@@ -123,6 +124,9 @@ function initAssistant() {
     const wordRescueModeBar = document.getElementById('wordRescueModeBar');
     const wordRescueModeLabel = document.getElementById('wordRescueModeLabel');
     const wordRescueExitButton = document.getElementById('wordRescueExitButton');
+    const classThoughtModeBar = document.getElementById('classThoughtModeBar');
+    const classThoughtModeLabel = document.getElementById('classThoughtModeLabel');
+    const classThoughtExitButton = document.getElementById('classThoughtExitButton');
     const chatConversationContainer = document.getElementById('chatConversationContainer');
     const assistantHelpBtn = document.getElementById('assistantHelpBtn');
     const clearChatHistoryBtn = document.getElementById('clearChatHistoryBtn');
@@ -139,12 +143,23 @@ function initAssistant() {
     let activeWordRescueSession = null;
     let memoryCoachUi = null;
     let wordRescueRequestGeneration = 0;
+    let activeClassThoughtContext = null;
+    let activeClassThoughtDraft = null;
+    let classThoughtRequestGeneration = 0;
+    let classThoughtPriorCaptureDraft = '';
+    let classThoughtComposerValue = '';
+    let classThoughtOwnsComposer = false;
+    let isClassThoughtGenerating = false;
+    let isClassThoughtSaving = false;
     const MAX_VISIBLE_CAPTURE_MESSAGES = 12;
     const CAPTURE_UNDO_WINDOW_MS = 10000;
     const DEFAULT_THINKING_BAR_PLACEHOLDER = thinkingBarInput?.getAttribute('placeholder')
       || 'Add a reminder, note, or ask…';
     const DEFAULT_THINKING_BAR_LABEL = thinkingBarLabel?.textContent
       || 'Add a reminder, note, or ask anything';
+    const DEFAULT_THINKING_BAR_MAX_LENGTH = thinkingBarInput?.getAttribute('maxlength');
+    const DEFAULT_THINKING_BAR_ARIA_LABEL = thinkingBarContainer?.getAttribute('aria-label')
+      || 'AI reminder, note, and question capture';
     if (!isTextEntryElement(thinkingBarInput)) {
       return;
     }
@@ -939,6 +954,135 @@ function initAssistant() {
       };
     };
 
+    const normalizeClassThoughtDraft = (value, context = {}, originalThought = '') => {
+      if (!value || typeof value !== 'object') {
+        return null;
+      }
+      const noteSource = value.note && typeof value.note === 'object' ? value.note : {};
+      const title = typeof noteSource.title === 'string' ? noteSource.title.trim().slice(0, 80) : '';
+      const body = typeof noteSource.body === 'string' ? noteSource.body.trim().slice(0, 1800) : '';
+      const tags = Array.isArray(noteSource.tags)
+        ? noteSource.tags
+          .map((tag) => (typeof tag === 'string' ? tag.trim().slice(0, 32) : ''))
+          .filter((tag, index, list) => tag && list.findIndex((item) => item.toLowerCase() === tag.toLowerCase()) === index)
+          .slice(0, 5)
+        : [];
+      if (!title || !body) {
+        return null;
+      }
+
+      const seenFollowUps = new Set();
+      const followUps = (Array.isArray(value.followUps) ? value.followUps : [])
+        .map((item, index) => {
+          const text = typeof item?.text === 'string' ? item.text.trim().slice(0, 180) : '';
+          const key = text.toLowerCase();
+          if (!text || seenFollowUps.has(key)) {
+            return null;
+          }
+          seenFollowUps.add(key);
+          return {
+            id: `class-thought-follow-up-${index}`,
+            text,
+            selected: true,
+            saved: false,
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 5);
+
+      return {
+        hubId: typeof context?.hubId === 'string' ? context.hubId.trim() : '',
+        hubName: typeof context?.hubName === 'string' ? context.hubName.trim() : '',
+        originalThought: typeof originalThought === 'string' ? originalThought.trim().slice(0, 2400) : '',
+        note: { title, body, tags },
+        followUps,
+        savedNote: null,
+        status: '',
+      };
+    };
+
+    const escapeClassThoughtHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const toClassThoughtNoteHtml = (value) => escapeClassThoughtHtml(value)
+      .split(/\n{2,}/)
+      .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
+      .join('');
+
+    const getCurrentClassThoughtHub = () => {
+      const hubId = typeof activeClassThoughtContext?.hubId === 'string'
+        ? activeClassThoughtContext.hubId
+        : '';
+      if (!hubId) {
+        return null;
+      }
+      const hubs = typeof getClassHubFolders === 'function' ? getClassHubFolders() : [];
+      return Array.isArray(hubs)
+        ? hubs.find((hub) => hub?.id === hubId) || null
+        : null;
+    };
+
+    const updateClassThoughtModeUi = () => {
+      const classSessionIsActive = Boolean(activeClassThoughtContext);
+      const modeIsActive = classSessionIsActive && classThoughtOwnsComposer && isCaptureViewActive();
+      classThoughtModeBar?.classList.toggle('hidden', !modeIsActive);
+      if (classThoughtModeLabel instanceof HTMLElement) {
+        classThoughtModeLabel.textContent = activeClassThoughtContext?.hubName || 'Class';
+      }
+      classThoughtModeBar?.setAttribute(
+        'aria-busy',
+        String(Boolean(isClassThoughtGenerating || isClassThoughtSaving)),
+      );
+      if (classThoughtExitButton instanceof HTMLButtonElement) {
+        classThoughtExitButton.disabled = Boolean(isClassThoughtSaving);
+      }
+      if (wordRescueLauncher instanceof HTMLButtonElement) {
+        wordRescueLauncher.disabled = classSessionIsActive;
+      }
+      if (memoryCoachLauncher instanceof HTMLButtonElement) {
+        memoryCoachLauncher.disabled = classSessionIsActive;
+      }
+      document.body?.classList.toggle('class-thought-mode-active', modeIsActive);
+
+      if (modeIsActive) {
+        thinkingBarInput.placeholder = activeClassThoughtDraft
+          ? 'Review the draft above before continuing'
+          : `Dump anything about ${activeClassThoughtContext.hubName}…`;
+        if (thinkingBarLabel instanceof HTMLElement) {
+          thinkingBarLabel.textContent = activeClassThoughtDraft
+            ? 'Review the organised class thought'
+            : `Add a thought about ${activeClassThoughtContext.hubName}`;
+        }
+        thinkingBarContainer?.setAttribute('aria-label', 'Class thought organiser');
+        thinkingBarInput.maxLength = 2400;
+      } else if (!activeWordRescueMode) {
+        thinkingBarInput.placeholder = DEFAULT_THINKING_BAR_PLACEHOLDER;
+        if (thinkingBarLabel instanceof HTMLElement) {
+          thinkingBarLabel.textContent = DEFAULT_THINKING_BAR_LABEL;
+        }
+        thinkingBarContainer?.setAttribute('aria-label', DEFAULT_THINKING_BAR_ARIA_LABEL);
+        if (DEFAULT_THINKING_BAR_MAX_LENGTH === null) {
+          thinkingBarInput.removeAttribute('maxlength');
+        } else {
+          thinkingBarInput.setAttribute('maxlength', DEFAULT_THINKING_BAR_MAX_LENGTH);
+        }
+      }
+
+      const composerLocked = modeIsActive
+        && Boolean(activeClassThoughtDraft || isClassThoughtGenerating || isClassThoughtSaving);
+      thinkingBarInput.readOnly = composerLocked;
+      if (thinkingBarSubmit instanceof HTMLButtonElement) {
+        thinkingBarSubmit.disabled = composerLocked;
+      }
+      if (thinkingBarVoiceButton instanceof HTMLButtonElement) {
+        thinkingBarVoiceButton.disabled = composerLocked;
+      }
+    };
+
     const updateWordRescueModeUi = () => {
       const modeIsActive = Boolean(activeWordRescueMode) && isCaptureViewActive();
       const modeName = activeWordRescueMode === 'coach' ? 'Coach me' : 'Find it now';
@@ -951,23 +1095,27 @@ function initAssistant() {
         wordRescueLauncher.setAttribute('aria-pressed', String(modeIsActive));
       }
       document.body?.classList.toggle('word-rescue-mode-active', modeIsActive);
-      thinkingBarInput.placeholder = modeIsActive
-        ? activeWordRescueMode === 'coach'
+      if (modeIsActive) {
+        thinkingBarInput.placeholder = activeWordRescueMode === 'coach'
           ? 'Describe the word and retrieve it with clues…'
-          : 'Describe the meaning or paste your sentence…'
-        : DEFAULT_THINKING_BAR_PLACEHOLDER;
+          : 'Describe the meaning or paste your sentence…';
+      } else if (!activeClassThoughtContext) {
+        thinkingBarInput.placeholder = DEFAULT_THINKING_BAR_PLACEHOLDER;
+      }
       if (thinkingBarLabel instanceof HTMLElement) {
-        thinkingBarLabel.textContent = modeIsActive
-          ? activeWordRescueMode === 'coach'
+        if (modeIsActive) {
+          thinkingBarLabel.textContent = activeWordRescueMode === 'coach'
             ? 'Describe the word you want to retrieve with coaching clues'
-            : 'Describe the word you need or paste the sentence'
-          : DEFAULT_THINKING_BAR_LABEL;
+            : 'Describe the word you need or paste the sentence';
+        } else if (!activeClassThoughtContext) {
+          thinkingBarLabel.textContent = DEFAULT_THINKING_BAR_LABEL;
+        }
       }
     };
 
     const setWordRescueBusy = (busy) => {
       if (wordRescueLauncher instanceof HTMLButtonElement) {
-        wordRescueLauncher.disabled = Boolean(busy);
+        wordRescueLauncher.disabled = Boolean(busy || activeClassThoughtContext);
       }
       if (wordRescueExitButton instanceof HTMLButtonElement) {
         wordRescueExitButton.disabled = Boolean(busy);
@@ -994,6 +1142,180 @@ function initAssistant() {
       renderConversationHistory();
       if (keepFocus) {
         thinkingBarInput.focus();
+      }
+    };
+
+    const closeClassThought = ({ restoreCaptureDraft = true, keepFocus = true } = {}) => {
+      classThoughtRequestGeneration += 1;
+      activeClassThoughtContext = null;
+      activeClassThoughtDraft = null;
+      isClassThoughtGenerating = false;
+      isClassThoughtSaving = false;
+      if (restoreCaptureDraft && classThoughtOwnsComposer) {
+        thinkingBarInput.value = classThoughtPriorCaptureDraft;
+      }
+      classThoughtPriorCaptureDraft = '';
+      classThoughtComposerValue = '';
+      classThoughtOwnsComposer = false;
+      updateClassThoughtModeUi();
+      updateWordRescueModeUi();
+      renderConversationHistory();
+      thinkingBarComposer?.autoResize?.();
+      if (keepFocus) {
+        thinkingBarInput.focus();
+      }
+    };
+
+    const pauseClassThoughtComposer = () => {
+      if (!activeClassThoughtContext || !classThoughtOwnsComposer) {
+        return;
+      }
+      classThoughtRequestGeneration += 1;
+      isClassThoughtGenerating = false;
+      classThoughtComposerValue = thinkingBarInput.value || '';
+      thinkingBarInput.value = classThoughtPriorCaptureDraft;
+      classThoughtOwnsComposer = false;
+      updateClassThoughtModeUi();
+      thinkingBarComposer?.autoResize?.();
+    };
+
+    const resumeClassThoughtComposer = () => {
+      if (!activeClassThoughtContext || classThoughtOwnsComposer) {
+        return;
+      }
+      classThoughtPriorCaptureDraft = thinkingBarInput.value || '';
+      thinkingBarInput.value = classThoughtComposerValue;
+      classThoughtOwnsComposer = true;
+      updateClassThoughtModeUi();
+      thinkingBarComposer?.autoResize?.();
+    };
+
+    const returnToClassThoughtHub = (status = '') => {
+      const hubId = activeClassThoughtContext?.hubId || activeClassThoughtDraft?.hubId || '';
+      closeClassThought({ restoreCaptureDraft: true, keepFocus: false });
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      if (hubId) {
+        document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
+          detail: { hubId, status },
+        }));
+      }
+    };
+
+    const pauseAndReturnToClassThoughtHub = () => {
+      const hubId = activeClassThoughtContext?.hubId || '';
+      pauseClassThoughtComposer();
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      if (hubId) {
+        document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
+          detail: {
+            hubId,
+            status: 'Class thought kept. Tap Organise a thought to resume where you left off.',
+          },
+        }));
+      }
+    };
+
+    const saveClassThoughtDraft = async () => {
+      if (!activeClassThoughtDraft || isClassThoughtSaving) {
+        return;
+      }
+      const hub = getCurrentClassThoughtHub();
+      if (!hub) {
+        activeClassThoughtDraft.status = 'This class hub no longer exists. Nothing was saved.';
+        renderConversationHistory();
+        return;
+      }
+
+      isClassThoughtSaving = true;
+      activeClassThoughtDraft.status = 'Saving your approved items…';
+      updateClassThoughtModeUi();
+      renderConversationHistory();
+
+      try {
+        if (!activeClassThoughtDraft.savedNote) {
+          const combinedText = [
+            activeClassThoughtDraft.note.body,
+            'Original thought:',
+            activeClassThoughtDraft.originalThought,
+          ].filter(Boolean).join('\n\n');
+          const tags = [hub.name, ...activeClassThoughtDraft.note.tags]
+            .filter((tag, index, list) => tag && list.findIndex((item) => item.toLowerCase() === tag.toLowerCase()) === index)
+            .slice(0, 6);
+          const note = await Promise.resolve(createAndSaveNote({
+            text: combinedText,
+            title: activeClassThoughtDraft.note.title,
+            bodyHtml: toClassThoughtNoteHtml(combinedText),
+            folderId: hub.id,
+            parsedType: 'note',
+            source: 'assistant',
+            entryPoint: 'class-hub-ai-organiser',
+            tags,
+            metadata: {
+              aiCaptured: true,
+              source: 'class-hub-ai-organiser',
+            },
+          }));
+          if (!note) {
+            activeClassThoughtDraft.status = 'The note could not be saved. No follow-ups were added. Try again.';
+            return;
+          }
+          activeClassThoughtDraft.savedNote = note;
+        }
+
+        let failedCount = 0;
+        for (const followUp of activeClassThoughtDraft.followUps) {
+          if (!followUp.selected || followUp.saved) {
+            continue;
+          }
+          let created = null;
+          try {
+            created = await Promise.resolve(reminderControllerApi?.createReminderFromPayload?.({
+              text: followUp.text,
+              title: followUp.text,
+              dueAt: null,
+              due: null,
+              notifyAt: null,
+              category: 'School',
+              priority: 'Medium',
+              source: 'manual',
+              metadata: {
+                type: 'class-follow-up',
+                classHubId: hub.id,
+                classHubName: hub.name,
+                suppressNotification: true,
+                source: 'assistant',
+              },
+            }, {
+              closeSheet: false,
+              parseSchedule: false,
+              activityAction: 'created',
+              activityLabelPrefix: 'Class follow-up added',
+            }));
+          } catch {
+            created = null;
+          }
+          if (created) {
+            followUp.saved = true;
+          } else {
+            failedCount += 1;
+          }
+        }
+
+        if (failedCount) {
+          activeClassThoughtDraft.status = `${failedCount} follow-up${failedCount === 1 ? '' : 's'} could not be saved. The note and successful follow-ups will not be duplicated when you retry.`;
+          return;
+        }
+
+        const savedFollowUpCount = activeClassThoughtDraft.followUps.filter((item) => item.saved).length;
+        returnToClassThoughtHub(
+          `Organised thought saved: 1 note and ${savedFollowUpCount} follow-up${savedFollowUpCount === 1 ? '' : 's'}.`,
+        );
+      } finally {
+        isClassThoughtSaving = false;
+        if (activeClassThoughtDraft) {
+          updateClassThoughtModeUi();
+          renderConversationHistory();
+        }
       }
     };
 
@@ -1249,9 +1571,139 @@ function initAssistant() {
       chatConversationContainer.appendChild(controls);
     };
 
+    const renderClassThoughtReview = () => {
+      const draft = activeClassThoughtDraft;
+      if (
+        !draft
+        || !activeClassThoughtContext
+        || !isCaptureViewActive()
+        || !(chatConversationContainer instanceof HTMLElement)
+      ) {
+        return;
+      }
+
+      const card = document.createElement('section');
+      card.className = 'class-thought-review-card';
+      card.setAttribute('role', 'region');
+      card.setAttribute('aria-labelledby', 'classThoughtReviewTitle');
+
+      const eyebrow = document.createElement('p');
+      eyebrow.className = 'class-thought-review-eyebrow';
+      eyebrow.textContent = 'AI draft - not saved automatically';
+
+      const title = document.createElement('h3');
+      title.id = 'classThoughtReviewTitle';
+      title.className = 'class-thought-review-title';
+      title.dataset.classThoughtReviewHeading = 'true';
+      title.tabIndex = -1;
+      title.textContent = 'Review your organised thought';
+
+      const copy = document.createElement('p');
+      copy.className = 'class-thought-review-copy';
+      copy.textContent = 'The note will keep your original thought underneath the organised summary. Choose which follow-ups to add.';
+
+      const privacy = document.createElement('p');
+      privacy.className = 'class-thought-review-privacy';
+      privacy.textContent = `Only this thought and the class name "${draft.hubName}" were sent to AI. Nothing is added to Notes or Reminders until you choose Save.`;
+
+      const noteSection = document.createElement('section');
+      noteSection.className = 'class-thought-review-section';
+      const noteHeading = document.createElement('h4');
+      noteHeading.className = 'class-thought-review-section-title';
+      noteHeading.textContent = draft.savedNote ? 'Note - saved' : 'Note to save';
+      const noteTitle = document.createElement('div');
+      noteTitle.className = 'class-thought-review-note-title';
+      noteTitle.textContent = draft.note.title;
+      const noteBody = document.createElement('p');
+      noteBody.className = 'class-thought-review-note-body';
+      noteBody.textContent = draft.note.body;
+      noteSection.append(noteHeading, noteTitle, noteBody);
+
+      const followSection = document.createElement('section');
+      followSection.className = 'class-thought-review-section';
+      const followHeading = document.createElement('h4');
+      followHeading.className = 'class-thought-review-section-title';
+      followHeading.textContent = 'Suggested follow-ups';
+      followSection.appendChild(followHeading);
+      if (!draft.followUps.length) {
+        const noFollowUps = document.createElement('p');
+        noFollowUps.className = 'class-thought-review-copy';
+        noFollowUps.textContent = 'No clear follow-ups were found. You can save the organised note on its own.';
+        followSection.appendChild(noFollowUps);
+      } else {
+        const list = document.createElement('ul');
+        list.className = 'class-thought-review-list';
+        draft.followUps.forEach((followUp) => {
+          const item = document.createElement('li');
+          item.className = 'class-thought-review-item';
+          const label = document.createElement('label');
+          label.className = 'class-thought-review-check-wrap';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.className = 'class-thought-review-check';
+          checkbox.checked = followUp.saved || followUp.selected;
+          checkbox.disabled = followUp.saved || isClassThoughtSaving;
+          checkbox.dataset.classThoughtFollowUp = followUp.id;
+          checkbox.setAttribute('aria-label', `${followUp.saved ? 'Saved' : 'Save'} follow-up: ${followUp.text}`);
+          checkbox.addEventListener('change', () => {
+            followUp.selected = checkbox.checked;
+          });
+          label.appendChild(checkbox);
+          const itemCopy = document.createElement('span');
+          itemCopy.className = 'class-thought-review-item-copy';
+          itemCopy.textContent = followUp.saved ? `${followUp.text} - saved` : followUp.text;
+          item.append(label, itemCopy);
+          list.appendChild(item);
+        });
+        followSection.appendChild(list);
+      }
+
+      if (draft.status) {
+        const status = document.createElement('p');
+        status.className = 'class-thought-review-copy';
+        status.setAttribute('role', 'status');
+        status.textContent = draft.status;
+        card.append(eyebrow, title, copy, privacy, noteSection, followSection, status);
+      } else {
+        card.append(eyebrow, title, copy, privacy, noteSection, followSection);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'class-thought-review-actions';
+      const saveButton = document.createElement('button');
+      saveButton.type = 'button';
+      saveButton.className = 'class-thought-review-button class-thought-review-button--primary';
+      saveButton.dataset.classThoughtSave = 'true';
+      saveButton.disabled = isClassThoughtSaving;
+      saveButton.textContent = draft.savedNote
+        ? 'Retry unsaved follow-ups'
+        : 'Save note and selected follow-ups';
+      saveButton.addEventListener('click', saveClassThoughtDraft);
+
+      const cancelButton = document.createElement('button');
+      cancelButton.type = 'button';
+      cancelButton.className = 'class-thought-review-button';
+      cancelButton.dataset.classThoughtCancel = 'true';
+      cancelButton.disabled = isClassThoughtSaving;
+      cancelButton.textContent = draft.savedNote ? 'Finish without remaining follow-ups' : 'Discard draft';
+      cancelButton.addEventListener('click', () => {
+        const savedCount = draft.followUps.filter((item) => item.saved).length;
+        returnToClassThoughtHub(draft.savedNote
+          ? `Saved 1 note and ${savedCount} follow-up${savedCount === 1 ? '' : 's'}. The remaining draft was discarded.`
+          : 'AI draft discarded. No Note or follow-up was added.');
+      });
+      actions.append(saveButton, cancelButton);
+      card.appendChild(actions);
+      chatConversationContainer.appendChild(card);
+    };
+
     const renderWordRescueSupplementalUi = () => {
       if (memoryCoachUi?.isActive?.()) {
         memoryCoachUi.render();
+        return;
+      }
+      if (activeClassThoughtDraft) {
+        renderClassThoughtReview();
         return;
       }
       renderWordRescueChoice();
@@ -1668,9 +2120,14 @@ function initAssistant() {
         revealLatestCaptureMessage();
       },
       beforeActivate: () => {
+        if (activeClassThoughtContext) {
+          setThinkingBarStatus('Finish or discard the class thought before opening Memory coach.');
+          return false;
+        }
         if (activeWordRescueMode || isWordRescueChoiceOpen) {
           closeWordRescue({ keepFocus: false });
         }
+        return true;
       },
       onFindWord: () => {
         isWordRescueChoiceOpen = true;
@@ -1693,9 +2150,10 @@ function initAssistant() {
           latestMessage.classList.contains('chat-message')
           || latestMessage.classList.contains('word-rescue-choice')
           || latestMessage.classList.contains('word-rescue-coach-controls')
-          || latestMessage.classList.contains('word-rescue-reveal')
-          || latestMessage.classList.contains('memory-coach-card')
-        )
+           || latestMessage.classList.contains('word-rescue-reveal')
+           || latestMessage.classList.contains('memory-coach-card')
+           || latestMessage.classList.contains('class-thought-review-card')
+         )
       ) {
         return;
       }
@@ -1703,6 +2161,18 @@ function initAssistant() {
       const scheduleFrame = typeof window.requestAnimationFrame === 'function'
         ? window.requestAnimationFrame.bind(window)
         : (callback) => callback();
+      if (latestMessage.classList.contains('class-thought-review-card')) {
+        const alignReviewStart = () => {
+          const appTop = appContent.getBoundingClientRect().top;
+          const cardTop = latestMessage.getBoundingClientRect().top;
+          appContent.scrollTop = Math.max(0, appContent.scrollTop + cardTop - appTop - 12);
+        };
+        scheduleFrame(() => {
+          alignReviewStart();
+          scheduleFrame(alignReviewStart);
+        });
+        return;
+      }
       const adjustScroll = () => {
         const composerTop = thinkingBarContainer?.getBoundingClientRect().top ?? window.innerHeight;
         const messageBottom = latestMessage.getBoundingClientRect().bottom;
@@ -2058,7 +2528,19 @@ function initAssistant() {
         return;
       }
 
+      if (activeClassThoughtDraft) {
+        activeClassThoughtDraft.status = 'Review or discard this draft before organising another thought.';
+        renderConversationHistory();
+        return;
+      }
+
       isAssistantSending = true;
+      const classThoughtContextForRequest = isCaptureViewActive() && classThoughtOwnsComposer && activeClassThoughtContext
+        ? { ...activeClassThoughtContext }
+        : null;
+      const classThoughtRequestToken = classThoughtContextForRequest
+        ? ++classThoughtRequestGeneration
+        : classThoughtRequestGeneration;
       const wordRescueModeForRequest = isCaptureViewActive() ? activeWordRescueMode : '';
       const wordRescueRequestToken = wordRescueModeForRequest
         ? ++wordRescueRequestGeneration
@@ -2066,18 +2548,61 @@ function initAssistant() {
       if (wordRescueModeForRequest) {
         activeWordRescueSession = null;
       }
+      if (classThoughtContextForRequest) {
+        isClassThoughtGenerating = true;
+        activeClassThoughtDraft = null;
+        updateClassThoughtModeUi();
+      }
       setWordRescueBusy(true);
 
       try {
-        const reply = await handleChatMessage(trimmedMessage, wordRescueModeForRequest
+        const dependencies = classThoughtContextForRequest
           ? {
+            assistantTask: 'organise_class_thought',
+            classHubId: classThoughtContextForRequest.hubId,
+            classHubName: classThoughtContextForRequest.hubName,
+          }
+          : wordRescueModeForRequest
+            ? {
             assistantTask: 'word_rescue',
             assistantMode: wordRescueModeForRequest,
           }
-          : {});
+            : {};
+        const reply = await handleChatMessage(trimmedMessage, dependencies);
         const replyMessage = typeof reply?.message === 'string' && reply.message.trim()
           ? reply.message.trim()
           : 'Saved to Inbox';
+
+        if (classThoughtContextForRequest) {
+          const canApplyClassThoughtResponse = isCaptureViewActive()
+            && classThoughtRequestToken === classThoughtRequestGeneration
+            && activeClassThoughtContext?.hubId === classThoughtContextForRequest.hubId;
+          if (!canApplyClassThoughtResponse) {
+            return;
+          }
+          const draft = normalizeClassThoughtDraft(
+            reply?.classThoughtDraft,
+            classThoughtContextForRequest,
+            trimmedMessage,
+          );
+          if (!draft) {
+            throw new Error('The organiser returned an invalid draft.');
+          }
+          activeClassThoughtDraft = draft;
+          isClassThoughtGenerating = false;
+          thinkingBarInput.value = '';
+          thinkingBarComposer?.autoResize?.();
+          updateClassThoughtModeUi();
+          renderConversationHistory();
+          setThinkingBarStatus('Draft ready. Review it before saving.');
+          const reviewHeading = chatConversationContainer?.querySelector('[data-class-thought-review-heading]');
+          if (reviewHeading instanceof HTMLElement) {
+            reviewHeading.focus({ preventScroll: true });
+          }
+          revealLatestCaptureMessage();
+          return;
+        }
+
         const coachSession = normalizeWordRescueCoachSession(reply?.wordRescue, trimmedMessage);
         const fastSession = normalizeWordRescueFastSession(reply?.wordRescue, trimmedMessage);
         const canApplyWordRescueResponse = isCaptureViewActive()
@@ -2105,9 +2630,30 @@ function initAssistant() {
         revealLatestCaptureMessage();
       } catch (error) {
         console.error('[capture] failed to process smart capture', error);
-        appendAssistantMessage("Sorry, I couldn't process that capture.", 'assistant-message assistant-message--error');
+        if (
+          classThoughtContextForRequest
+          && classThoughtRequestToken === classThoughtRequestGeneration
+          && activeClassThoughtContext?.hubId === classThoughtContextForRequest.hubId
+        ) {
+          isClassThoughtGenerating = false;
+          updateClassThoughtModeUi();
+          renderConversationHistory();
+          appendAssistantMessage("I couldn't organise this right now. Your original thought is still here.", 'assistant-message assistant-message--error');
+          setThinkingBarStatus('Nothing was added. You can try again or return to the class hub.');
+          thinkingBarInput.focus();
+        } else if (!classThoughtContextForRequest) {
+          appendAssistantMessage("Sorry, I couldn't process that capture.", 'assistant-message assistant-message--error');
+        }
       } finally {
         isAssistantSending = false;
+        if (
+          classThoughtContextForRequest
+          && classThoughtRequestToken === classThoughtRequestGeneration
+          && activeClassThoughtContext?.hubId === classThoughtContextForRequest.hubId
+        ) {
+          isClassThoughtGenerating = false;
+          updateClassThoughtModeUi();
+        }
         setWordRescueBusy(false);
       }
     };
@@ -2121,7 +2667,61 @@ function initAssistant() {
     thinkingBarForm?.addEventListener('submit', sendAssistantMessage);
     setupThinkingBarVoiceCapture();
 
+    const handleClassThoughtStart = (event) => {
+      const detail = event?.detail && typeof event.detail === 'object' ? event.detail : null;
+      if (!detail || isAssistantSending || isClassThoughtSaving) {
+        return;
+      }
+      const requestedHubId = typeof detail.hubId === 'string' ? detail.hubId.trim() : '';
+      const requestedHubName = typeof detail.hubName === 'string' ? detail.hubName.trim().slice(0, 80) : '';
+      const hub = (typeof getClassHubFolders === 'function' ? getClassHubFolders() : [])
+        .find?.((item) => item?.id === requestedHubId);
+      if (!requestedHubId || !requestedHubName || !hub) {
+        return;
+      }
+      if (activeClassThoughtContext) {
+        if (activeClassThoughtContext.hubId === requestedHubId) {
+          detail.accepted = true;
+        }
+        return;
+      }
+
+      if (memoryCoachUi?.isActive?.()) {
+        memoryCoachUi.deactivate({ restoreFocus: false });
+      }
+      if (activeWordRescueMode || isWordRescueChoiceOpen) {
+        closeWordRescue({ keepFocus: false });
+      }
+      classThoughtPriorCaptureDraft = thinkingBarInput.value || '';
+      classThoughtComposerValue = '';
+      classThoughtOwnsComposer = false;
+      activeClassThoughtContext = {
+        hubId: requestedHubId,
+        hubName: typeof hub.name === 'string' && hub.name.trim() ? hub.name.trim() : requestedHubName,
+      };
+      activeClassThoughtDraft = null;
+      classThoughtRequestGeneration += 1;
+      isClassThoughtGenerating = false;
+      isClassThoughtSaving = false;
+      detail.accepted = true;
+      setThinkingBarStatus('Add one thought. AI will draft a Note and optional follow-ups for you to review.');
+      if (isCaptureViewActive()) {
+        resumeClassThoughtComposer();
+      }
+      updateClassThoughtModeUi();
+      renderConversationHistory();
+      thinkingBarComposer?.autoResize?.();
+    };
+    window.addEventListener('memoryCue:classThoughtStart', handleClassThoughtStart);
+    window.addEventListener('pagehide', () => {
+      window.removeEventListener('memoryCue:classThoughtStart', handleClassThoughtStart);
+    }, { once: true });
+
     wordRescueLauncher?.addEventListener('click', () => {
+      if (activeClassThoughtContext) {
+        setThinkingBarStatus('Finish or discard the class thought before opening Word help.');
+        return;
+      }
       if (memoryCoachUi?.isActive?.()) {
         memoryCoachUi.deactivate({ restoreFocus: false });
       }
@@ -2140,6 +2740,27 @@ function initAssistant() {
     });
 
     wordRescueExitButton?.addEventListener('click', () => closeWordRescue());
+    classThoughtExitButton?.addEventListener('click', () => {
+      if (activeClassThoughtContext && !isClassThoughtSaving) {
+        if (activeClassThoughtDraft || thinkingBarInput.value.trim()) {
+          pauseAndReturnToClassThoughtHub();
+        } else {
+          returnToClassThoughtHub('Class organiser closed. No Note or follow-up was added.');
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !activeClassThoughtContext || isClassThoughtSaving) {
+        return;
+      }
+      event.preventDefault();
+      if (activeClassThoughtDraft || thinkingBarInput.value.trim()) {
+        pauseAndReturnToClassThoughtHub();
+      } else {
+        returnToClassThoughtHub('Class organiser closed. No Note or follow-up was added.');
+      }
+    });
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape' || (!activeWordRescueMode && !isWordRescueChoiceOpen)) {
@@ -2151,6 +2772,27 @@ function initAssistant() {
     });
 
     window.addEventListener('memorycue:navigation:changed', (event) => {
+      if (event?.detail?.view !== 'capture' && activeClassThoughtContext) {
+        pauseClassThoughtComposer();
+      } else if (event?.detail?.view === 'capture' && activeClassThoughtContext) {
+        resumeClassThoughtComposer();
+        renderConversationHistory();
+        const focusComposer = () => {
+          if (activeClassThoughtDraft) {
+            chatConversationContainer
+              ?.querySelector('[data-class-thought-review-heading]')
+              ?.focus({ preventScroll: true });
+            revealLatestCaptureMessage();
+          } else {
+            thinkingBarInput.focus({ preventScroll: true });
+          }
+        };
+        if (typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(focusComposer);
+        } else {
+          setTimeout(focusComposer, 0);
+        }
+      }
       if (event?.detail?.view !== 'capture' && (activeWordRescueMode || isWordRescueChoiceOpen)) {
         closeWordRescue({ keepFocus: false });
       } else {
@@ -2159,6 +2801,7 @@ function initAssistant() {
     });
 
     updateWordRescueModeUi();
+    updateClassThoughtModeUi();
     refreshCaptureConversation();
     document.addEventListener('memoryCue:chatUpdated', refreshCaptureConversation);
     document.addEventListener('memoryCue:notesUpdated', refreshCaptureConversation);
@@ -5246,6 +5889,19 @@ const initMobileNotes = () => {
         updatedAt: timestamp,
       });
       applyNotesMode('notebooks');
+      return true;
+    },
+    startAiOrganize: (hub) => {
+      const detail = {
+        hubId: typeof hub?.id === 'string' ? hub.id : '',
+        hubName: typeof hub?.name === 'string' ? hub.name : '',
+        accepted: false,
+      };
+      window.dispatchEvent(new CustomEvent('memoryCue:classThoughtStart', { detail }));
+      if (!detail.accepted) {
+        return false;
+      }
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
       return true;
     },
   });

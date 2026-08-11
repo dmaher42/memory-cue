@@ -55,10 +55,11 @@ describe('mobile Class Hubs UI', () => {
   let openNote;
   let openReminder;
   let startFullNote;
+  let startAiOrganize;
 
   beforeEach(() => {
     document.head.innerHTML = '';
-    document.body.innerHTML = '<section id="classHubsPanel" aria-label="Class hubs"></section>';
+    document.body.innerHTML = '<main id="main"><section id="classHubsPanel" aria-label="Class hubs"></section></main>';
     folders = [
       { id: 'school', name: 'School', order: 0 },
       { id: 'class-existing', name: 'Year 9 English', order: 1, kind: 'class-hub' },
@@ -80,6 +81,7 @@ describe('mobile Class Hubs UI', () => {
     openNote = jest.fn();
     openReminder = jest.fn();
     startFullNote = jest.fn();
+    startAiOrganize = jest.fn(() => true);
 
     const { initMobileClassHubsUi } = loadClassHubsUi();
     ui = initMobileClassHubsUi({
@@ -113,6 +115,7 @@ describe('mobile Class Hubs UI', () => {
       openNote,
       openReminder,
       startFullNote,
+      startAiOrganize,
     });
   });
 
@@ -236,5 +239,62 @@ describe('mobile Class Hubs UI', () => {
 
     expect(document.querySelector('.class-hub-detail-summary').textContent).toContain('1 note');
     expect(document.querySelector('[data-class-hub-note-open="autosaved-class-note"]')).not.toBeNull();
+  });
+
+  test('starts review-first AI organising from the hub without adding another freeform input', () => {
+    document.querySelector('[data-class-hub-open="class-existing"]').click();
+
+    const action = document.querySelector('[data-class-hub-ai-organize]');
+    const privacyCopy = document.querySelector('.class-hub-ai-organize-privacy');
+    expect(action.textContent).toBe('Organise a thought');
+    expect(privacyCopy.textContent).toContain('sent to AI');
+    expect(privacyCopy.textContent).toContain('review everything');
+    expect(document.querySelector('#classHubsPanel textarea')).toBeNull();
+
+    action.click();
+
+    expect(startAiOrganize).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'class-existing',
+      name: 'Year 9 English',
+      kind: 'class-hub',
+    }));
+  });
+
+  test('stays in the hub with an inline status when Class thought cannot start', () => {
+    startAiOrganize.mockReturnValue(false);
+    document.querySelector('[data-class-hub-open="class-existing"]').click();
+
+    document.querySelector('[data-class-hub-ai-organize]').click();
+
+    expect(document.querySelector('[data-class-hub-heading]').textContent).toBe('Year 9 English');
+    expect(document.querySelector('[data-class-hub-status]').textContent)
+      .toBe('Finish the current Capture first, then try again.');
+  });
+
+  test('returns to the requested hub with a live status and heading focus', async () => {
+    document.getElementById('main').scrollTop = 240;
+    document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
+      detail: {
+        hubId: 'class-existing',
+        status: 'Organised thought saved: 1 note and 2 follow-ups.',
+      },
+    }));
+    await flush();
+
+    const heading = document.querySelector('[data-class-hub-heading]');
+    expect(heading.textContent).toBe('Year 9 English');
+    expect(document.querySelector('[data-class-hub-status]').textContent)
+      .toBe('Organised thought saved: 1 note and 2 follow-ups.');
+    expect(document.activeElement).toBe(heading);
+    expect(document.getElementById('main').scrollTop).toBe(0);
+  });
+
+  test('places Class thought mode beside the one existing Capture input', () => {
+    const html = fs.readFileSync(path.resolve(__dirname, '../../mobile.html'), 'utf8');
+    expect(html.match(/id="thinkingBarInput"/g)).toHaveLength(1);
+    expect(html).toContain('id="classThoughtModeBar"');
+    expect(html).toContain('Class thought:');
+    expect(html).toContain('id="classThoughtExitButton"');
+    expect(html).not.toContain('id="classThoughtInput"');
   });
 });

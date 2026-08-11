@@ -9,6 +9,7 @@ const PLAN_DAY_PHRASES = ['plan my day', 'what should i do today', 'daily plan',
 
 const WORD_RESCUE_PATTERN = /(?:\bword\s+for\b|\b(?:another|better|right|correct|different)\s+word\b|\b(?:synonym|antonym|thesaurus)\b|\b(?:can(?:not|'t)|could(?:not|'t))\s+(?:think of|find|remember)\s+(?:the|a)\s+word\b|\btip of (?:my|the) tongue\b|\bwhat do you call\b|\bhelp me (?:find|discover|remember) (?:the|a) word\b)/i;
 const WORD_COACH_PATTERN = /\b(?:coach me|quiz me|test me|give me (?:a )?(?:clue|hint)|help me discover|work it out|do not tell me|don't tell me)\b/i;
+const CLASS_THOUGHT_TASK = 'organise_class_thought';
 const PERSONAL_MEMORY_QUERY_PATTERNS = [
   /\bwhat did i (?:write|save|note|capture|record)\b/i,
   /\bwhat did i (?:need|have) to do\b/i,
@@ -54,8 +55,16 @@ const getWordRescueMode = (text, hints = {}) => {
 };
 
 const createAssistantDecision = (text, hints = {}, options = {}) => {
-  const assistantTask = options.assistantTask === 'word_rescue' ? 'word_rescue' : 'general';
-  const parsedType = assistantTask === 'word_rescue' ? 'word_rescue' : 'question';
+  const assistantTask = options.assistantTask === 'word_rescue'
+    ? 'word_rescue'
+    : options.assistantTask === CLASS_THOUGHT_TASK
+      ? CLASS_THOUGHT_TASK
+      : 'general';
+  const parsedType = assistantTask === 'word_rescue'
+    ? 'word_rescue'
+    : assistantTask === CLASS_THOUGHT_TASK
+      ? 'class_thought'
+      : 'question';
   const mode = assistantTask === 'word_rescue' ? getWordRescueMode(text, hints) : null;
   return {
     decisionType: 'assistant_query',
@@ -73,6 +82,9 @@ const getExplicitAssistantDecision = (text, hints = {}) => {
   const explicitTask = typeof hints?.assistantTask === 'string'
     ? hints.assistantTask.trim().toLowerCase()
     : '';
+  if (explicitTask === CLASS_THOUGHT_TASK) {
+    return createAssistantDecision(text, hints, { assistantTask: CLASS_THOUGHT_TASK });
+  }
   if (explicitTask === 'word_rescue' || explicitMode) {
     return createAssistantDecision(text, hints, { assistantTask: 'word_rescue' });
   }

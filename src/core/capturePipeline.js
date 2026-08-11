@@ -5,6 +5,7 @@ import { semanticSearch } from '../services/semanticSearchService.js';
 import { handleQuery } from '../brain/queryEngine.js';
 import {
   buildMemoryAssistantRequest,
+  buildClassThoughtAssistantRequest,
   buildWordRescueAssistantRequest,
   requestAssistantChat,
   requestAssistantChatResult,
@@ -49,6 +50,11 @@ const normalizeWordRescueMode = (value) => {
 const hasExplicitWordRescueMode = (hints = {}) => (
   normalizeWordRescueMode(hints?.assistantMode || hints?.mode)
   || (typeof hints?.assistantTask === 'string' && hints.assistantTask.trim().toLowerCase() === 'word_rescue')
+);
+
+const hasExplicitClassThoughtTask = (hints = {}) => (
+  typeof hints?.assistantTask === 'string'
+  && hints.assistantTask.trim().toLowerCase() === 'organise_class_thought'
 );
 
 const getPendingChannelKey = (context = {}) => {
@@ -784,11 +790,26 @@ const saveNoteMemory = async (text, decision, context) => {
 };
 
 const runAssistantQuery = async (text, decision = {}, metadata = {}) => {
-  const assistantTask = decision?.assistantTask === 'word_rescue'
+  const requestedTask = typeof (decision?.assistantTask || metadata?.assistantTask) === 'string'
+    ? (decision.assistantTask || metadata.assistantTask).trim().toLowerCase()
+    : '';
+  const assistantTask = requestedTask === 'organise_class_thought'
+    ? 'organise_class_thought'
+    : decision?.assistantTask === 'word_rescue'
     || metadata?.assistantTask === 'word_rescue'
     || normalizeWordRescueMode(metadata?.assistantMode)
     ? 'word_rescue'
     : 'general';
+
+  if (assistantTask === 'organise_class_thought') {
+    const classHubName = typeof (decision?.hints?.classHubName || metadata?.classHubName) === 'string'
+      ? (decision.hints?.classHubName || metadata.classHubName).trim()
+      : '';
+    const body = buildClassThoughtAssistantRequest(text, { classHubName });
+    return requestAssistantChatResult(body, {
+      fallbackReply: 'Draft ready. Review it before saving.',
+    });
+  }
 
   if (assistantTask === 'word_rescue') {
     const mode = normalizeWordRescueMode(
@@ -819,7 +840,10 @@ export async function analyzeCaptureInput({
   source = 'unknown',
   metadata = {},
 }) {
-  const normalizedText = normalizeText(resolveShorthandText(text));
+  const explicitClassThought = hasExplicitClassThoughtTask(metadata);
+  const normalizedText = explicitClassThought && typeof text === 'string'
+    ? text.trim()
+    : normalizeText(resolveShorthandText(text));
   if (!normalizedText) {
     return null;
   }
@@ -839,7 +863,7 @@ export async function analyzeCaptureInput({
     ...metadata,
   };
 
-  if (hasExplicitWordRescueMode(hints)) {
+  if (hasExplicitWordRescueMode(hints) || hasExplicitClassThoughtTask(hints)) {
     const decision = await resolveDecision(normalizedText, hints);
     return {
       text: normalizedText,
@@ -930,7 +954,10 @@ export async function captureInput({
   source = 'unknown',
   metadata = {},
 }) {
-  const normalizedText = normalizeText(text);
+  const explicitClassThought = hasExplicitClassThoughtTask(metadata);
+  const normalizedText = explicitClassThought && typeof text === 'string'
+    ? text.trim()
+    : normalizeText(text);
   if (!normalizedText) {
     return null;
   }
@@ -951,7 +978,9 @@ export async function captureInput({
   };
 
   const channelKey = getPendingChannelKey(context);
-  const pendingShorthand = pendingShorthandMeaningsByChannel.get(channelKey) || null;
+  const pendingShorthand = explicitClassThought
+    ? null
+    : pendingShorthandMeaningsByChannel.get(channelKey) || null;
   if (pendingShorthand) {
     const learnedMeaning = normalizedText;
     rememberShorthand(pendingShorthand.token, learnedMeaning);
@@ -970,8 +999,10 @@ export async function captureInput({
     return buildAssistantResponse(`Got it - I will remember ${pendingShorthand.token} means "${learnedMeaning}".`);
   }
 
-  const expandedText = resolveShorthandText(normalizedText);
-  const unknownShorthand = getUnknownShorthandToken(expandedText);
+  const expandedText = explicitClassThought
+    ? normalizedText
+    : resolveShorthandText(normalizedText);
+  const unknownShorthand = explicitClassThought ? null : getUnknownShorthandToken(expandedText);
   if (unknownShorthand && parseReminderDueAt(expandedText)) {
     pendingShorthandMeaningsByChannel.set(channelKey, {
       token: unknownShorthand,
@@ -981,7 +1012,9 @@ export async function captureInput({
     return buildAssistantResponse(`What does ${unknownShorthand} mean?`);
   }
 
-  const pendingResolution = await maybeResolvePendingIntent(normalizedText, context);
+  const pendingResolution = explicitClassThought
+    ? null
+    : await maybeResolvePendingIntent(normalizedText, context);
   if (pendingResolution?.clarification) {
     return pendingResolution.clarification;
   }
@@ -1074,9 +1107,11 @@ export async function captureInput({
         data: {
           reply,
           ...(assistantResult?.wordRescue ? { wordRescue: assistantResult.wordRescue } : {}),
+          ...(assistantResult?.classThoughtDraft ? { classThoughtDraft: assistantResult.classThoughtDraft } : {}),
         },
         message: reply,
         ...(assistantResult?.wordRescue ? { wordRescue: assistantResult.wordRescue } : {}),
+        ...(assistantResult?.classThoughtDraft ? { classThoughtDraft: assistantResult.classThoughtDraft } : {}),
       };
     }
     case 'persist_inbox':

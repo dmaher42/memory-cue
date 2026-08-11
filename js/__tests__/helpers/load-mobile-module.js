@@ -16,6 +16,7 @@ const initAuth = window.__mobileMocks?.initAuth || (async () => ({}));
 const loadAllNotes = window.__mobileMocks?.loadAllNotes || (() => []);
 const saveAllNotes = window.__mobileMocks?.saveAllNotes || (() => {});
 const createNote = window.__mobileMocks?.createNote || ((note) => note || {});
+const createAndSaveNote = window.__mobileMocks?.createAndSaveNote || ((note) => note || null);
 const NOTES_STORAGE_KEY = window.__mobileMocks?.NOTES_STORAGE_KEY || 'memoryCueNotes';
 const getFolders = window.__mobileMocks?.getFolders || (() => []);
 const getClassHubFolders = window.__mobileMocks?.getClassHubFolders || (() => []);

@@ -5088,13 +5088,16 @@ export async function initReminders(sel = {}) {
       closeSheet = true,
       activityAction = 'created',
       activityLabelPrefix = 'Reminder added',
+      parseSchedule = true,
     } = options;
     const sourceText = typeof payload?.text === 'string' && payload.text.trim()
       ? payload.text.trim()
       : typeof payload?.title === 'string' && payload.title.trim()
         ? payload.title.trim()
         : '';
-    const parsedSchedule = sourceText ? parseReminderScheduleFromText(sourceText) : { dueDate: null, cleanedText: '' };
+    const parsedSchedule = parseSchedule && sourceText
+      ? parseReminderScheduleFromText(sourceText)
+      : { dueDate: null, cleanedText: '' };
     // Accept an explicit due as an ISO string, a Date, OR epoch milliseconds.
     // buildReminderPayload normalizes dueAt to a number before this runs, so the old
     // string/Date-only check treated a correctly-parsed time as "no explicit due" and
@@ -5133,6 +5136,7 @@ export async function initReminders(sel = {}) {
       createId: uid,
       defaultCategory: categoryInput ? categoryInput.value : DEFAULT_CATEGORY,
       pendingSync: !userId,
+      parseSchedule,
       onCreated: (createdReminder) => {
         const createdEntry = normalizeReminderRecord({
           ...createdReminder,

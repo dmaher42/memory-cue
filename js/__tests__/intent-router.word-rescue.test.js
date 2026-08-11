@@ -42,6 +42,31 @@ test('routes explicit Word Rescue modes before capture heuristics', () => {
   }));
 });
 
+test('routes class thought organisation only when explicitly requested', () => {
+  const { intentRouter } = loadIntentRouter();
+
+  const result = intentRouter('Two students left during the outdoor lesson.', {
+    assistantTask: 'organise_class_thought',
+    classHubName: 'Year 8 HPE',
+  });
+
+  expect(result.type).toBe('assistant_query');
+  expect(result.payload).toEqual(expect.objectContaining({
+    decisionType: 'assistant_query',
+    parsedType: 'class_thought',
+    assistantTask: 'organise_class_thought',
+    mode: null,
+  }));
+  expect(result.payload.hints.classHubName).toBe('Year 8 HPE');
+});
+
+test('does not infer class thought organisation from ordinary capture text', () => {
+  const { intentRouter } = loadIntentRouter();
+  const result = intentRouter('Two students left during the outdoor lesson.');
+
+  expect(result.payload.assistantTask).not.toBe('organise_class_thought');
+});
+
 test.each([
   ['I need another word for careful', 'fast'],
   ['Use a thesaurus for happy', 'fast'],

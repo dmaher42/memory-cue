@@ -12,8 +12,12 @@ function loadNotesStorageModule() {
     .replace(/export\s+const/g, 'const')
     .replace(/export\s+\{\s*NOTES_STORAGE_KEY\s*\};/g, '')
     .replace(/export\s+\{\s*NOTES_STORAGE_KEY\s*\}/g, '')
-    .replace(/export\s+\{[^}]*\};?/g, '');
-  source += '\nmodule.exports = { createNote, loadAllNotes, saveAllNotes, linkEntries };\n';
+    .replace(/export\s+\{[^}]*\};?/g, '')
+    // Keep this storage unit test focused on the canonical Notes record. The derived
+    // memory/embedding mirrors use dynamic imports that are covered by their own tests.
+    .replace('syncNoteToMemoryService(note, normalizedPayload);', '')
+    .replace('ensureNoteEmbedding(note, [note, ...notes], options);', '');
+  source += '\nmodule.exports = { createAndSaveNote, createNote, loadAllNotes, saveAllNotes, setRemoteSyncHandler, linkEntries };\n';
 
   const module = { exports: {} };
   const sandbox = {
@@ -45,6 +49,39 @@ test('createNote initializes links to an empty array', () => {
 
   expect(Array.isArray(note.links)).toBe(true);
   expect(note.links).toHaveLength(0);
+});
+
+test('createAndSaveNote keeps a programmatic class note pending until remote sync confirms it', () => {
+  const {
+    createAndSaveNote,
+    loadAllNotes,
+    setRemoteSyncHandler,
+  } = loadNotesStorageModule();
+  const remoteSyncHandler = jest.fn();
+  setRemoteSyncHandler(remoteSyncHandler);
+
+  const note = createAndSaveNote({
+    title: 'Outdoor lesson follow-up',
+    text: 'Speak to the students next lesson.',
+    folderId: 'class-year-8-hpe',
+    source: 'assistant',
+  });
+
+  expect(note).toMatchObject({
+    folderId: 'class-year-8-hpe',
+    pendingSync: true,
+  });
+  expect(loadAllNotes()).toEqual([
+    expect.objectContaining({
+      id: note.id,
+      folderId: 'class-year-8-hpe',
+      pendingSync: true,
+    }),
+  ]);
+  expect(remoteSyncHandler).toHaveBeenCalledTimes(1);
+  expect(remoteSyncHandler).toHaveBeenCalledWith([
+    expect.objectContaining({ id: note.id, pendingSync: true }),
+  ]);
 });
 
 test('linkEntries stores links on both source and target notes', () => {

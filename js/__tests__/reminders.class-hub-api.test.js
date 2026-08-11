@@ -67,12 +67,14 @@ describe('class hub reminder API', () => {
     createReminder = jest.fn((payload = {}, options = {}) => {
       const now = Date.now();
       const tomorrow = new Date(now + 24 * 60 * 60 * 1000).toISOString();
+      const due = payload.due || payload.dueAt || (options.parseSchedule === false ? null : tomorrow);
+      const notifyAt = payload.notifyAt || (options.parseSchedule === false ? null : tomorrow);
       const record = {
         id: payload.id || `reminder-${now}`,
         title: payload.title || payload.text || '',
-        due: payload.due || payload.dueAt || tomorrow,
-        dueAt: payload.dueAt || payload.due || tomorrow,
-        notifyAt: payload.notifyAt || tomorrow,
+        due,
+        dueAt: due,
+        notifyAt,
         category: payload.category || 'School',
         priority: payload.priority || 'Medium',
         metadata: payload.metadata ? { ...payload.metadata } : null,
@@ -203,14 +205,20 @@ describe('class hub reminder API', () => {
         classHubName: 'Year 8 HPE',
         suppressNotification: true,
       },
-    }, { closeSheet: false });
+    }, { closeSheet: false, parseSchedule: false });
     await Promise.resolve();
 
     expect(created).toMatchObject({
       title: 'Call parent tomorrow',
+      due: null,
+      dueAt: null,
+      notifyAt: null,
       metadata: { suppressNotification: true },
     });
-    expect(createReminder).toHaveBeenCalled();
+    expect(createReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ text: 'Call parent tomorrow' }),
+      expect.objectContaining({ parseSchedule: false }),
+    );
     expect(MockNotification.requestPermission).not.toHaveBeenCalled();
     const scheduled = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
     expect(scheduled[created.id]).toBeUndefined();

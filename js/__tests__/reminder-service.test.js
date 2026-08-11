@@ -97,6 +97,35 @@ test('createReminder keeps an explicit epoch-millisecond dueAt (assistant/captur
   expect(reminder.dueAt).toBe(new Date(dueMs).toISOString());
 });
 
+test('createReminder can keep date-like class follow-up text explicitly untimed', () => {
+  const saved = [];
+  const { createReminder } = loadReminderService({
+    createReminderInStore: (reminder) => {
+      saved.push(reminder);
+      return reminder;
+    },
+  });
+
+  const reminder = createReminder({
+    title: 'Call parent tomorrow',
+    metadata: {
+      type: 'class-follow-up',
+      classHubId: 'class-year-8-hpe',
+      suppressNotification: true,
+    },
+  }, {
+    createId: () => 'class-follow-up-1',
+    parseSchedule: false,
+  });
+
+  expect(saved).toHaveLength(1);
+  expect(reminder.title).toBe('Call parent tomorrow');
+  expect(reminder.text).toBe('Call parent tomorrow');
+  expect(reminder.due).toBeNull();
+  expect(reminder.dueAt).toBeNull();
+  expect(reminder.notifyAt).toBeNull();
+});
+
 test('completeReminder records when an item was done and clears that date when reopened', () => {
   const updates = [];
   const { completeReminder } = loadReminderService({

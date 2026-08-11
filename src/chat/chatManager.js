@@ -191,6 +191,7 @@ const normalizeRouteResult = (result) => {
       isQueryResult: false,
       decisionType: '',
       wordRescue: null,
+      classThoughtDraft: null,
     };
   }
 
@@ -210,6 +211,11 @@ const normalizeRouteResult = (result) => {
       ? result.wordRescue
       : result?.data?.wordRescue && typeof result.data.wordRescue === 'object'
         ? result.data.wordRescue
+        : null,
+    classThoughtDraft: result?.classThoughtDraft && typeof result.classThoughtDraft === 'object'
+      ? result.classThoughtDraft
+      : result?.data?.classThoughtDraft && typeof result.data.classThoughtDraft === 'object'
+        ? result.data.classThoughtDraft
         : null,
   };
 };
@@ -506,12 +512,17 @@ export const handleChatMessage = async (text, dependencies = {}) => {
     return { message: '', quickActions: [], status: null };
   }
 
-  addMessage(createMessage('user', message));
+  const isExplicitClassThought = dependencies?.assistantTask === 'organise_class_thought';
+  // Class thought organisation is a review draft, not part of persistent chat history.
+  // Keeping both sides ephemeral makes Discard a genuine no-write action.
+  if (!isExplicitClassThought) {
+    addMessage(createMessage('user', message));
+  }
 
   const isExplicitWordRescue = dependencies?.assistantTask === 'word_rescue'
     || dependencies?.assistantMode === 'fast'
     || dependencies?.assistantMode === 'coach';
-  const localWordRescueDecision = isExplicitWordRescue
+  const localWordRescueDecision = isExplicitWordRescue || isExplicitClassThought
     ? null
     : classifyIntentLocally(message, { source: 'chat', entryPoint: 'chat.handleChatMessage' });
   const isWordRescue = isExplicitWordRescue
@@ -520,7 +531,7 @@ export const handleChatMessage = async (text, dependencies = {}) => {
       && localWordRescueDecision?.assistantTask === 'word_rescue'
     );
 
-  if (!isWordRescue && looksLikeActiveLessonPrompt(message)) {
+  if (!isWordRescue && !isExplicitClassThought && looksLikeActiveLessonPrompt(message)) {
     const lessonReply = await answerFromActiveLesson(message);
     if (typeof lessonReply === 'string' && lessonReply.trim()) {
       const lessonResponse = { message: lessonReply.trim(), quickActions: [], status: null };
@@ -535,10 +546,13 @@ export const handleChatMessage = async (text, dependencies = {}) => {
     metadata: {
       entryPoint: dependencies?.assistantTask === 'word_rescue' || dependencies?.assistantMode
         ? 'chat.handleChatMessage.wordRescue'
-        : 'chat.handleChatMessage',
+        : isExplicitClassThought
+          ? 'chat.handleChatMessage.classThought'
+          : 'chat.handleChatMessage',
       uid: dependencies?.uid,
       assistantTask: dependencies?.assistantTask,
       assistantMode: dependencies?.assistantMode,
+      ...(isExplicitClassThought ? { classHubName: dependencies?.classHubName } : {}),
     },
   });
 
@@ -559,13 +573,15 @@ export const handleChatMessage = async (text, dependencies = {}) => {
     }
   }
 
-  addMessage(createMessage(
-    'assistant',
-    response.message,
-    response.quickActions,
-    response.relatedMemories,
-    response.resultItems,
-  ));
+  if (!isExplicitClassThought) {
+    addMessage(createMessage(
+      'assistant',
+      response.message,
+      response.quickActions,
+      response.relatedMemories,
+      response.resultItems,
+    ));
+  }
   return response;
 };
 
