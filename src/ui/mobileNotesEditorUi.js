@@ -85,7 +85,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
   const openNoteEditorForNewNote = (note) => {
     if (!note) return;
     const nextFolderId =
-      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
+      note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     setCurrentEditingNoteFolderId(nextFolderId);
     syncNoteFolderButtonLabel(nextFolderId);
     resetEditorScroll();
@@ -96,8 +96,9 @@ export const initMobileNotesEditorUi = (options = {}) => {
   const startNewNoteFromUI = () => {
     const timestamp = new Date().toISOString();
     const activeFolderId = getCurrentFolderId() && getCurrentFolderId() !== 'all'
+      && getCurrentFolderId() !== 'unsorted'
       ? getCurrentFolderId()
-      : 'everyday';
+      : null;
     const draftNote = createNote('', '', { folderId: activeFolderId, updatedAt: timestamp });
     const newNote = {
       ...draftNote,
@@ -126,8 +127,9 @@ export const initMobileNotesEditorUi = (options = {}) => {
     const timestamp = new Date().toISOString();
     const normalizedFolderId =
       getCurrentEditingNoteFolderId() && getCurrentEditingNoteFolderId() !== 'all'
+        && getCurrentEditingNoteFolderId() !== 'unsorted'
         ? getCurrentEditingNoteFolderId()
-        : 'everyday';
+        : null;
     const currentNoteId = getCurrentNoteId();
     // A local-only save (autosave) hasn't reached Firestore yet, so flag it so a remote
     // snapshot won't revert it. A save that also pushes to remote clears the flag.

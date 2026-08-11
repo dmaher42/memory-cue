@@ -195,4 +195,11 @@ describe('mobile new folder modal interaction', () => {
       colour: 'teal',
     }));
   });
+
+  test('the mobile app passes new-folder completion into the real folder manager callback', () => {
+    const mobileSource = fs.readFileSync(path.resolve(__dirname, '../../mobile.js'), 'utf8');
+
+    expect(mobileSource).toMatch(/setAfterFolderCreated,\s*\n\s*getFolderOptions:/);
+    expect(mobileSource).not.toContain('let afterFolderCreated = null');
+  });
 });

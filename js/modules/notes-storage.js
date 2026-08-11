@@ -727,9 +727,12 @@ export const getFolders = () => {
 
 // Helper to look up a folder name by id
 export const getFolderNameById = (id) => {
+  if (!id || String(id).trim().toLowerCase() === 'unsorted') {
+    return 'No category';
+  }
   const folders = getFolders();
   const found = folders.find((f) => f && String(f.id) === String(id));
-  return found ? String(found.name) : 'Everyday';
+  return found ? String(found.name) : 'No category';
 };
 
 export const saveFolders = (folders) => {
@@ -829,9 +832,13 @@ export const assignNoteToFolder = (noteId, folderId) => {
   const newNotes = notes.map((n) => {
     if (n.id === noteId) {
       changed = true;
+      const normalizedFolderId = typeof folderId === 'string' && folderId.trim()
+        && folderId.trim().toLowerCase() !== 'unsorted'
+        ? folderId.trim()
+        : null;
       return {
         ...n,
-        folderId: folderId && typeof folderId === 'string' ? folderId : 'everyday',
+        folderId: normalizedFolderId,
         updatedAt: new Date().toISOString(),
       };
     }

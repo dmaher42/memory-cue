@@ -174,6 +174,77 @@ test('body-only notes get a short automatic title for the saved notes list', () 
   expect(notes[0].title.length).toBeLessThanOrEqual(72);
 });
 
+test('new notes default to no category while an explicitly selected category is preserved', () => {
+  const { initMobileNotesEditorUi } = loadMobileNotesEditorUi();
+  const titleInput = document.getElementById('noteTitleMobile');
+  const editor = document.getElementById('notebook-editor-body');
+  const saveButton = document.getElementById('noteSaveMobile');
+  const newNoteButton = document.getElementById('newNoteMobile');
+  let currentNoteId = null;
+  let currentNoteIsNew = false;
+  let currentNoteHasChanged = false;
+  let currentEditingFolderId = 'unsorted';
+  let currentFolderId = 'all';
+  let nextId = 1;
+  let notes = [];
+
+  initMobileNotesEditorUi({
+    saveButton,
+    titleInput,
+    scratchNotesEditorElement: editor,
+    newNoteButton,
+    createNote: (title, bodyHtml, overrides = {}) => ({
+      id: `note-${nextId++}`,
+      title,
+      body: bodyHtml,
+      bodyHtml,
+      bodyText: overrides.bodyText || '',
+      folderId: Object.prototype.hasOwnProperty.call(overrides, 'folderId')
+        ? overrides.folderId
+        : null,
+      updatedAt: overrides.updatedAt,
+    }),
+    loadAllNotes: () => notes,
+    saveAllNotes: (nextNotes) => { notes = nextNotes; return true; },
+    getEditorBodyHtml: () => editor.innerHTML,
+    getEditorBodyText: () => editor.textContent || '',
+    getCurrentNoteId: () => currentNoteId,
+    setCurrentNoteId: (value) => { currentNoteId = value; },
+    getCurrentFolderId: () => currentFolderId,
+    getCurrentEditingNoteFolderId: () => currentEditingFolderId,
+    setCurrentEditingNoteFolderId: (value) => { currentEditingFolderId = value; },
+    getCurrentNoteIsNew: () => currentNoteIsNew,
+    setCurrentNoteIsNew: (value) => { currentNoteIsNew = value; },
+    getCurrentNoteHasChanged: () => currentNoteHasChanged,
+    setCurrentNoteHasChanged: (value) => { currentNoteHasChanged = value; },
+    hasMeaningfulContent: () => Boolean(titleInput.value.trim() || editor.textContent.trim()),
+    hasUnsavedChanges: () => true,
+    setEditorValues: (note, { isNew = false } = {}) => {
+      currentNoteId = note?.id || null;
+      currentNoteIsNew = isNew;
+      currentNoteHasChanged = true;
+      currentEditingFolderId = note?.folderId || 'unsorted';
+      titleInput.value = '';
+      editor.innerHTML = '';
+    },
+    updateListSelection: () => {},
+    updateStoredSnapshot: () => {},
+    refreshFromStorage: () => {},
+    syncNoteFolderButtonLabel: () => {},
+  });
+
+  newNoteButton.click();
+  editor.textContent = 'A loose note';
+  saveButton.click();
+  expect(notes[0].folderId).toBeNull();
+
+  currentFolderId = 'school';
+  newNoteButton.click();
+  editor.textContent = 'A school note';
+  saveButton.click();
+  expect(notes[0].folderId).toBe('school');
+});
+
 test('long note titles grow to two lines and Enter moves focus to the note body', () => {
   document.body.innerHTML = `
     <textarea id="noteTitleMobile" style="font-size: 16px; line-height: 20px; padding: 4px; border: 1px solid;"></textarea>

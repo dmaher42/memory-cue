@@ -13,7 +13,7 @@ function loadNotesStorageModule() {
     .replace(/export\s+\{\s*NOTES_STORAGE_KEY\s*\};/g, '')
     .replace(/export\s+\{\s*NOTES_STORAGE_KEY\s*\}/g, '')
     .replace(/export\s+\{[^}]*\};?/g, '');
-  source += '\nmodule.exports = { CLASS_HUB_FOLDER_KIND, createClassHubFolder, getClassHubFolders, getFolders, isClassHubFolder, saveFolders };\n';
+  source += '\nmodule.exports = { CLASS_HUB_FOLDER_KIND, assignNoteToFolder, createClassHubFolder, getClassHubFolders, getFolderNameById, getFolders, isClassHubFolder, loadAllNotes, saveFolders };\n';
 
   const module = { exports: {} };
   const sandbox = {
@@ -176,4 +176,24 @@ test('saveFolders preserves class-hub and future folder metadata', () => {
     colour: 'teal',
     preferences: { quickThoughts: true },
   });
+});
+
+test('notes can be moved to no category without being forced into Everyday', () => {
+  const { assignNoteToFolder, getFolderNameById, loadAllNotes } = loadNotesStorageModule();
+  localStorage.setItem('memoryCueNotes', JSON.stringify([{
+    id: 'note-1',
+    title: 'Loose thought',
+    body: 'Remember this',
+    bodyHtml: 'Remember this',
+    bodyText: 'Remember this',
+    folderId: 'school',
+    createdAt: '2026-08-12T01:00:00.000Z',
+    updatedAt: '2026-08-12T01:00:00.000Z',
+  }]));
+
+  expect(assignNoteToFolder('note-1', null)).toBe(true);
+  expect(loadAllNotes()[0].folderId).toBeNull();
+  expect(getFolderNameById(null)).toBe('No category');
+  expect(getFolderNameById('unsorted')).toBe('No category');
+  expect(getFolderNameById('deleted-category')).toBe('No category');
 });

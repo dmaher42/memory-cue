@@ -4482,6 +4482,7 @@ const initMobileNotes = () => {
   let notesOverviewQuery = '';
   let notesOverviewSortValue = 'recent';
   let notesOverviewStateValue = 'all';
+  let notesOverviewOpenCategoryId = null;
   let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
   let currentNoteSections = [];
@@ -4639,89 +4640,233 @@ const initMobileNotes = () => {
     return sortNotesForDisplay(filtered);
   };
 
+  const createNotesOverviewItem = (note) => {
+    const item = document.createElement('article');
+    item.className = 'notes-overview-item';
+    item.dataset.noteId = note.id;
+    const safeTitle = note?.title || 'Untitled note';
+
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'notes-overview-item-main';
+    openButton.dataset.noteId = note.id;
+    openButton.innerHTML = `
+      <div class="notes-overview-item-title-row">
+        <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
+        ${note?.pinned ? '<span class="notes-overview-pinned-label">Pinned</span>' : ''}
+      </div>
+    `;
+    openButton.addEventListener('click', () => {
+      setEditorValues(note);
+      updateListSelection();
+      applyNotesMode('notebooks');
+      const notebooksBtn = document.getElementById('mobile-footer-notebooks');
+      if (notebooksBtn instanceof HTMLElement) {
+        notebooksBtn.click();
+      }
+    });
+
+    const actionsButton = document.createElement('button');
+    actionsButton.type = 'button';
+    actionsButton.className = 'notes-overview-item-actions note-options-button';
+    actionsButton.dataset.role = 'note-menu';
+    actionsButton.dataset.noteId = note.id;
+    actionsButton.setAttribute('aria-label', `Actions for ${safeTitle}`);
+    actionsButton.setAttribute('aria-haspopup', 'menu');
+    actionsButton.textContent = '\u22ef';
+    actionsButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openNoteOptionsMenu(note.id, actionsButton);
+    });
+
+    item.appendChild(openButton);
+    item.appendChild(actionsButton);
+    return item;
+  };
+
+  const getNotesOverviewCategorySections = (items = []) => {
+    let folders = [];
+    try {
+      folders = Array.isArray(getFolders()) ? getFolders() : [];
+    } catch {
+      folders = [];
+    }
+
+    const classHubIds = new Set(
+      folders
+        .filter((folder) => folder?.kind === 'class-hub')
+        .map((folder) => normalizeFolderId(folder?.id)),
+    );
+    const ordinaryFolders = folders
+      .filter((folder) => folder?.id && folder.id !== 'unsorted' && folder.kind !== 'class-hub')
+      .sort((a, b) => (Number(a?.order) || 0) - (Number(b?.order) || 0));
+    const ordinaryFolderIds = new Set(
+      ordinaryFolders.map((folder) => normalizeFolderId(folder.id)),
+    );
+    const notesByCategory = new Map(
+      ordinaryFolders.map((folder) => [normalizeFolderId(folder.id), []]),
+    );
+    const noCategoryNotes = [];
+
+    items.forEach((note) => {
+      const folderId = normalizeFolderId(note?.folderId);
+      if (classHubIds.has(folderId)) {
+        return;
+      }
+      if (ordinaryFolderIds.has(folderId)) {
+        notesByCategory.get(folderId).push(note);
+        return;
+      }
+      noCategoryNotes.push(note);
+    });
+
+    return [
+      ...ordinaryFolders.map((folder) => ({
+        id: normalizeFolderId(folder.id),
+        name: String(folder.name || folder.id),
+        notes: notesByCategory.get(normalizeFolderId(folder.id)) || [],
+      })),
+      {
+        id: 'unsorted',
+        name: 'No category',
+        notes: noCategoryNotes,
+      },
+    ];
+  };
+
+  const setNotesOverviewOpenCategory = (categoryId) => {
+    notesOverviewOpenCategoryId = notesOverviewOpenCategoryId === categoryId
+      ? null
+      : categoryId;
+    notesOverviewList
+      ?.querySelectorAll('[data-notes-category]')
+      .forEach((section) => {
+        if (!(section instanceof HTMLElement)) {
+          return;
+        }
+        const isOpen = section.dataset.notesCategory === notesOverviewOpenCategoryId;
+        section.classList.toggle('is-expanded', isOpen);
+        const toggle = section.querySelector('[data-notes-category-toggle]');
+        const content = section.querySelector('[data-notes-category-content]');
+        toggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (content instanceof HTMLElement) {
+          content.hidden = !isOpen;
+        }
+      });
+  };
+
   const renderNotesOverview = () => {
     if (!(notesOverviewList instanceof HTMLElement)) {
       return;
     }
     notesOverviewList.innerHTML = '';
     const items = getNotesOverviewItems();
-    if (!items.length) {
-      const hasActiveFilter = Boolean((notesOverviewQuery || '').trim())
-        || (notesOverviewStateValue || 'all').toLowerCase() !== 'all';
+    const hasSearch = Boolean((notesOverviewQuery || '').trim());
+    const hasActiveFilter = hasSearch
+      || (notesOverviewStateValue || 'all').toLowerCase() !== 'all';
+
+    if (!items.length && hasActiveFilter) {
       const empty = document.createElement('div');
       empty.className = 'notes-overview-empty';
 
       const title = document.createElement('h3');
       title.className = 'notes-overview-empty-title';
-      title.textContent = hasActiveFilter ? 'No notes found' : 'No saved notes yet';
+      title.textContent = 'No notes found';
       empty.appendChild(title);
 
       const copy = document.createElement('p');
       copy.className = 'notes-overview-empty-copy';
-      copy.textContent = hasActiveFilter
-        ? 'Try a different search.'
-        : 'Your notes will appear here as soon as you start writing.';
+      copy.textContent = 'Try a different search.';
       empty.appendChild(copy);
-
-      if (!hasActiveFilter) {
-        const startButton = document.createElement('button');
-        startButton.type = 'button';
-        startButton.className = 'note-inline-action';
-        startButton.textContent = 'Start a note';
-        startButton.addEventListener('click', () => {
-          applyNotesMode('notebooks');
-          document.getElementById('newNoteMobile')?.click();
-        });
-        empty.appendChild(startButton);
-      }
-
       notesOverviewList.appendChild(empty);
       return;
     }
 
-    items.slice(0, 30).forEach((note) => {
-      const item = document.createElement('article');
-      item.className = 'notes-overview-item';
-      item.dataset.noteId = note.id;
-      const safeTitle = note?.title || 'Untitled note';
+    if (hasSearch) {
+      const summary = document.createElement('div');
+      summary.className = 'notes-overview-results-summary';
+      summary.textContent = `${items.length} ${items.length === 1 ? 'result' : 'results'}`;
+      notesOverviewList.appendChild(summary);
+      items.forEach((note) => {
+        notesOverviewList.appendChild(createNotesOverviewItem(note));
+      });
+      updateListSelection();
+      return;
+    }
 
-      const openButton = document.createElement('button');
-      openButton.type = 'button';
-      openButton.className = 'notes-overview-item-main';
-      openButton.dataset.noteId = note.id;
-      openButton.innerHTML = `
-        <div class="notes-overview-item-title-row">
-          <div class="notes-overview-item-title">${escapeHtml(safeTitle)}</div>
-          ${note?.pinned ? '<span class="notes-overview-pinned-label">Pinned</span>' : ''}
-        </div>
-      `;
-      openButton.addEventListener('click', () => {
-        setEditorValues(note);
-        updateListSelection();
-        applyNotesMode('notebooks');
-        const notebooksBtn = document.getElementById('mobile-footer-notebooks');
-        if (notebooksBtn instanceof HTMLElement) {
-          notebooksBtn.click();
-        }
+    const sections = getNotesOverviewCategorySections(items);
+    if (notesOverviewOpenCategoryId
+      && !sections.some((section) => section.id === notesOverviewOpenCategoryId)) {
+      notesOverviewOpenCategoryId = null;
+    }
+
+    const label = document.createElement('div');
+    label.className = 'notes-overview-categories-label';
+    label.textContent = 'Categories';
+    notesOverviewList.appendChild(label);
+
+    sections.forEach((category, index) => {
+      const section = document.createElement('section');
+      section.className = 'notes-overview-category';
+      section.dataset.notesCategory = category.id;
+      const isOpen = category.id === notesOverviewOpenCategoryId;
+      section.classList.toggle('is-expanded', isOpen);
+
+      const contentId = `notes-overview-category-${index}`;
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'notes-overview-category-toggle';
+      toggle.dataset.notesCategoryToggle = category.id;
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      toggle.setAttribute('aria-controls', contentId);
+      toggle.setAttribute(
+        'aria-label',
+        `${category.name}, ${category.notes.length} ${category.notes.length === 1 ? 'note' : 'notes'}`,
+      );
+
+      const name = document.createElement('span');
+      name.className = 'notes-overview-category-name';
+      name.textContent = category.name;
+
+      const count = document.createElement('span');
+      count.className = 'notes-overview-category-count';
+      count.textContent = String(category.notes.length);
+
+      const chevron = document.createElement('span');
+      chevron.className = 'notes-overview-category-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '\u203a';
+
+      toggle.appendChild(name);
+      toggle.appendChild(count);
+      toggle.appendChild(chevron);
+      toggle.addEventListener('click', () => {
+        setNotesOverviewOpenCategory(category.id);
       });
 
-      const actionsButton = document.createElement('button');
-      actionsButton.type = 'button';
-      actionsButton.className = 'notes-overview-item-actions note-options-button';
-      actionsButton.dataset.role = 'note-menu';
-      actionsButton.dataset.noteId = note.id;
-      actionsButton.setAttribute('aria-label', `Actions for ${safeTitle}`);
-      actionsButton.setAttribute('aria-haspopup', 'menu');
-      actionsButton.textContent = '\u22ef';
-      actionsButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openNoteOptionsMenu(note.id, actionsButton);
-      });
+      const content = document.createElement('div');
+      content.id = contentId;
+      content.className = 'notes-overview-category-content';
+      content.dataset.notesCategoryContent = category.id;
+      content.setAttribute('role', 'region');
+      content.setAttribute('aria-label', `${category.name} notes`);
+      content.hidden = !isOpen;
 
-      item.appendChild(openButton);
-      item.appendChild(actionsButton);
-      notesOverviewList.appendChild(item);
+      if (!category.notes.length) {
+        const empty = document.createElement('p');
+        empty.className = 'notes-overview-category-empty';
+        empty.textContent = 'No notes here yet.';
+        content.appendChild(empty);
+      } else {
+        category.notes.forEach((note) => {
+          content.appendChild(createNotesOverviewItem(note));
+        });
+      }
+
+      section.appendChild(toggle);
+      section.appendChild(content);
+      notesOverviewList.appendChild(section);
     });
     updateListSelection();
   };
@@ -4802,7 +4947,7 @@ const initMobileNotes = () => {
     titleInput.dataset.noteOriginalTitle = isNew ? '' : nextTitle;
     scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
     // set current editing folder for existing notes
-    currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
+    currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     renderRelatedNotes(note);
   };
@@ -5392,8 +5537,8 @@ const initMobileNotes = () => {
         titleRow.appendChild(pinIcon);
       }
 
-      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'everyday';
-      const folderName = getFolderNameById(folderId) || 'Unsorted';
+      const folderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
+      const folderName = getFolderNameById(folderId) || 'No category';
       const metaRow = document.createElement('div');
       metaRow.className = 'note-row-meta note-list-meta note-card-meta';
 
@@ -5509,7 +5654,7 @@ const initMobileNotes = () => {
     }
     const normalized = Array.isArray(folders) ? folders.filter(Boolean) : [];
     const unsortedFolder =
-      normalized.find((f) => f && f.id === 'unsorted') || { id: 'unsorted', name: 'Unsorted' };
+      normalized.find((f) => f && f.id === 'unsorted') || { id: 'unsorted', name: 'No category' };
     const extraFolders = normalized
       .filter((f) => f && f.id !== 'unsorted')
       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
@@ -5633,7 +5778,6 @@ const initMobileNotes = () => {
   let closeOverflowMenu = () => {};
   let handleMoveNoteToFolder = () => {};
   let openFolderOverflowMenu = () => {};
-  let afterFolderCreated = null;
 
   ({
     setAfterFolderCreated,
@@ -5784,7 +5928,7 @@ const initMobileNotes = () => {
     setFolderSelectorOnSelect: (value) => { folderSelectorOnSelect = value; },
     getActiveFolderSheetOpener: () => activeFolderSheetOpener,
     setActiveFolderSheetOpener: (value) => { activeFolderSheetOpener = value; },
-    setAfterFolderCreated: (value) => { afterFolderCreated = value; },
+    setAfterFolderCreated,
     getFolderOptions: () => {
       try {
         return Array.isArray(getFolders()) ? getFolders() : [];
@@ -5873,6 +6017,9 @@ const initMobileNotes = () => {
     renderNotesOverview,
     applyNotesMode,
     getNotesMode: () => notesMode,
+  });
+  document.addEventListener('memoryCue:foldersUpdated', () => {
+    renderNotesOverview();
   });
   // Legacy notebook browser wiring lives in src/ui/mobileNotesBrowserUi.js.
 

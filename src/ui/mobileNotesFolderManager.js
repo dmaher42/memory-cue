@@ -30,7 +30,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
     deleteFolderCancelBtn = null,
     getFolders = () => [],
     saveFolders = () => false,
-    getFolderNameById = () => 'Unsorted',
+    getFolderNameById = () => 'No category',
     assignNoteToFolder = () => false,
     buildFolderChips = () => {},
     buildFolderFilterSelect = () => {},
@@ -163,7 +163,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
     if (!(noteFolderBtn instanceof HTMLElement)) {
       return;
     }
-    noteFolderBtn.textContent = getFolderNameById(folderId || 'unsorted') || 'Unsorted';
+    noteFolderBtn.textContent = getFolderNameById(folderId || 'unsorted') || 'No category';
   };
 
   const closeOverflowMenu = () => {
@@ -225,7 +225,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
       console.warn('[notebook] failed to refresh folder chips after move', error);
     }
     try {
-      const targetName = getFolderNameById(normalizedTarget || 'unsorted') || 'Unsorted';
+      const targetName = getFolderNameById(normalizedTarget || 'unsorted') || 'No category';
       showMoveToast(targetName);
     } catch {
       /* no-op */
@@ -264,7 +264,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
 
     const unsorted =
       folders.find((folder) => folder && folder.id === 'unsorted')
-      || { id: 'unsorted', name: 'Unsorted', order: -1 };
+      || { id: 'unsorted', name: 'No category', order: -1 };
     const normalized = [unsorted, ...userFolders].map((folder, indexValue) => ({
       ...folder,
       order: indexValue,
@@ -395,7 +395,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
 
     const updatedFolders = folders.filter((folder) => String(folder.id) !== String(pendingDeleteFolderId));
     if (!updatedFolders.some((folder) => folder && folder.id === 'unsorted')) {
-      updatedFolders.unshift({ id: 'unsorted', name: 'Unsorted' });
+      updatedFolders.unshift({ id: 'unsorted', name: 'No category' });
     }
 
     const saved = saveFolders(updatedFolders);
@@ -412,7 +412,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
     const notes = loadAllNotes();
     const updatedNotes = (Array.isArray(notes) ? notes : []).map((note) => {
       if (note && String(note.folderId) === String(pendingDeleteFolderId)) {
-        return { ...note, folderId: 'unsorted', updatedAt: new Date().toISOString() };
+        return { ...note, folderId: null, updatedAt: new Date().toISOString() };
       }
       return note;
     });

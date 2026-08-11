@@ -240,3 +240,119 @@ test('installs the full-page Notes writing canvas styles', () => {
   expect(style.textContent).toContain('.note-action-create-lesson-cue');
   expect(style.textContent).toContain('.note-action-set-active-lesson');
 });
+
+test('selecting a category on a new unsaved draft updates the draft instead of trying to move a stored note', () => {
+  document.body.innerHTML = `
+    <section id="view-notebook">
+      <section id="notesOverviewPanel"><div id="notesOverviewList"></div></section>
+      <div id="noteEditorSheet">
+        <div class="scratch-notes-header-block">
+          <div class="note-editor-actions-row">
+            <button id="noteFolderPillMobile" type="button">No category</button>
+          </div>
+        </div>
+      </div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+    <div id="note-folder-sheet" aria-hidden="true">
+      <button class="note-folder-sheet-close" type="button">Close</button>
+      <div class="note-folder-sheet-list"></div>
+    </div>
+    <div id="note-folder-sheet-backdrop" aria-hidden="true"></div>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const folderButton = document.getElementById('noteFolderPillMobile');
+  let editingFolderId = 'unsorted';
+  const handleMoveNoteToFolder = jest.fn();
+
+  const { openFolderSelectorForNote } = initMobileNotesShellUi({
+    noteEditorSheet: document.getElementById('noteEditorSheet'),
+    notesOverviewPanel: document.getElementById('notesOverviewPanel'),
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+    noteFolderSheet: document.getElementById('note-folder-sheet'),
+    noteFolderSheetBackdrop: document.getElementById('note-folder-sheet-backdrop'),
+    noteFolderSheetList: document.querySelector('.note-folder-sheet-list'),
+    noteFolderSheetClose: document.querySelector('.note-folder-sheet-close'),
+    noteFolderButton: folderButton,
+    getCurrentNoteId: () => 'draft-note-1',
+    getAllNotes: () => [],
+    getCurrentEditingNoteFolderId: () => editingFolderId,
+    setCurrentEditingNoteFolderId: (value) => { editingFolderId = value; },
+    getFolderOptions: () => [{ id: 'school', name: 'School', order: 0 }],
+    getFolderNameById: (id) => (id === 'school' ? 'School' : 'No category'),
+    handleMoveNoteToFolder,
+  });
+
+  openFolderSelectorForNote('draft-note-1', {
+    initialFolderId: 'unsorted',
+    triggerEl: folderButton,
+  });
+  const schoolOption = Array.from(document.querySelectorAll('.note-folder-row'))
+    .find((option) => option.textContent === 'School');
+  expect(schoolOption).toBeInstanceOf(HTMLButtonElement);
+  schoolOption.click();
+
+  expect(handleMoveNoteToFolder).not.toHaveBeenCalled();
+  expect(editingFolderId).toBe('school');
+  expect(folderButton.textContent).toBe('School');
+});
+
+test('creating a category from a new unsaved draft assigns the new category to that draft', () => {
+  document.body.innerHTML = `
+    <section id="view-notebook">
+      <section id="notesOverviewPanel"><div id="notesOverviewList"></div></section>
+      <div id="noteEditorSheet">
+        <div class="scratch-notes-header-block">
+          <div class="note-editor-actions-row">
+            <button id="noteFolderPillMobile" type="button">No category</button>
+          </div>
+        </div>
+      </div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+    <div id="note-folder-sheet" aria-hidden="true">
+      <button class="note-folder-sheet-close" type="button">Close</button>
+      <div class="note-folder-sheet-list"></div>
+    </div>
+    <div id="note-folder-sheet-backdrop" aria-hidden="true"></div>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const folderButton = document.getElementById('noteFolderPillMobile');
+  let editingFolderId = 'unsorted';
+  let afterFolderCreated = null;
+  const openNewFolderDialog = jest.fn();
+  const handleMoveNoteToFolder = jest.fn();
+
+  const { openFolderSelectorForNote } = initMobileNotesShellUi({
+    noteEditorSheet: document.getElementById('noteEditorSheet'),
+    notesOverviewPanel: document.getElementById('notesOverviewPanel'),
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+    noteFolderSheet: document.getElementById('note-folder-sheet'),
+    noteFolderSheetBackdrop: document.getElementById('note-folder-sheet-backdrop'),
+    noteFolderSheetList: document.querySelector('.note-folder-sheet-list'),
+    noteFolderSheetClose: document.querySelector('.note-folder-sheet-close'),
+    noteFolderButton: folderButton,
+    getCurrentNoteId: () => 'draft-note-2',
+    getAllNotes: () => [],
+    getCurrentEditingNoteFolderId: () => editingFolderId,
+    setCurrentEditingNoteFolderId: (value) => { editingFolderId = value; },
+    getFolderOptions: () => [],
+    getFolderNameById: (id) => (id === 'folder-trips' ? 'Trips' : 'No category'),
+    handleMoveNoteToFolder,
+    setAfterFolderCreated: (callback) => { afterFolderCreated = callback; },
+    openNewFolderDialog,
+  });
+
+  openFolderSelectorForNote('draft-note-2', {
+    initialFolderId: 'unsorted',
+    triggerEl: folderButton,
+  });
+  document.querySelector('.note-folder-row-new').click();
+  expect(openNewFolderDialog).toHaveBeenCalledTimes(1);
+  expect(typeof afterFolderCreated).toBe('function');
+
+  afterFolderCreated('folder-trips');
+  expect(handleMoveNoteToFolder).not.toHaveBeenCalled();
+  expect(editingFolderId).toBe('folder-trips');
+  expect(folderButton.textContent).toBe('Trips');
+});
