@@ -652,6 +652,10 @@ export function initMobileClassHubsUi(options = {}) {
   const handleDataUpdate = () => render();
   const handleNotesModeChanged = (event) => {
     if (event?.detail?.mode === 'overview') {
+      if (event?.detail?.source === 'notes-tab') {
+        activeHubId = null;
+        statusMessage = '';
+      }
       render();
       return;
     }

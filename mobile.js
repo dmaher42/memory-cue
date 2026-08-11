@@ -4640,6 +4640,12 @@ const initMobileNotes = () => {
     return sortNotesForDisplay(filtered);
   };
 
+  const getRecentNotesOverviewItems = (items = []) => (
+    [...items]
+      .sort((a, b) => getNoteTimestamp(b) - getNoteTimestamp(a))
+      .slice(0, 3)
+  );
+
   const createNotesOverviewItem = (note) => {
     const item = document.createElement('article');
     item.className = 'notes-overview-item';
@@ -4660,10 +4666,7 @@ const initMobileNotes = () => {
       setEditorValues(note);
       updateListSelection();
       applyNotesMode('notebooks');
-      const notebooksBtn = document.getElementById('mobile-footer-notebooks');
-      if (notebooksBtn instanceof HTMLElement) {
-        notebooksBtn.click();
-      }
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
     });
 
     const actionsButton = document.createElement('button');
@@ -4799,6 +4802,28 @@ const initMobileNotes = () => {
     if (notesOverviewOpenCategoryId
       && !sections.some((section) => section.id === notesOverviewOpenCategoryId)) {
       notesOverviewOpenCategoryId = null;
+    }
+
+    const recentItems = getRecentNotesOverviewItems(items);
+    if (recentItems.length) {
+      const recentSection = document.createElement('section');
+      recentSection.className = 'notes-overview-recent';
+      recentSection.dataset.notesRecent = 'true';
+      recentSection.setAttribute('aria-labelledby', 'notes-overview-recent-heading');
+
+      const recentHeading = document.createElement('h3');
+      recentHeading.id = 'notes-overview-recent-heading';
+      recentHeading.className = 'notes-overview-recent-label';
+      recentHeading.textContent = 'Recent notes';
+
+      const recentList = document.createElement('div');
+      recentList.className = 'notes-overview-recent-list';
+      recentItems.forEach((note) => {
+        recentList.appendChild(createNotesOverviewItem(note));
+      });
+
+      recentSection.append(recentHeading, recentList);
+      notesOverviewList.appendChild(recentSection);
     }
 
     const label = document.createElement('div');

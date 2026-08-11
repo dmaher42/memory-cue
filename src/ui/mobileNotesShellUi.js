@@ -216,6 +216,7 @@ const NOTEBOOK_POLISH_CSS = `
     display: none !important;
   }
 
+  #view-notebook #notesOverviewList .notes-overview-recent-label,
   #view-notebook #notesOverviewList .notes-overview-categories-label,
   #view-notebook #notesOverviewList .notes-overview-results-summary {
     margin: 0.18rem 0.12rem 0.08rem;
@@ -225,6 +226,13 @@ const NOTEBOOK_POLISH_CSS = `
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+  }
+
+  #view-notebook #notesOverviewList .notes-overview-recent,
+  #view-notebook #notesOverviewList .notes-overview-recent-list {
+    display: grid;
+    gap: 0.36rem;
+    min-width: 0;
   }
 
   #view-notebook #notesOverviewList .notes-overview-category {
@@ -1831,6 +1839,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   const appHeaderTitle = appHeader?.querySelector('.header-title');
   const notesHeaderActions = document.getElementById('notesHeaderActions');
   const newNoteButton = document.getElementById('newNoteMobile');
+  const notesTabButton = document.getElementById('mobile-footer-notebooks');
   if (appHeaderTitle instanceof HTMLElement && !appHeaderTitle.dataset.defaultTitle) {
     appHeaderTitle.dataset.defaultTitle = appHeaderTitle.textContent?.trim() || 'Memory Cue';
   }
@@ -1898,6 +1907,9 @@ export const initMobileNotesShellUi = (options = {}) => {
     if (notesMode === 'overview') {
       applyNotesMode('notebooks');
     }
+  });
+  notesTabButton?.addEventListener('click', () => {
+    applyNotesMode('overview', { source: 'notes-tab' });
   });
   window.addEventListener('memorycue:navigation:changed', renderNotesAppHeader);
   renderNotesOverviewToggle();
@@ -1999,7 +2011,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     }
   };
 
-  const applyNotesMode = (mode = 'notebooks') => {
+  const applyNotesMode = (mode = 'notebooks', options = {}) => {
     notesMode = mode === 'overview' ? 'overview' : 'notebooks';
     if (notesMode === 'overview') {
       flushCurrentNote();
@@ -2022,7 +2034,10 @@ export const initMobileNotesShellUi = (options = {}) => {
     const NotesModeEvent = document.defaultView?.CustomEvent;
     if (typeof NotesModeEvent === 'function') {
       document.dispatchEvent(new NotesModeEvent('memoryCue:notesModeChanged', {
-        detail: { mode: notesMode },
+        detail: {
+          mode: notesMode,
+          source: typeof options?.source === 'string' ? options.source : '',
+        },
       }));
     }
   };

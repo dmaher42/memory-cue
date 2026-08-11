@@ -7,6 +7,7 @@ const { loadMobileModule } = require('./helpers/load-mobile-module');
 
 describe('mobile Saved notes overview', () => {
   let openNoteOptionsMenu;
+  let applyNotesMode;
   let notes;
   let folders;
 
@@ -57,8 +58,8 @@ describe('mobile Saved notes overview', () => {
         bodyText: 'Strong group session',
         folderId: 'coaching',
         pinned: true,
-        createdAt: '2026-07-27T09:00:00.000Z',
-        updatedAt: '2026-07-29T09:00:00.000Z',
+        createdAt: '2026-07-25T09:00:00.000Z',
+        updatedAt: '2026-07-26T09:00:00.000Z',
       },
       {
         id: 'note-loose',
@@ -82,7 +83,7 @@ describe('mobile Saved notes overview', () => {
         bodyText: 'Class Hub note that remains searchable',
         folderId: 'hub-hpe',
         createdAt: '2026-07-24T09:00:00.000Z',
-        updatedAt: '2026-07-26T09:00:00.000Z',
+        updatedAt: '2026-07-31T09:00:00.000Z',
       },
     ];
     folders = [
@@ -93,6 +94,7 @@ describe('mobile Saved notes overview', () => {
     ];
 
     openNoteOptionsMenu = jest.fn();
+    applyNotesMode = jest.fn();
     window.__mobileMocks = {
       initViewportHeight: jest.fn(),
       initReminders: jest.fn().mockResolvedValue({}),
@@ -103,7 +105,7 @@ describe('mobile Saved notes overview', () => {
       getFolderNameById: (folderId) => folders.find((folder) => folder.id === folderId)?.name || 'No category',
       initNotesSync: () => ({ handleSessionChange() {}, setFirebaseClient() {} }),
       initMobileNotesShellUi: () => ({
-        applyNotesMode: () => {},
+        applyNotesMode,
         isSavedNotesSheetOpen: () => false,
         showSavedNotesSheet: () => {},
         hideSavedNotesSheet: () => {},
@@ -151,6 +153,20 @@ describe('mobile Saved notes overview', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
+    const recentSection = document.querySelector('[data-notes-recent]');
+    const recentCards = Array.from(recentSection.querySelectorAll('.notes-overview-item'));
+    expect(recentSection.querySelector('.notes-overview-recent-label').textContent).toBe('Recent notes');
+    expect(recentCards).toHaveLength(3);
+    expect(recentCards.map((card) => card.querySelector('.notes-overview-item-title').textContent))
+      .toEqual(['Year 8 excursion', 'Maths lesson plan', 'Loose thought']);
+
+    const notesTabClick = jest.fn();
+    document.getElementById('mobile-footer-notebooks').addEventListener('click', notesTabClick);
+    recentCards[0].querySelector('.notes-overview-item-main').click();
+    expect(document.getElementById('noteTitleMobile').value).toBe('Year 8 excursion');
+    expect(applyNotesMode).toHaveBeenLastCalledWith('notebooks');
+    expect(notesTabClick).not.toHaveBeenCalled();
+
     const categoryButtons = Array.from(document.querySelectorAll('[data-notes-category-toggle]'));
     expect(categoryButtons.map((button) => button.querySelector('.notes-overview-category-name').textContent))
       .toEqual(['School', 'Coaching', 'Everyday', 'No category']);
@@ -161,7 +177,7 @@ describe('mobile Saved notes overview', () => {
     expect(noCategory.querySelector('.notes-overview-category-count').textContent).toBe('2');
     expect(noCategory.textContent).toContain('Loose thought');
     expect(noCategory.textContent).toContain('Old category note');
-    expect(document.body.textContent).not.toContain('Year 8 excursion');
+    expect(document.querySelector('[data-notes-category] [data-note-id="note-class-hub"]')).toBeNull();
 
     const coachingButton = document.querySelector('[data-notes-category-toggle="coaching"]');
     coachingButton.click();
@@ -195,10 +211,21 @@ describe('mobile Saved notes overview', () => {
     expect(cards[0].querySelector('.notes-overview-item-title').textContent).toBe('Year 8 excursion');
     expect(cards[0].querySelector('.notes-overview-item-preview')).toBeNull();
     expect(document.querySelector('[data-notes-category]')).toBeNull();
+    expect(document.querySelector('[data-notes-recent]')).toBeNull();
 
     search.value = '';
     search.dispatchEvent(new window.Event('input', { bubbles: true }));
+    expect(document.querySelector('[data-notes-recent]')).not.toBeNull();
     expect(document.querySelector('[data-notes-category-toggle="school"]').getAttribute('aria-expanded')).toBe('true');
+  });
+
+  test('omits the Recent notes block when there are no notes', () => {
+    notes = [];
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    expect(document.querySelector('[data-notes-recent]')).toBeNull();
   });
 
   test('keeps notes beyond the old thirty-note limit reachable in their category', () => {

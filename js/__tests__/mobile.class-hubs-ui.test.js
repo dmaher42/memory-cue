@@ -245,6 +245,19 @@ describe('mobile Class Hubs UI', () => {
     expect(document.querySelector('[data-class-hub-note-open="autosaved-class-note"]')).not.toBeNull();
   });
 
+  test('returns to the Class hubs list when the bottom Notes tab is pressed', () => {
+    document.querySelector('[data-class-hub-open="class-existing"]').click();
+    expect(document.querySelector('[data-class-hub-heading]').textContent).toBe('Year 9 English');
+
+    document.dispatchEvent(new CustomEvent('memoryCue:notesModeChanged', {
+      detail: { mode: 'overview', source: 'notes-tab' },
+    }));
+
+    expect(document.querySelector('.class-hubs-title').textContent).toBe('Class hubs');
+    expect(document.querySelector('[data-class-hub-heading]')).toBeNull();
+    expect(document.body.classList.contains('class-hub-open')).toBe(false);
+  });
+
   test('starts a review-first note from the hub without instructions or another freeform input', () => {
     document.querySelector('[data-class-hub-open="class-existing"]').click();
 

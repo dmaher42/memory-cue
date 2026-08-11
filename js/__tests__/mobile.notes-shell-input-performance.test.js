@@ -161,6 +161,57 @@ test('shows a Saved notes heading and refreshes the list before opening it', () 
   expect(noteEditorSheet.classList.contains('hidden')).toBe(false);
 });
 
+test('opens Saved notes from the bottom Notes tab and keeps New as the editor route', () => {
+  document.body.innerHTML = `
+    <button id="newNoteMobile" type="button">+ New</button>
+    <button id="mobile-footer-notebooks" type="button">Notes</button>
+    <section id="view-notebook">
+      <section id="notesOverviewPanel">
+        <h2>Notes</h2>
+        <div id="notesOverviewList"></div>
+      </section>
+      <div id="noteEditorSheet"></div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const noteEditorSheet = document.getElementById('noteEditorSheet');
+  const notesOverviewPanel = document.getElementById('notesOverviewPanel');
+  const list = document.getElementById('notesOverviewList');
+  const flushCurrentNote = jest.fn();
+  const refreshFromStorage = jest.fn();
+  const modeEvents = [];
+  const handleModeChanged = (event) => modeEvents.push(event.detail);
+  document.addEventListener('memoryCue:notesModeChanged', handleModeChanged);
+
+  const { applyNotesMode } = initMobileNotesShellUi({
+    noteEditorSheet,
+    notesOverviewPanel,
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+    flushCurrentNote,
+    refreshFromStorage,
+  });
+
+  applyNotesMode('notebooks');
+  flushCurrentNote.mockClear();
+  refreshFromStorage.mockClear();
+  document.getElementById('mobile-footer-notebooks').click();
+
+  expect(document.getElementById('view-notebook').dataset.notesMode).toBe('overview');
+  expect(noteEditorSheet.classList.contains('hidden')).toBe(true);
+  expect(list.hidden).toBe(false);
+  expect(flushCurrentNote).toHaveBeenCalledTimes(1);
+  expect(refreshFromStorage).toHaveBeenCalledWith({ preserveDraft: true });
+  expect(modeEvents.at(-1)).toEqual({ mode: 'overview', source: 'notes-tab' });
+
+  document.getElementById('newNoteMobile').click();
+  expect(document.getElementById('view-notebook').dataset.notesMode).toBe('notebooks');
+  expect(noteEditorSheet.classList.contains('hidden')).toBe(false);
+  expect(list.hidden).toBe(true);
+
+  document.removeEventListener('memoryCue:notesModeChanged', handleModeChanged);
+});
+
 test('places Saved notes and New in the Notes app header', () => {
   document.body.innerHTML = `
     <header id="reminders-slim-header">
