@@ -93,7 +93,6 @@ export function initMobileClassHubsUi(options = {}) {
     setReminderCompleted = () => null,
     openReminder = () => false,
     openNote = () => false,
-    startFullNote = () => false,
     startAiOrganize = () => false,
   } = options;
 
@@ -495,18 +494,6 @@ export function initMobileClassHubsUi(options = {}) {
     header.append(back, titleCopy);
     rootElement.append(header, buildStatus());
 
-    const aiSection = createElement('section', 'class-hub-ai-organize');
-    const addNote = createElement(
-      'button',
-      'class-hub-action class-hub-action--primary class-hub-ai-organize-button',
-      'Add note',
-    );
-    addNote.type = 'button';
-    addNote.dataset.classHubAiOrganize = 'true';
-    addNote.setAttribute('aria-label', `Add note to ${hub.name}`);
-    aiSection.appendChild(addNote);
-    rootElement.appendChild(aiSection);
-
     const followSection = createElement('section', 'class-hub-section');
     const followHeading = createElement('div', 'class-hub-section-heading');
     followHeading.appendChild(createElement('h4', 'class-hub-section-title', 'Follow-ups'));
@@ -539,12 +526,18 @@ export function initMobileClassHubsUi(options = {}) {
     const notesSection = createElement('section', 'class-hub-section');
     const notesHeading = createElement('div', 'class-hub-section-heading');
     notesHeading.appendChild(createElement('h4', 'class-hub-section-title', 'Notes'));
-    const openEditor = createElement('button', 'class-hub-action', 'Open editor');
-    openEditor.type = 'button';
-    openEditor.dataset.classHubFullNote = 'true';
-    openEditor.setAttribute('aria-label', `Open the full note editor for ${hub.name}`);
-    notesHeading.appendChild(openEditor);
-    notesSection.appendChild(notesHeading);
+    const addNote = createElement(
+      'button',
+      'class-hub-action class-hub-action--primary',
+      'Add note',
+    );
+    addNote.type = 'button';
+    addNote.dataset.classHubAiOrganize = 'true';
+    addNote.setAttribute('aria-label', `Add note to ${hub.name}`);
+    notesHeading.appendChild(addNote);
+    const reviewHost = createElement('div', 'class-thought-inline-review-host');
+    reviewHost.dataset.classThoughtReviewHost = hub.id;
+    notesSection.append(notesHeading, reviewHost);
     if (!notes.length) {
       notesSection.appendChild(createElement('p', 'class-hub-section-copy', 'No class notes yet.'));
     } else {
@@ -574,8 +567,12 @@ export function initMobileClassHubsUi(options = {}) {
       statusMessage = 'That class hub is no longer available.';
     }
     rootElement.closest('#notesOverviewPanel')?.classList.toggle('class-hub-is-open', Boolean(activeHub));
+    document.body?.classList.toggle('class-hub-open', Boolean(activeHub));
     if (activeHub) renderHub(activeHub);
     else renderList();
+    document.dispatchEvent(new CustomEvent('memoryCue:classHubRendered', {
+      detail: { hubId: activeHub?.id || '' },
+    }));
   }
 
   const handleRootClick = (event) => {
@@ -613,7 +610,7 @@ export function initMobileClassHubsUi(options = {}) {
       try {
         const started = startAiOrganize({ ...hub });
         if (started === false) {
-          updateStatus('Finish the current Capture first, then try again.');
+          updateStatus('Another action is still running. Try again in a moment.');
         }
       } catch {
         updateStatus('Note could not start. Try again.');
@@ -627,10 +624,6 @@ export function initMobileClassHubsUi(options = {}) {
     if (button.dataset.classHubNoteOpen) {
       openNote(button.dataset.classHubNoteOpen);
       return;
-    }
-    if (button.dataset.classHubFullNote) {
-      const hub = getActiveHub();
-      if (hub) startFullNote(hub.id);
     }
   };
 
@@ -661,7 +654,12 @@ export function initMobileClassHubsUi(options = {}) {
   const handleNotesModeChanged = (event) => {
     if (event?.detail?.mode === 'overview') {
       render();
+      return;
     }
+    document.body?.classList.remove('class-hub-open');
+    document.dispatchEvent(new CustomEvent('memoryCue:classHubRendered', {
+      detail: { hubId: '' },
+    }));
   };
   const handleClassHubOpen = (event) => {
     const hubId = normalizeText(event?.detail?.hubId);
@@ -709,6 +707,7 @@ export function initMobileClassHubsUi(options = {}) {
       createDialog?.remove();
       followUpDialog?.remove();
       rootElement.closest('#notesOverviewPanel')?.classList.remove('class-hub-is-open');
+      document.body?.classList.remove('class-hub-open');
     },
   };
 }

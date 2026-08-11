@@ -20,6 +20,11 @@ describe('mobile capture result rendering', () => {
         <section id="view-capture">
           <section id="chatConversationContainer"></section>
         </section>
+        <section id="view-notebook">
+          <section id="classHubsPanel">
+            <div class="class-thought-inline-review-host" data-class-thought-review-host="hub-hpe"></div>
+          </section>
+        </section>
       </main>
       <section id="thinkingBarContainer">
         <div id="wordRescueModeBar" class="hidden">
@@ -32,7 +37,7 @@ describe('mobile capture result rendering', () => {
         </div>
         <div id="classThoughtModeBar" class="hidden">
           <span>New note: <strong id="classThoughtModeLabel">Class</strong></span>
-          <button id="classThoughtExitButton" type="button">Back to class</button>
+          <button id="classThoughtExitButton" type="button">Close</button>
         </div>
         <form id="thinkingBarForm">
           <label for="thinkingBarInput">Add a reminder, note, or ask anything</label>
@@ -68,6 +73,7 @@ describe('mobile capture result rendering', () => {
     localStorage.clear();
     document.body.innerHTML = '';
     delete document.body.dataset.memoryCueAssistantInit;
+    document.body.classList.remove('class-hub-open', 'class-thought-mode-active', 'class-thought-review-active');
     delete window.__mobileMocks;
     delete window.SpeechRecognition;
     delete window.webkitSpeechRecognition;
@@ -790,7 +796,7 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelector('.word-rescue-coach-controls')).toBeNull();
   });
 
-  test('starts the Class Hub organiser in the one universal input and restores an existing Capture draft', () => {
+  test('starts a Class Hub note in the one universal input without leaving Notes and restores an existing Capture draft', () => {
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
@@ -800,23 +806,20 @@ describe('mobile capture result rendering', () => {
     const input = document.getElementById('thinkingBarInput');
     input.value = 'Unsent ordinary Capture draft';
     document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
 
     expect(detail.accepted).toBe(true);
-    expect(input.value).toBe('Unsent ordinary Capture draft');
+    expect(input.value).toBe('');
     expect(document.querySelectorAll('textarea')).toHaveLength(1);
-
-    document.body.dataset.activeView = 'capture';
-    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
-      detail: { view: 'capture' },
-    }));
 
     expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
     expect(document.getElementById('classThoughtModeLabel')?.textContent).toBe('Year 8 HPE');
     expect(input.placeholder).toBe('Add anything about Year 8 HPE…');
     expect(input.maxLength).toBe(2400);
     expect(input.value).toBe('');
+    expect(document.body.dataset.activeView).toBe('notebooks');
 
     document.getElementById('classThoughtExitButton').click();
     expect(input.value).toBe('Unsent ordinary Capture draft');
@@ -855,6 +858,8 @@ describe('mobile capture result rendering', () => {
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
     const input = document.getElementById('thinkingBarInput');
@@ -876,6 +881,9 @@ describe('mobile capture result rendering', () => {
     expect(createAndSaveNote).not.toHaveBeenCalled();
     expect(createReminderFromPayload).not.toHaveBeenCalled();
     expect(document.querySelector('.class-thought-review-card')).not.toBeNull();
+    expect(document.querySelector('[data-class-thought-review-host] .class-thought-review-card')).not.toBeNull();
+    expect(document.body.dataset.activeView).toBe('notebooks');
+    expect(document.body.classList.contains('class-thought-review-active')).toBe(true);
     const reviewHeading = document.querySelector('[data-class-thought-review-heading]');
     expect(document.activeElement).toBe(reviewHeading);
     expect(reviewHeading?.tabIndex).toBe(-1);
@@ -913,7 +921,7 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelector('.class-thought-review-card')).toBeNull();
   });
 
-  test('Back to class pauses an unsent organiser thought and resumes it without losing the ordinary Capture draft', () => {
+  test('Close pauses an unsent class note and Add note resumes it without losing the ordinary Capture draft', () => {
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
@@ -922,6 +930,8 @@ describe('mobile capture result rendering', () => {
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
     const input = document.getElementById('thinkingBarInput');
     input.value = 'Ordinary Capture draft';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
       detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
     }));
@@ -934,13 +944,234 @@ describe('mobile capture result rendering', () => {
     const resumeDetail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail: resumeDetail }));
     expect(resumeDetail.accepted).toBe(true);
-    document.body.dataset.activeView = 'capture';
-    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
-      detail: { view: 'capture' },
-    }));
 
     expect(input.value).toBe('Unsent class thought that must survive');
     expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
+  });
+
+  test('a paused class review does not block ordinary Capture and resumes unchanged', async () => {
+    const classDraft = {
+      message: 'Draft ready. Review it before saving.',
+      classThoughtDraft: {
+        note: { title: 'Class note', body: 'Organised class note', tags: [] },
+        followUps: [{ text: 'Speak to the students next lesson' }],
+      },
+    };
+    const handleChatMessage = jest.fn(async (_message, dependencies = {}) => (
+      dependencies.assistantTask === 'organise_class_thought'
+        ? classDraft
+        : { message: 'Captured normally' }
+    ));
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Ordinary Capture draft';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    input.value = 'Class thought to review';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelector('.class-thought-review-card')).not.toBeNull();
+
+    document.body.dataset.activeView = 'capture';
+    document.body.classList.remove('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    expect(input.value).toBe('Ordinary Capture draft');
+    input.value = 'Save this ordinary Capture note';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(handleChatMessage).toHaveBeenCalledTimes(2);
+    expect(handleChatMessage.mock.calls[1][0]).toBe('Save this ordinary Capture note');
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'notebooks' },
+    }));
+    expect(document.querySelector('.class-thought-review-card')).not.toBeNull();
+    expect(document.querySelector('.class-thought-review-note-title')?.textContent).toBe('Class note');
+  });
+
+  test('Escape outside the active Class Hub leaves a paused class note untouched', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    input.value = 'Ordinary Capture draft';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    input.value = 'Paused class note';
+    document.getElementById('classThoughtExitButton').click();
+
+    document.body.dataset.activeView = 'capture';
+    document.body.classList.remove('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    const escapeEvent = new window.KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(escapeEvent);
+    expect(escapeEvent.defaultPrevented).toBe(false);
+    expect(document.body.dataset.activeView).toBe('capture');
+    expect(input.value).toBe('Ordinary Capture draft');
+
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'notebooks' },
+    }));
+    expect(input.value).toBe('Paused class note');
+  });
+
+  test('returning to a paused class note cannot let a pending Capture response clear it', async () => {
+    let resolveCapture;
+    const handleChatMessage = jest.fn(() => new Promise((resolve) => {
+      resolveCapture = resolve;
+    }));
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    input.value = 'Class note that must survive';
+    document.getElementById('classThoughtExitButton').click();
+
+    document.body.dataset.activeView = 'capture';
+    document.body.classList.remove('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    input.value = 'Ordinary Capture request still running';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await Promise.resolve();
+
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'notebooks' },
+    }));
+    expect(input.value).toBe('Ordinary Capture request still running');
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(true);
+
+    resolveCapture({ message: 'Captured normally' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(input.value).toBe('Class note that must survive');
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
+
+    document.getElementById('classThoughtExitButton').click();
+    expect(input.value).toBe('');
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    expect(input.value).toBe('Class note that must survive');
+  });
+
+  test('a pending Capture response cannot mount one class review inside another Class Hub', async () => {
+    let resolveCapture;
+    const handleChatMessage = jest.fn()
+      .mockResolvedValueOnce({
+        message: 'Draft ready. Review it before saving.',
+        classThoughtDraft: {
+          note: { title: 'Year 8 HPE note', body: 'HPE class detail', tags: [] },
+          followUps: [{ text: 'Speak to the HPE students' }],
+        },
+      })
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveCapture = resolve;
+      }));
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.getClassHubFolders = () => [
+      { id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' },
+      { id: 'hub-maths', name: 'Year 8 Maths', kind: 'class-hub' },
+    ];
+    window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    const input = document.getElementById('thinkingBarInput');
+    const reviewHost = document.querySelector('[data-class-thought-review-host]');
+    reviewHost.dataset.classThoughtReviewHost = 'hub-hpe';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
+      detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
+    }));
+    input.value = 'HPE thought';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelector('.class-thought-review-note-title')?.textContent).toBe('Year 8 HPE note');
+    document.getElementById('classThoughtExitButton').click();
+
+    document.body.dataset.activeView = 'capture';
+    document.body.classList.remove('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    input.value = 'Ordinary Capture request';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await Promise.resolve();
+
+    reviewHost.replaceChildren();
+    reviewHost.dataset.classThoughtReviewHost = 'hub-maths';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'notebooks' },
+    }));
+    resolveCapture({ message: 'Captured normally' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(reviewHost.querySelector('.class-thought-review-card')).toBeNull();
+    expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(true);
+
+    reviewHost.dataset.classThoughtReviewHost = 'hub-hpe';
+    const resumeDetail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
+    window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail: resumeDetail }));
+    expect(resumeDetail.accepted).toBe(true);
+    expect(reviewHost.querySelector('.class-thought-review-note-title')?.textContent).toBe('Year 8 HPE note');
   });
 
   test('keeps the original class thought available when AI fails and writes nothing', async () => {
@@ -956,6 +1187,8 @@ describe('mobile capture result rendering', () => {
 
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
     const input = document.getElementById('thinkingBarInput');
@@ -1001,6 +1234,8 @@ describe('mobile capture result rendering', () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
     await new Promise((resolve) => setTimeout(resolve, 0));
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', {
       detail: { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false },
     }));
@@ -1025,19 +1260,24 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelector('.class-thought-review-card')).toBeNull();
   });
 
-  test('does not apply a late class organiser response after the user leaves Capture', async () => {
+  test('does not apply a late class note response or block Capture after the user leaves the Class Hub', async () => {
     let resolveAssistant;
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.getClassHubFolders = () => [{ id: 'hub-hpe', name: 'Year 8 HPE', kind: 'class-hub' }];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
-    window.__mobileMocks.handleChatMessage = jest.fn(() => new Promise((resolve) => {
-      resolveAssistant = resolve;
-    }));
+    const handleChatMessage = jest.fn()
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveAssistant = resolve;
+      }))
+      .mockResolvedValueOnce({ message: 'Captured normally' });
+    window.__mobileMocks.handleChatMessage = handleChatMessage;
 
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
     const input = document.getElementById('thinkingBarInput');
     input.value = 'Original Capture draft';
+    document.body.dataset.activeView = 'notebooks';
+    document.body.classList.add('class-hub-open');
     const detail = { hubId: 'hub-hpe', hubName: 'Year 8 HPE', accepted: false };
     window.dispatchEvent(new window.CustomEvent('memoryCue:classThoughtStart', { detail }));
     input.value = 'Class thought waiting for AI';
@@ -1053,6 +1293,19 @@ describe('mobile capture result rendering', () => {
     }));
     expect(input.value).toBe('Original Capture draft');
 
+    document.body.dataset.activeView = 'capture';
+    window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
+      detail: { view: 'capture' },
+    }));
+    input.value = 'Capture while the old class request finishes';
+    document.getElementById('thinkingBarForm').dispatchEvent(new window.Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(handleChatMessage).toHaveBeenCalledTimes(2);
+    expect(handleChatMessage.mock.calls[1][0]).toBe('Capture while the old class request finishes');
+
     resolveAssistant({
       message: 'Draft ready. Review it before saving.',
       classThoughtDraft: {
@@ -1062,9 +1315,9 @@ describe('mobile capture result rendering', () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    document.body.dataset.activeView = 'capture';
+    document.body.dataset.activeView = 'notebooks';
     window.dispatchEvent(new window.CustomEvent('memorycue:navigation:changed', {
-      detail: { view: 'capture' },
+      detail: { view: 'notebooks' },
     }));
     expect(document.querySelector('.class-thought-review-card')).toBeNull();
     expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);

@@ -54,7 +54,6 @@ describe('mobile Class Hubs UI', () => {
   let ui;
   let openNote;
   let openReminder;
-  let startFullNote;
   let startAiOrganize;
 
   beforeEach(() => {
@@ -80,7 +79,6 @@ describe('mobile Class Hubs UI', () => {
     }];
     openNote = jest.fn();
     openReminder = jest.fn();
-    startFullNote = jest.fn();
     startAiOrganize = jest.fn(() => true);
 
     const { initMobileClassHubsUi } = loadClassHubsUi();
@@ -114,7 +112,6 @@ describe('mobile Class Hubs UI', () => {
       },
       openNote,
       openReminder,
-      startFullNote,
       startAiOrganize,
     });
   });
@@ -195,7 +192,7 @@ describe('mobile Class Hubs UI', () => {
     expect(cueDate.getHours()).toBe(10);
   });
 
-  test('opens existing Notes and Reminders through their canonical editors', () => {
+  test('opens saved Notes and Reminders through their canonical editors without a second note-creation action', () => {
     notes.push({
       id: 'class-note',
       title: 'Outdoor lesson',
@@ -215,11 +212,10 @@ describe('mobile Class Hubs UI', () => {
 
     document.querySelector('[data-class-hub-note-open="class-note"]').click();
     document.querySelector('[data-class-hub-reminder-open="class-task"]').click();
-    document.querySelector('[data-class-hub-full-note]').click();
 
     expect(openNote).toHaveBeenCalledWith('class-note');
     expect(openReminder).toHaveBeenCalledWith('class-task');
-    expect(startFullNote).toHaveBeenCalledWith('class-existing');
+    expect(document.querySelector('[data-class-hub-full-note]')).toBeNull();
   });
 
   test('refreshes an open hub when Saved notes is reopened after an editor autosave', () => {
@@ -245,11 +241,15 @@ describe('mobile Class Hubs UI', () => {
     document.querySelector('[data-class-hub-open="class-existing"]').click();
 
     const action = document.querySelector('[data-class-hub-ai-organize]');
+    const notesSection = action.closest('.class-hub-section');
     expect(action.textContent).toBe('Add note');
     expect(action.getAttribute('aria-label')).toBe('Add note to Year 9 English');
-    expect(document.querySelector('.class-hub-ai-organize-title')).toBeNull();
-    expect(document.querySelector('.class-hub-ai-organize-privacy')).toBeNull();
-    expect(document.querySelector('[data-class-hub-full-note]').textContent).toBe('Open editor');
+    expect(notesSection.querySelector('.class-hub-section-title').textContent).toBe('Notes');
+    expect(document.querySelectorAll('[data-class-hub-ai-organize]')).toHaveLength(1);
+    expect(document.querySelector('[data-class-hub-full-note]')).toBeNull();
+    expect(document.querySelector('[data-class-thought-review-host="class-existing"]')).not.toBeNull();
+    expect(document.querySelector('[data-class-thought-review-host="class-existing"]').childElementCount).toBe(0);
+    expect(document.body.classList.contains('class-hub-open')).toBe(true);
     expect(document.querySelector('#classHubsPanel textarea')).toBeNull();
 
     action.click();
@@ -261,6 +261,42 @@ describe('mobile Class Hubs UI', () => {
     }));
   });
 
+  test('announces hub renders and clears the global hub-open state on back', () => {
+    const rendered = jest.fn();
+    document.addEventListener('memoryCue:classHubRendered', rendered);
+
+    document.querySelector('[data-class-hub-open="class-existing"]').click();
+    expect(rendered).toHaveBeenLastCalledWith(expect.objectContaining({
+      detail: { hubId: 'class-existing' },
+    }));
+    expect(document.body.classList.contains('class-hub-open')).toBe(true);
+
+    document.querySelector('[data-class-hub-back]').click();
+    expect(rendered).toHaveBeenLastCalledWith(expect.objectContaining({
+      detail: { hubId: '' },
+    }));
+    expect(document.body.classList.contains('class-hub-open')).toBe(false);
+
+    document.removeEventListener('memoryCue:classHubRendered', rendered);
+  });
+
+  test('shows the global New action state only while the Class Hub overview is visible', () => {
+    const rendered = jest.fn();
+    document.addEventListener('memoryCue:classHubRendered', rendered);
+    document.querySelector('[data-class-hub-open="class-existing"]').click();
+    expect(document.body.classList.contains('class-hub-open')).toBe(true);
+
+    document.dispatchEvent(new CustomEvent('memoryCue:notesModeChanged', {
+      detail: { mode: 'notebooks' },
+    }));
+
+    expect(document.body.classList.contains('class-hub-open')).toBe(false);
+    expect(rendered).toHaveBeenLastCalledWith(expect.objectContaining({
+      detail: { hubId: '' },
+    }));
+    document.removeEventListener('memoryCue:classHubRendered', rendered);
+  });
+
   test('stays in the hub with an inline status when a note cannot start', () => {
     startAiOrganize.mockReturnValue(false);
     document.querySelector('[data-class-hub-open="class-existing"]').click();
@@ -269,7 +305,7 @@ describe('mobile Class Hubs UI', () => {
 
     expect(document.querySelector('[data-class-hub-heading]').textContent).toBe('Year 9 English');
     expect(document.querySelector('[data-class-hub-status]').textContent)
-      .toBe('Finish the current Capture first, then try again.');
+      .toBe('Another action is still running. Try again in a moment.');
   });
 
   test('returns to the requested hub with a live status and heading focus', async () => {

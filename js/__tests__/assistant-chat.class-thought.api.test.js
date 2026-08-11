@@ -116,7 +116,7 @@ test('organises only the supplied class thought into a bounded review draft', as
   expect(payload.classThoughtDraft.note.title).toBe('Outdoor lesson follow-up');
   expect(payload.classThoughtDraft.note.body).toHaveLength(1800);
   expect(payload.classThoughtDraft.note.tags).toEqual(['behaviour', 'HPE', 'follow-up', 'students', 'extra']);
-  expect(payload.classThoughtDraft.followUps).toHaveLength(5);
+  expect(payload.classThoughtDraft.followUps).toHaveLength(3);
   expect(openAiBody.store).toBe(false);
   expect(openAiBody.reasoning).toEqual({ effort: 'minimal' });
   expect(openAiBody.max_output_tokens).toBe(1600);
@@ -126,7 +126,9 @@ test('organises only the supplied class thought into a bounded review draft', as
     name: 'organise_class_thought',
     strict: true,
   });
-  expect(openAiBody.text.format.schema.properties.followUps.maxItems).toBe(5);
+  expect(openAiBody.text.format.schema.properties.followUps.maxItems).toBe(3);
+  expect(openAiText).toContain('smallest useful follow-up list');
+  expect(openAiText).toContain('Do not infer extra administration');
   expect(openAiText).toContain('Two students left during the outdoor lesson.');
   expect(openAiText).toContain('Year 8 HPE');
   expect(openAiText).not.toContain('CANARY_PRIVATE_NOTE');

@@ -138,6 +138,7 @@ function initAssistant() {
     const recallList = document.getElementById('memoryRecallList');
     let lastRecallNotificationKey = '';
     let isAssistantSending = false;
+    let assistantSendGeneration = 0;
     let isWordRescueChoiceOpen = false;
     let activeWordRescueMode = '';
     let activeWordRescueSession = null;
@@ -886,12 +887,42 @@ function initAssistant() {
       appendConversationMessage('assistant', text);
     };
 
-    const isCaptureViewActive = () => {
+    const getActiveView = () => {
       const activeView = typeof document.body?.dataset?.activeView === 'string'
         ? document.body.dataset.activeView
         : '';
+      return activeView;
+    };
+
+    const isCaptureViewActive = () => {
+      const activeView = getActiveView();
       return !activeView || activeView === 'capture';
     };
+
+    const isClassThoughtHubViewActive = () => (
+      getActiveView() === 'notebooks'
+      && document.body?.classList.contains('class-hub-open')
+    );
+
+    const getClassThoughtReviewHost = (expectedHubId = activeClassThoughtContext?.hubId || '') => {
+      if (!isClassThoughtHubViewActive()) {
+        return null;
+      }
+      const host = document.querySelector('#classHubsPanel [data-class-thought-review-host]');
+      if (!(host instanceof HTMLElement)) {
+        return null;
+      }
+      const renderedHubId = host.dataset.classThoughtReviewHost || '';
+      if (expectedHubId && renderedHubId !== expectedHubId) {
+        return null;
+      }
+      return host;
+    };
+
+    const isActiveClassThoughtHubView = () => Boolean(
+      activeClassThoughtContext?.hubId
+      && getClassThoughtReviewHost(activeClassThoughtContext.hubId),
+    );
 
     const normalizeWordRescueCoachSession = (value, cue = '') => {
       if (!value || typeof value !== 'object' || value.mode !== 'coach') {
@@ -1028,7 +1059,7 @@ function initAssistant() {
 
     const updateClassThoughtModeUi = () => {
       const classSessionIsActive = Boolean(activeClassThoughtContext);
-      const modeIsActive = classSessionIsActive && classThoughtOwnsComposer && isCaptureViewActive();
+      const modeIsActive = classSessionIsActive && classThoughtOwnsComposer && isActiveClassThoughtHubView();
       classThoughtModeBar?.classList.toggle('hidden', !modeIsActive);
       if (classThoughtModeLabel instanceof HTMLElement) {
         classThoughtModeLabel.textContent = activeClassThoughtContext?.hubName || 'Class';
@@ -1047,13 +1078,21 @@ function initAssistant() {
         memoryCoachLauncher.disabled = classSessionIsActive;
       }
       document.body?.classList.toggle('class-thought-mode-active', modeIsActive);
+      document.body?.classList.toggle(
+        'class-thought-review-active',
+        Boolean(modeIsActive && activeClassThoughtDraft),
+      );
 
       if (modeIsActive) {
-        thinkingBarInput.placeholder = activeClassThoughtDraft
+        thinkingBarInput.placeholder = isClassThoughtGenerating
+          ? 'Preparing your note…'
+          : activeClassThoughtDraft
           ? 'Review the draft above before continuing'
           : `Add anything about ${activeClassThoughtContext.hubName}…`;
         if (thinkingBarLabel instanceof HTMLElement) {
-          thinkingBarLabel.textContent = activeClassThoughtDraft
+          thinkingBarLabel.textContent = isClassThoughtGenerating
+            ? `Preparing note for ${activeClassThoughtContext.hubName}`
+            : activeClassThoughtDraft
             ? 'Review your note'
             : `Add note for ${activeClassThoughtContext.hubName}`;
         }
@@ -1171,6 +1210,11 @@ function initAssistant() {
         return;
       }
       classThoughtRequestGeneration += 1;
+      if (isClassThoughtGenerating) {
+        assistantSendGeneration += 1;
+        isAssistantSending = false;
+        setWordRescueBusy(false);
+      }
       isClassThoughtGenerating = false;
       classThoughtComposerValue = thinkingBarInput.value || '';
       thinkingBarInput.value = classThoughtPriorCaptureDraft;
@@ -1180,7 +1224,7 @@ function initAssistant() {
     };
 
     const resumeClassThoughtComposer = () => {
-      if (!activeClassThoughtContext || classThoughtOwnsComposer) {
+      if (!activeClassThoughtContext || classThoughtOwnsComposer || isAssistantSending) {
         return;
       }
       classThoughtPriorCaptureDraft = thinkingBarInput.value || '';
@@ -1193,7 +1237,9 @@ function initAssistant() {
     const returnToClassThoughtHub = (status = '') => {
       const hubId = activeClassThoughtContext?.hubId || activeClassThoughtDraft?.hubId || '';
       closeClassThought({ restoreCaptureDraft: true, keepFocus: false });
-      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      if (getActiveView() !== 'notebooks') {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      }
       if (hubId) {
         document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
           detail: { hubId, status },
@@ -1204,7 +1250,9 @@ function initAssistant() {
     const pauseAndReturnToClassThoughtHub = () => {
       const hubId = activeClassThoughtContext?.hubId || '';
       pauseClassThoughtComposer();
-      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      if (getActiveView() !== 'notebooks') {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+      }
       if (hubId) {
         document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
           detail: {
@@ -1573,11 +1621,11 @@ function initAssistant() {
 
     const renderClassThoughtReview = () => {
       const draft = activeClassThoughtDraft;
+      const reviewHost = getClassThoughtReviewHost();
       if (
         !draft
         || !activeClassThoughtContext
-        || !isCaptureViewActive()
-        || !(chatConversationContainer instanceof HTMLElement)
+        || !reviewHost
       ) {
         return;
       }
@@ -1589,48 +1637,32 @@ function initAssistant() {
 
       const eyebrow = document.createElement('p');
       eyebrow.className = 'class-thought-review-eyebrow';
-      eyebrow.textContent = 'AI draft - not saved automatically';
+      eyebrow.textContent = draft.savedNote ? 'Note saved - follow-ups pending' : 'AI draft - not saved';
 
       const title = document.createElement('h3');
       title.id = 'classThoughtReviewTitle';
       title.className = 'class-thought-review-title';
       title.dataset.classThoughtReviewHeading = 'true';
       title.tabIndex = -1;
-      title.textContent = 'Review your note';
-
-      const copy = document.createElement('p');
-      copy.className = 'class-thought-review-copy';
-      copy.textContent = 'Choose any follow-ups you want to add.';
-
-      const privacy = document.createElement('p');
-      privacy.className = 'class-thought-review-privacy';
-      privacy.textContent = `Sent to AI: this note and "${draft.hubName}" only. Not saved yet.`;
+      title.textContent = 'Review note';
 
       const noteSection = document.createElement('section');
       noteSection.className = 'class-thought-review-section';
-      const noteHeading = document.createElement('h4');
-      noteHeading.className = 'class-thought-review-section-title';
-      noteHeading.textContent = draft.savedNote ? 'Note - saved' : 'Note to save';
       const noteTitle = document.createElement('div');
       noteTitle.className = 'class-thought-review-note-title';
       noteTitle.textContent = draft.note.title;
       const noteBody = document.createElement('p');
       noteBody.className = 'class-thought-review-note-body';
       noteBody.textContent = draft.note.body;
-      noteSection.append(noteHeading, noteTitle, noteBody);
+      noteSection.append(noteTitle, noteBody);
 
       const followSection = document.createElement('section');
       followSection.className = 'class-thought-review-section';
       const followHeading = document.createElement('h4');
       followHeading.className = 'class-thought-review-section-title';
-      followHeading.textContent = 'Suggested follow-ups';
+      followHeading.textContent = 'Follow-ups';
       followSection.appendChild(followHeading);
-      if (!draft.followUps.length) {
-        const noFollowUps = document.createElement('p');
-        noFollowUps.className = 'class-thought-review-copy';
-        noFollowUps.textContent = 'No clear follow-ups were found. You can save the note on its own.';
-        followSection.appendChild(noFollowUps);
-      } else {
+      if (draft.followUps.length) {
         const list = document.createElement('ul');
         list.className = 'class-thought-review-list';
         draft.followUps.forEach((followUp) => {
@@ -1663,9 +1695,12 @@ function initAssistant() {
         status.className = 'class-thought-review-copy';
         status.setAttribute('role', 'status');
         status.textContent = draft.status;
-        card.append(eyebrow, title, copy, privacy, noteSection, followSection, status);
+        card.append(eyebrow, title, noteSection);
+        if (draft.followUps.length) card.appendChild(followSection);
+        card.appendChild(status);
       } else {
-        card.append(eyebrow, title, copy, privacy, noteSection, followSection);
+        card.append(eyebrow, title, noteSection);
+        if (draft.followUps.length) card.appendChild(followSection);
       }
 
       const actions = document.createElement('div');
@@ -1675,9 +1710,7 @@ function initAssistant() {
       saveButton.className = 'class-thought-review-button class-thought-review-button--primary';
       saveButton.dataset.classThoughtSave = 'true';
       saveButton.disabled = isClassThoughtSaving;
-      saveButton.textContent = draft.savedNote
-        ? 'Retry unsaved follow-ups'
-        : 'Save note and selected follow-ups';
+      saveButton.textContent = draft.savedNote ? 'Retry' : 'Save';
       saveButton.addEventListener('click', saveClassThoughtDraft);
 
       const cancelButton = document.createElement('button');
@@ -1685,7 +1718,7 @@ function initAssistant() {
       cancelButton.className = 'class-thought-review-button';
       cancelButton.dataset.classThoughtCancel = 'true';
       cancelButton.disabled = isClassThoughtSaving;
-      cancelButton.textContent = draft.savedNote ? 'Finish without remaining follow-ups' : 'Discard draft';
+      cancelButton.textContent = draft.savedNote ? 'Done' : 'Discard';
       cancelButton.addEventListener('click', () => {
         const savedCount = draft.followUps.filter((item) => item.saved).length;
         returnToClassThoughtHub(draft.savedNote
@@ -1694,7 +1727,7 @@ function initAssistant() {
       });
       actions.append(saveButton, cancelButton);
       card.appendChild(actions);
-      chatConversationContainer.appendChild(card);
+      reviewHost.replaceChildren(card);
     };
 
     const renderWordRescueSupplementalUi = () => {
@@ -1846,6 +1879,7 @@ function initAssistant() {
       if (!(chatConversationContainer instanceof HTMLElement)) {
         return;
       }
+      getClassThoughtReviewHost()?.replaceChildren();
       chatConversationContainer.innerHTML = '';
       const messages = getMessages();
 
@@ -2528,14 +2562,15 @@ function initAssistant() {
         return;
       }
 
-      if (activeClassThoughtDraft) {
+      if (activeClassThoughtDraft && isActiveClassThoughtHubView() && classThoughtOwnsComposer) {
         activeClassThoughtDraft.status = 'Review or discard this note before adding another.';
         renderConversationHistory();
         return;
       }
 
       isAssistantSending = true;
-      const classThoughtContextForRequest = isCaptureViewActive() && classThoughtOwnsComposer && activeClassThoughtContext
+      const assistantSendToken = ++assistantSendGeneration;
+      const classThoughtContextForRequest = isActiveClassThoughtHubView() && classThoughtOwnsComposer && activeClassThoughtContext
         ? { ...activeClassThoughtContext }
         : null;
       const classThoughtRequestToken = classThoughtContextForRequest
@@ -2552,6 +2587,7 @@ function initAssistant() {
         isClassThoughtGenerating = true;
         activeClassThoughtDraft = null;
         updateClassThoughtModeUi();
+        setThinkingBarStatus('Preparing your note…');
       }
       setWordRescueBusy(true);
 
@@ -2574,7 +2610,7 @@ function initAssistant() {
           : 'Saved to Inbox';
 
         if (classThoughtContextForRequest) {
-          const canApplyClassThoughtResponse = isCaptureViewActive()
+          const canApplyClassThoughtResponse = isActiveClassThoughtHubView()
             && classThoughtRequestToken === classThoughtRequestGeneration
             && activeClassThoughtContext?.hubId === classThoughtContextForRequest.hubId;
           if (!canApplyClassThoughtResponse) {
@@ -2595,11 +2631,12 @@ function initAssistant() {
           updateClassThoughtModeUi();
           renderConversationHistory();
           setThinkingBarStatus('Draft ready. Review it before saving.');
-          const reviewHeading = chatConversationContainer?.querySelector('[data-class-thought-review-heading]');
+          const reviewHost = getClassThoughtReviewHost();
+          const reviewHeading = reviewHost?.querySelector('[data-class-thought-review-heading]');
           if (reviewHeading instanceof HTMLElement) {
             reviewHeading.focus({ preventScroll: true });
+            reviewHost?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
           }
-          revealLatestCaptureMessage();
           return;
         }
 
@@ -2638,14 +2675,15 @@ function initAssistant() {
           isClassThoughtGenerating = false;
           updateClassThoughtModeUi();
           renderConversationHistory();
-          appendAssistantMessage("I couldn't prepare this note right now. Your original note is still here.", 'assistant-message assistant-message--error');
-          setThinkingBarStatus('Nothing was added. You can try again or return to the class hub.');
+          setThinkingBarStatus('Nothing was added. Your note is still here, so you can try again.');
           thinkingBarInput.focus();
         } else if (!classThoughtContextForRequest) {
           appendAssistantMessage("Sorry, I couldn't process that capture.", 'assistant-message assistant-message--error');
         }
       } finally {
-        isAssistantSending = false;
+        if (assistantSendToken === assistantSendGeneration) {
+          isAssistantSending = false;
+        }
         if (
           classThoughtContextForRequest
           && classThoughtRequestToken === classThoughtRequestGeneration
@@ -2654,7 +2692,23 @@ function initAssistant() {
           isClassThoughtGenerating = false;
           updateClassThoughtModeUi();
         }
-        setWordRescueBusy(false);
+        if (assistantSendToken === assistantSendGeneration) {
+          setWordRescueBusy(false);
+        }
+        if (
+          assistantSendToken === assistantSendGeneration
+          && !classThoughtContextForRequest
+          && activeClassThoughtContext
+          && isActiveClassThoughtHubView()
+          && !classThoughtOwnsComposer
+        ) {
+          resumeClassThoughtComposer();
+          renderConversationHistory();
+          const focusTarget = activeClassThoughtDraft
+            ? getClassThoughtReviewHost()?.querySelector('[data-class-thought-review-heading]')
+            : thinkingBarInput;
+          focusTarget?.focus?.({ preventScroll: true });
+        }
       }
     };
 
@@ -2682,6 +2736,14 @@ function initAssistant() {
       if (activeClassThoughtContext) {
         if (activeClassThoughtContext.hubId === requestedHubId) {
           detail.accepted = true;
+          if (isActiveClassThoughtHubView()) {
+            resumeClassThoughtComposer();
+            renderConversationHistory();
+            const focusTarget = activeClassThoughtDraft
+              ? getClassThoughtReviewHost()?.querySelector('[data-class-thought-review-heading]')
+              : thinkingBarInput;
+            focusTarget?.focus?.({ preventScroll: true });
+          }
         }
         return;
       }
@@ -2705,16 +2767,34 @@ function initAssistant() {
       isClassThoughtSaving = false;
       detail.accepted = true;
       setThinkingBarStatus('');
-      if (isCaptureViewActive()) {
+      if (isActiveClassThoughtHubView()) {
         resumeClassThoughtComposer();
       }
       updateClassThoughtModeUi();
       renderConversationHistory();
       thinkingBarComposer?.autoResize?.();
+      if (classThoughtOwnsComposer) {
+        thinkingBarInput.focus({ preventScroll: true });
+      }
     };
     window.addEventListener('memoryCue:classThoughtStart', handleClassThoughtStart);
+    const handleClassHubRendered = (event) => {
+      if (!activeClassThoughtContext) {
+        return;
+      }
+      const renderedHubId = typeof event?.detail?.hubId === 'string' ? event.detail.hubId : '';
+      if (renderedHubId !== activeClassThoughtContext.hubId || !isActiveClassThoughtHubView()) {
+        pauseClassThoughtComposer();
+        return;
+      }
+      if (classThoughtOwnsComposer) {
+        renderConversationHistory();
+      }
+    };
+    document.addEventListener('memoryCue:classHubRendered', handleClassHubRendered);
     window.addEventListener('pagehide', () => {
       window.removeEventListener('memoryCue:classThoughtStart', handleClassThoughtStart);
+      document.removeEventListener('memoryCue:classHubRendered', handleClassHubRendered);
     }, { once: true });
 
     wordRescueLauncher?.addEventListener('click', () => {
@@ -2751,7 +2831,13 @@ function initAssistant() {
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape' || !activeClassThoughtContext || isClassThoughtSaving) {
+      if (
+        event.key !== 'Escape'
+        || !activeClassThoughtContext
+        || isClassThoughtSaving
+        || !isActiveClassThoughtHubView()
+        || !classThoughtOwnsComposer
+      ) {
         return;
       }
       event.preventDefault();
@@ -2772,25 +2858,12 @@ function initAssistant() {
     });
 
     window.addEventListener('memorycue:navigation:changed', (event) => {
-      if (event?.detail?.view !== 'capture' && activeClassThoughtContext) {
-        pauseClassThoughtComposer();
-      } else if (event?.detail?.view === 'capture' && activeClassThoughtContext) {
-        resumeClassThoughtComposer();
-        renderConversationHistory();
-        const focusComposer = () => {
-          if (activeClassThoughtDraft) {
-            chatConversationContainer
-              ?.querySelector('[data-class-thought-review-heading]')
-              ?.focus({ preventScroll: true });
-            revealLatestCaptureMessage();
-          } else {
-            thinkingBarInput.focus({ preventScroll: true });
-          }
-        };
-        if (typeof window.requestAnimationFrame === 'function') {
-          window.requestAnimationFrame(focusComposer);
+      if (activeClassThoughtContext) {
+        if (event?.detail?.view === 'notebooks' && isActiveClassThoughtHubView()) {
+          resumeClassThoughtComposer();
+          renderConversationHistory();
         } else {
-          setTimeout(focusComposer, 0);
+          pauseClassThoughtComposer();
         }
       }
       if (event?.detail?.view !== 'capture' && (activeWordRescueMode || isWordRescueChoiceOpen)) {
@@ -5812,7 +5885,6 @@ const initMobileNotes = () => {
   const fabNewNoteButton = document.getElementById('mobile-fab-new-note');
 
   const {
-    openNoteEditorForNewNote,
     startNewNoteFromUI,
     flushAutoSave: editorFlushAutoSave,
     resizeTitleInput: editorResizeTitleInput,
@@ -5876,21 +5948,6 @@ const initMobileNotes = () => {
     setReminderCompleted: (id, completed) => reminderControllerApi?.setReminderCompleted?.(id, completed) || null,
     openReminder: (id) => reminderControllerApi?.openReminderById?.(id) || false,
     openNote: (id) => openNoteFromDashboard(id),
-    startFullNote: (folderId) => {
-      const timestamp = new Date().toISOString();
-      const draftNote = createNote('', '', { folderId, updatedAt: timestamp });
-      openNoteEditorForNewNote({
-        ...draftNote,
-        title: '',
-        body: '',
-        bodyHtml: '',
-        bodyText: '',
-        folderId,
-        updatedAt: timestamp,
-      });
-      applyNotesMode('notebooks');
-      return true;
-    },
     startAiOrganize: (hub) => {
       const detail = {
         hubId: typeof hub?.id === 'string' ? hub.id : '',
@@ -5901,7 +5958,6 @@ const initMobileNotes = () => {
       if (!detail.accepted) {
         return false;
       }
-      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
       return true;
     },
   });

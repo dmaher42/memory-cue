@@ -138,9 +138,30 @@ body[data-active-view="notebooks"] #wordRescueModeBar,
 body[data-active-view="reminders"] #wordRescueModeBar,
 body[data-active-view="notebooks"] #memoryCoachModeBar,
 body[data-active-view="reminders"] #memoryCoachModeBar,
-body[data-active-view="notebooks"] #classThoughtModeBar,
 body[data-active-view="reminders"] #classThoughtModeBar {
   display: none;
+}
+
+body[data-active-view="notebooks"].class-thought-mode-active:not(.class-thought-review-active)
+  #thinkingBarContainer {
+  display: block !important;
+}
+
+body[data-active-view="notebooks"].class-thought-review-active #thinkingBarContainer {
+  display: none !important;
+}
+
+body[data-active-view="notebooks"].class-thought-mode-active:not(.class-thought-review-active)
+  #view-notebook {
+  padding-bottom: 8.5rem !important;
+}
+
+body[data-active-view="notebooks"].class-thought-mode-active #thinkingBarStatus:not(.hidden) {
+  display: block;
+}
+
+body.class-hub-open #newNoteMobile {
+  display: none !important;
 }
 
 #thinkingBarContainer #wordRescueExitButton.word-rescue-exit-button,
@@ -839,18 +860,17 @@ html.dark #thinkingBarVoiceButton.is-listening {
   flex: 0 0 auto;
 }
 
-#classHubsPanel .class-hub-ai-organize {
-  display: flex;
-  margin-top: 0.65rem;
+.class-thought-inline-review-host:empty {
+  display: none;
 }
 
-#classHubsPanel .class-hub-ai-organize-button {
-  width: 100%;
-  max-width: none;
-  text-align: center;
+.class-thought-inline-review-host:not(:empty) {
+  display: block;
+  margin-top: 0.7rem;
+  scroll-margin-top: 4rem;
 }
 
-#chatConversationContainer .class-thought-review-card {
+.class-thought-review-card {
   display: grid;
   align-self: center;
   gap: 0.72rem;
@@ -865,7 +885,7 @@ html.dark #thinkingBarVoiceButton.is-listening {
   overflow-wrap: anywhere;
 }
 
-#chatConversationContainer .class-thought-review-eyebrow {
+.class-thought-review-eyebrow {
   color: var(--accent-color, #0f766e);
   font-size: 0.7rem;
   font-weight: 800;
@@ -874,40 +894,32 @@ html.dark #thinkingBarVoiceButton.is-listening {
   text-transform: uppercase;
 }
 
-#chatConversationContainer .class-thought-review-title,
-#chatConversationContainer .class-thought-review-section-title {
+.class-thought-review-title,
+.class-thought-review-section-title {
   margin: 0;
   color: var(--text-main, #1f2937);
   font-weight: 800;
   line-height: 1.3;
 }
 
-#chatConversationContainer .class-thought-review-title {
+.class-thought-review-title {
   margin-top: -0.38rem;
   font-size: 1.04rem;
 }
 
-#chatConversationContainer .class-thought-review-copy,
-#chatConversationContainer .class-thought-review-privacy,
-#chatConversationContainer .class-thought-review-note-body {
+.class-thought-review-copy,
+.class-thought-review-note-body {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.45;
   white-space: pre-wrap;
 }
 
-#chatConversationContainer .class-thought-review-copy,
-#chatConversationContainer .class-thought-review-privacy {
+.class-thought-review-copy {
   color: var(--text-muted, #6b7280);
 }
 
-#chatConversationContainer .class-thought-review-privacy {
-  padding: 0.62rem 0.7rem;
-  border-radius: 0.72rem;
-  background: color-mix(in srgb, #fffbeb 78%, var(--surface-elevated, #ffffff) 22%);
-}
-
-#chatConversationContainer .class-thought-review-section {
+.class-thought-review-section {
   display: grid;
   gap: 0.48rem;
   min-width: 0;
@@ -917,17 +929,17 @@ html.dark #thinkingBarVoiceButton.is-listening {
   background: var(--surface-elevated, #ffffff);
 }
 
-#chatConversationContainer .class-thought-review-section-title {
+.class-thought-review-section-title {
   font-size: 0.82rem;
 }
 
-#chatConversationContainer .class-thought-review-note-title {
+.class-thought-review-note-title {
   font-size: 0.9rem;
   font-weight: 750;
   line-height: 1.35;
 }
 
-#chatConversationContainer .class-thought-review-list {
+.class-thought-review-list {
   display: grid;
   gap: 0.38rem;
   margin: 0;
@@ -935,7 +947,7 @@ html.dark #thinkingBarVoiceButton.is-listening {
   list-style: none;
 }
 
-#chatConversationContainer .class-thought-review-item {
+.class-thought-review-item {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
@@ -944,7 +956,7 @@ html.dark #thinkingBarVoiceButton.is-listening {
   background: color-mix(in srgb, var(--surface-elevated, #ffffff) 86%, #f1f5f9 14%);
 }
 
-#chatConversationContainer .class-thought-review-check-wrap {
+.class-thought-review-check-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -952,27 +964,27 @@ html.dark #thinkingBarVoiceButton.is-listening {
   height: 44px;
 }
 
-#chatConversationContainer .class-thought-review-check {
+.class-thought-review-check {
   width: 20px;
   height: 20px;
   margin: 0;
   accent-color: var(--accent-color, #0f766e);
 }
 
-#chatConversationContainer .class-thought-review-item-copy {
+.class-thought-review-item-copy {
   min-width: 0;
   padding: 0.58rem 0.62rem 0.58rem 0;
   font-size: 0.82rem;
   line-height: 1.4;
 }
 
-#chatConversationContainer .class-thought-review-actions {
+.class-thought-review-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
-#chatConversationContainer .class-thought-review-button {
+.class-thought-review-button {
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -990,19 +1002,19 @@ html.dark #thinkingBarVoiceButton.is-listening {
   cursor: pointer;
 }
 
-#chatConversationContainer .class-thought-review-button--primary {
+.class-thought-review-button--primary {
   border-color: var(--accent-color, #0f766e);
   background: var(--accent-color, #0f766e);
   color: #ffffff;
 }
 
-#chatConversationContainer .class-thought-review-button:focus-visible,
-#chatConversationContainer .class-thought-review-check:focus-visible {
+.class-thought-review-button:focus-visible,
+.class-thought-review-check:focus-visible {
   outline: 2px solid var(--accent-color, #0f766e);
   outline-offset: 2px;
 }
 
-#chatConversationContainer .class-thought-review-button:disabled {
+.class-thought-review-button:disabled {
   opacity: 0.58;
   cursor: wait;
 }
@@ -1012,7 +1024,7 @@ html.dark #thinkingBarVoiceButton.is-listening {
     align-items: flex-start;
   }
 
-  #chatConversationContainer .class-thought-review-card {
+  .class-thought-review-card {
     padding: 0.78rem;
   }
 }
