@@ -122,6 +122,14 @@ describe('mobile Class Hubs UI', () => {
     document.head.innerHTML = '';
   });
 
+  test('keeps the Class hubs header compact without explanatory copy', () => {
+    const panel = document.getElementById('classHubsPanel');
+
+    expect(panel.querySelector('.class-hubs-title').textContent).toBe('Class hubs');
+    expect(panel.querySelector('[data-class-hub-create]').textContent).toBe('+ Class');
+    expect(panel.textContent).not.toContain('Keep notes and follow-ups for each class together.');
+  });
+
   test('creates a class, adds a follow-up and completes it without changing ordinary Notes', async () => {
     const ordinaryNoteBefore = JSON.stringify(notes[0]);
     const ordinaryReminderBefore = JSON.stringify(reminders[0]);

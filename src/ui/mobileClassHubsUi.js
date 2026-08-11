@@ -452,7 +452,6 @@ export function initMobileClassHubsUi(options = {}) {
     const headingCopy = createElement('div');
     headingCopy.append(
       createElement('h3', 'class-hubs-title', 'Class hubs'),
-      createElement('p', 'class-hubs-copy', 'Keep notes and follow-ups for each class together.'),
     );
     const add = createElement('button', 'class-hub-action class-hub-action--primary', '+ Class');
     add.type = 'button';
