@@ -271,7 +271,11 @@ describe('mobile Class Hubs UI', () => {
     }));
     expect(document.body.classList.contains('class-hub-open')).toBe(true);
 
-    document.querySelector('[data-class-hub-back]').click();
+    const back = document.querySelector('[data-class-hub-back]');
+    expect(back.textContent).toBe('← Back');
+    expect(back.getAttribute('aria-label')).toBe('Back to Class hubs');
+    expect(document.querySelectorAll('[data-class-hub-back]')).toHaveLength(1);
+    back.click();
     expect(rendered).toHaveBeenLastCalledWith(expect.objectContaining({
       detail: { hubId: '' },
     }));

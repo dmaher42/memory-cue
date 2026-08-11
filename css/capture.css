@@ -160,7 +160,8 @@ body[data-active-view="notebooks"].class-thought-mode-active #thinkingBarStatus:
   display: block;
 }
 
-body.class-hub-open #newNoteMobile {
+body.class-hub-open #newNoteMobile,
+body.class-hub-open #notesHeaderActions .notes-overview-toggle {
   display: none !important;
 }
 

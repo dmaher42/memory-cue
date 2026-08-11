@@ -482,7 +482,7 @@ export function initMobileClassHubsUi(options = {}) {
     const completed = reminders.filter(isCompletedReminder);
 
     const header = createElement('div', 'class-hub-detail-heading');
-    const back = createElement('button', 'class-hub-back', 'Class hubs');
+    const back = createElement('button', 'class-hub-back', '← Back');
     back.type = 'button';
     back.dataset.classHubBack = 'true';
     back.setAttribute('aria-label', 'Back to Class hubs');
