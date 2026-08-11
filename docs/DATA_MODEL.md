@@ -38,6 +38,30 @@
 }
 ```
 
+## ClassHubFolder and linked records
+A Class Hub extends the existing Notes folder record. Notes remain ordinary Notes, and class follow-ups remain ordinary Reminders.
+
+```json
+{
+  "folder": { "id": "class-y8-hpe", "name": "Year 8 HPE", "order": 4, "kind": "class-hub" },
+  "note": { "folderId": "class-y8-hpe" },
+  "followUpMetadata": {
+    "type": "class-follow-up",
+    "classHubId": "class-y8-hpe",
+    "classHubName": "Year 8 HPE",
+    "suppressNotification": true
+  },
+  "checkListCueMetadata": {
+    "type": "class-list-cue",
+    "classHubId": "class-y8-hpe",
+    "classHubName": "Year 8 HPE",
+    "suppressNotification": false
+  }
+}
+```
+
+The hub relationship uses the stable folder id, not the editable class name. A class-list cue must have a user-selected future date and time.
+
 ## MemoryCoachInboxEntry metadata
 Memory Coach does not introduce a separate record store. A card is a hidden deferred-review Inbox entry with this additional metadata:
 
@@ -89,6 +113,7 @@ Only an explicit `Learn` action creates this metadata. Review ratings update the
 ## Storage authority
 - Inbox entries are persisted in `localStorage.memoryCueInbox`.
 - Notes are persisted in `localStorage.memoryCueNotes` through `js/modules/notes-storage.js`.
+- Class Hub definitions are class-kind records in `localStorage.memoryCueFolders`; their notes and follow-ups continue to use the existing Notes and Reminders stores.
 - Memory Coach cards and schedules are opt-in hidden Inbox metadata inside `localStorage.memoryCueInbox`; there is no separate practice key and no Memory Coach write to Notes or Reminders.
 - Reminders are persisted in the reminders module, mirrored in `localStorage.scheduledReminders`, and synced to service worker IndexedDB.
 - Assistant conversation history is persisted in `sessionStorage.memoryCueAssistantConversation`.

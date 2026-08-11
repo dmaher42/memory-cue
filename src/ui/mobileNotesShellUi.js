@@ -1908,6 +1908,12 @@ export const initMobileNotesShellUi = (options = {}) => {
     renderActiveLessonCard();
     renderTeacherModeEditorBar();
     renderNoteSectionsBar();
+    const NotesModeEvent = document.defaultView?.CustomEvent;
+    if (typeof NotesModeEvent === 'function') {
+      document.dispatchEvent(new NotesModeEvent('memoryCue:notesModeChanged', {
+        detail: { mode: notesMode },
+      }));
+    }
   };
 
   const isSavedNotesSheetOpen = () => savedNotesSheet?.dataset.open === 'true';

@@ -7,7 +7,11 @@ import {
   createNote,
   NOTES_STORAGE_KEY,
 } from './js/modules/notes-storage.js';
-import { getFolders } from './js/modules/notes-storage.js';
+import {
+  getFolders,
+  getClassHubFolders,
+  createClassHubFolder,
+} from './js/modules/notes-storage.js';
 import { getFolderNameById, assignNoteToFolder } from './js/modules/notes-storage.js';
 import { initNotesSync } from './js/modules/notes-sync.js';
 import { saveFolders } from './js/modules/notes-storage.js';
@@ -30,6 +34,7 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
+import { initMobileClassHubsUi } from './src/ui/mobileClassHubsUi.js';
 import { createMemoryCoachUi } from './src/ui/mobileMemoryCoachUi.js';
 
 let reminderControllerApi = null;
@@ -2804,6 +2809,9 @@ const bootstrapReminders = () => {
   })
     .then((controllerApi) => {
       reminderControllerApi = controllerApi;
+      document.dispatchEvent(new CustomEvent('memoryCue:remindersReady', {
+        detail: { items: reminderControllerApi?.getReminders?.() || [] },
+      }));
       // Wire Firebase auth + notes sync for mobile
       wireMobileNotesFirebaseAuth();
     })
@@ -5214,6 +5222,33 @@ const initMobileNotes = () => {
   if (typeof editorResizeTitleInput === 'function') {
     resizeNoteTitleInput = editorResizeTitleInput;
   }
+
+  initMobileClassHubsUi({
+    rootElement: document.getElementById('classHubsPanel'),
+    getClassHubFolders,
+    createClassHubFolder,
+    getNotes: () => loadAllNotes(),
+    getReminders: () => reminderControllerApi?.getReminders?.() || [],
+    createReminder: (payload, options) => reminderControllerApi?.createReminderFromPayload?.(payload, options) || null,
+    setReminderCompleted: (id, completed) => reminderControllerApi?.setReminderCompleted?.(id, completed) || null,
+    openReminder: (id) => reminderControllerApi?.openReminderById?.(id) || false,
+    openNote: (id) => openNoteFromDashboard(id),
+    startFullNote: (folderId) => {
+      const timestamp = new Date().toISOString();
+      const draftNote = createNote('', '', { folderId, updatedAt: timestamp });
+      openNoteEditorForNewNote({
+        ...draftNote,
+        title: '',
+        body: '',
+        bodyHtml: '',
+        bodyText: '',
+        folderId,
+        updatedAt: timestamp,
+      });
+      applyNotesMode('notebooks');
+      return true;
+    },
+  });
 
   updateToolbarState();
   applyInitialSelection();

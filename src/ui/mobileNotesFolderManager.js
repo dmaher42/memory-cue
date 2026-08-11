@@ -266,8 +266,7 @@ export const initMobileNotesFolderManager = (options = {}) => {
       folders.find((folder) => folder && folder.id === 'unsorted')
       || { id: 'unsorted', name: 'Unsorted', order: -1 };
     const normalized = [unsorted, ...userFolders].map((folder, indexValue) => ({
-      id: folder.id,
-      name: folder.name,
+      ...folder,
       order: indexValue,
     }));
 

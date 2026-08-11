@@ -23,6 +23,7 @@ function loadFolderManagerModule() {
     console,
     document,
     window,
+    HTMLElement: window.HTMLElement,
     setTimeout,
     clearTimeout,
     ModalController: class ModalController {
@@ -156,5 +157,42 @@ describe('mobile new folder modal interaction', () => {
     expect(typeof api.openNewFolderDialog).toBe('function');
     api.openNewFolderDialog();
     expect(modalEl.getAttribute('aria-hidden')).toBe('false');
+  });
+
+  test('reordering a class hub preserves its folder metadata', () => {
+    const { initMobileNotesFolderManager } = loadFolderManagerModule();
+    const anchor = document.createElement('button');
+    document.body.appendChild(anchor);
+    const folders = [
+      { id: 'school', name: 'School', order: 0 },
+      {
+        id: 'class-year-8-hpe',
+        name: 'Year 8 HPE',
+        order: 1,
+        kind: 'class-hub',
+        colour: 'teal',
+      },
+    ];
+    const saveFolders = jest.fn(() => true);
+
+    const api = initMobileNotesFolderManager({
+      getFolders: () => folders,
+      saveFolders,
+      buildFolderChips: () => {},
+      renderFilteredNotes: () => {},
+    });
+
+    api.openFolderOverflowMenu('class-year-8-hpe', anchor);
+    const moveUpButton = Array.from(document.body.querySelectorAll('button'))
+      .find((button) => button.textContent === 'Move up');
+    expect(moveUpButton).toBeTruthy();
+    moveUpButton.click();
+
+    expect(saveFolders).toHaveBeenCalledTimes(1);
+    const savedFolders = saveFolders.mock.calls[0][0];
+    expect(savedFolders.find((folder) => folder.id === 'class-year-8-hpe')).toEqual(expect.objectContaining({
+      kind: 'class-hub',
+      colour: 'teal',
+    }));
   });
 });

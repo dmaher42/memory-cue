@@ -18,6 +18,8 @@ const saveAllNotes = window.__mobileMocks?.saveAllNotes || (() => {});
 const createNote = window.__mobileMocks?.createNote || ((note) => note || {});
 const NOTES_STORAGE_KEY = window.__mobileMocks?.NOTES_STORAGE_KEY || 'memoryCueNotes';
 const getFolders = window.__mobileMocks?.getFolders || (() => []);
+const getClassHubFolders = window.__mobileMocks?.getClassHubFolders || (() => []);
+const createClassHubFolder = window.__mobileMocks?.createClassHubFolder || (() => ({ status: 'error', folder: null }));
 const getFolderNameById = window.__mobileMocks?.getFolderNameById || (() => 'General');
 const assignNoteToFolder = window.__mobileMocks?.assignNoteToFolder || (() => {});
 const initNotesSync = window.__mobileMocks?.initNotesSync || (() => ({ handleSessionChange() {}, setFirebaseClient() {} }));
@@ -44,6 +46,12 @@ const initMobileNotesShellUi = window.__mobileMocks?.initMobileNotesShellUi || (
 const initMobileNotesFolderManager = window.__mobileMocks?.initMobileNotesFolderManager || (() => ({}));
 const initMobileNotesBrowserUi = window.__mobileMocks?.initMobileNotesBrowserUi || (() => ({}));
 const initMobileNotesEditorUi = window.__mobileMocks?.initMobileNotesEditorUi || (() => ({}));
+const initMobileClassHubsUi = window.__mobileMocks?.initMobileClassHubsUi || (() => ({
+  render() {},
+  openHub() {},
+  closeHub() {},
+  destroy() {},
+}));
 const createDailyTasksManager = window.__mobileMocks?.createDailyTasksManager || (() => ({}));
 const createMemoryCoachUi = window.__mobileMocks?.createMemoryCoachUi || (() => ({
   activate() {},

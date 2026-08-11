@@ -22,6 +22,12 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 3. Reminders persist to the reminders offline store (`memoryCue:offlineReminders`) and render in reminders UI.
 4. Existing reminder sync/scheduling paths run from the same module.
 
+## Class Hubs inside Notes
+1. A Class Hub is an existing Notes folder with `kind = "class-hub"`; there is no separate class store.
+2. `src/ui/mobileClassHubsUi.js` lists hubs in Saved notes and opens the existing Notes editor with the hub folder already selected.
+3. Class follow-ups are existing Reminder records linked by `metadata.classHubId` and shown in both the hub and Reminders.
+4. Untimed class-list items set `metadata.suppressNotification = true`. A separate, explicitly dated `class-list-cue` reminder can prompt the user to check the hub.
+
 ## Main memory flow
 1. Raw captures are stored in the canonical Inbox store (`memoryCueInbox`); legacy `memoryEntries` data is migrated by the Inbox service.
 2. Notes are stored in `memoryCueNotes` (notebook domain).
@@ -37,6 +43,7 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 - **Notes / notebook memory:** `memoryCueNotes`.
 - **Memory Coach cards and schedules:** opt-in hidden records inside `memoryCueInbox`; no separate storage key.
 - **Folders/taxonomy for notes:** `memoryCueFolders`.
+- **Class Hubs:** class-kind records in `memoryCueFolders`, ordinary Notes linked by `folderId`, and ordinary Reminders linked by `metadata.classHubId`.
 - **Historical local keys with no active readers or writers:** `memoryCueState`, `memoryCueDB`, `brainDumpItems`, and `reminderEntries`. Do not reintroduce these parallel stores.
 
 ## Guardrail

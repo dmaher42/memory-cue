@@ -5167,14 +5167,18 @@ export async function initReminders(sel = {}) {
           return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
         })();
 
+        const notificationsSuppressed = createdEntry?.metadata?.suppressNotification === true;
         scheduleReminderNotification({
           id: createdEntry.id,
           text: createdEntry.title,
           dueAt: createdEntry.due,
           notifyMinutesBefore,
+          metadata: createdEntry.metadata,
         });
-        ensureNotificationPermission();
-        syncCurrentDevicePushRegistration();
+        if (!notificationsSuppressed) {
+          ensureNotificationPermission();
+          syncCurrentDevicePushRegistration();
+        }
         scheduleReminder(createdEntry);
         rescheduleAllReminders();
         emitReminderUpdates();
@@ -5242,11 +5246,24 @@ export async function initReminders(sel = {}) {
     });
     return reminder;
   }
-  function toggleDone(id){
+  function getReminders(){
+    return items.map((item) => ({
+      ...item,
+      metadata: item?.metadata && typeof item.metadata === 'object'
+        ? { ...item.metadata }
+        : item?.metadata ?? null,
+      keywords: Array.isArray(item?.keywords) ? [...item.keywords] : [],
+      semanticEmbedding: Array.isArray(item?.semanticEmbedding)
+        ? [...item.semanticEmbedding]
+        : item?.semanticEmbedding ?? null,
+    }));
+  }
+
+  function setReminderCompleted(id, completed = true){
     const it = items.find(x=>x.id===id);
-    if(!it) return;
-    const completed = !it.done;
-    const updated = reminderDataService.completeReminder(id, completed, {
+    if(!it) return null;
+    const nextCompleted = Boolean(completed);
+    const updated = reminderDataService.completeReminder(id, nextCompleted, {
       onCompleted: (record) => {
         it.done = !!record.done;
         it.completed = !!record.completed;
@@ -5255,11 +5272,13 @@ export async function initReminders(sel = {}) {
       },
     });
     if (!updated) {
-      return;
+      return null;
     }
     saveToFirebase(it);
+    suppressRenderMemoryEvent = true;
     render();
     persistItems();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items: getReminders() });
     if(it.done){
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         navigator.vibrate(10);
@@ -5276,6 +5295,13 @@ export async function initReminders(sel = {}) {
         label: `Reminder reopened · ${it.title}`,
       });
     }
+    return getReminders().find((entry) => entry.id === id) || null;
+  }
+
+  function toggleDone(id){
+    const it = items.find(x=>x.id===id);
+    if(!it) return null;
+    return setReminderCompleted(id, !it.done);
   }
 
   function setReminderPinnedState(id, pinned) {
@@ -7931,6 +7957,8 @@ export async function initReminders(sel = {}) {
 
   activeReminderControllerApi = {
     createReminderFromPayload,
+    getReminders,
+    setReminderCompleted,
     openReminderById,
     render,
     setupReminderFirestoreSync,
@@ -7938,6 +7966,7 @@ export async function initReminders(sel = {}) {
   };
 
   return {
+    createReminderFromPayload,
     cancelReminder,
     scheduleReminder,
     closeActiveNotifications,
@@ -7945,6 +7974,8 @@ export async function initReminders(sel = {}) {
     addNoteToReminder,
     buildRagContext,
     askAssistant,
+    getReminders,
+    setReminderCompleted,
     openReminderById,
     undoCapturedReminder,
     __testing: {
@@ -7968,6 +7999,14 @@ export async function initReminders(sel = {}) {
 
 export function createReminderFromPayload(payload = {}, options = {}) {
   return activeReminderControllerApi?.createReminderFromPayload?.(payload, options);
+}
+
+export function getReminders() {
+  return activeReminderControllerApi?.getReminders?.() || [];
+}
+
+export function setReminderCompleted(id, completed = true) {
+  return activeReminderControllerApi?.setReminderCompleted?.(id, completed) || null;
 }
 
 export function render() {

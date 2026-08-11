@@ -1,4 +1,5 @@
 let reminderControllerModulePromise = null;
+let activeReminderControllerApi = null;
 
 function loadReminderControllerModule() {
   if (!reminderControllerModulePromise) {
@@ -12,6 +13,8 @@ export async function initReminders(sel = {}) {
 
   if (typeof globalThis !== 'undefined') {
     globalThis.createReminderFromPayload = (...args) => controller.createReminderFromPayload(...args);
+    globalThis.getReminders = (...args) => controller.getReminders(...args);
+    globalThis.setReminderCompleted = (...args) => controller.setReminderCompleted(...args);
     globalThis.render = (...args) => controller.render(...args);
     globalThis.setupReminderFirestoreSync = (...args) => controller.setupReminderFirestoreSync(...args);
     // Backward-compatible alias for legacy callers.
@@ -19,5 +22,14 @@ export async function initReminders(sel = {}) {
     globalThis.initReminders = (...args) => controller.initReminders(...args);
   }
 
-  return controller.initReminders(sel);
+  activeReminderControllerApi = await controller.initReminders(sel);
+  return activeReminderControllerApi;
+}
+
+export function getReminders() {
+  return activeReminderControllerApi?.getReminders?.() || [];
+}
+
+export function setReminderCompleted(id, completed = true) {
+  return activeReminderControllerApi?.setReminderCompleted?.(id, completed) || null;
 }

@@ -625,6 +625,30 @@ export const saveAllNotes = (notes, options = {}) => {
 export { NOTES_STORAGE_KEY };
 
 // Folders API
+export const CLASS_HUB_FOLDER_KIND = 'class-hub';
+
+export const isClassHubFolder = (folder) => (
+  Boolean(folder)
+  && typeof folder === 'object'
+  && folder.kind === CLASS_HUB_FOLDER_KIND
+);
+
+const dispatchFoldersUpdated = (folders = []) => {
+  if (typeof document === 'undefined' || typeof CustomEvent !== 'function') {
+    return;
+  }
+
+  try {
+    document.dispatchEvent(new CustomEvent('memoryCue:foldersUpdated', {
+      detail: {
+        items: Array.isArray(folders) ? folders : [],
+      },
+    }));
+  } catch {
+    // Folder persistence must still succeed when an event listener or test DOM is unavailable.
+  }
+};
+
 const CORE_NOTEBOOKS = [
   { id: 'school', name: 'School' },
   { id: 'coaching', name: 'Coaching' },
@@ -637,6 +661,7 @@ const ensureRequiredFolders = (folders = []) => {
     ? folders
         .filter((folder) => folder && typeof folder.id === 'string' && folder.id.trim())
         .map((folder, index) => ({
+          ...folder,
           id: String(folder.id),
           name: typeof folder.name === 'string' ? folder.name : String(folder.id),
           order: typeof folder.order === 'number' ? folder.order : index,
@@ -710,10 +735,85 @@ export const saveFolders = (folders) => {
   try {
     const ensured = ensureRequiredFolders(folders);
     localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(ensured.folders));
+    dispatchFoldersUpdated(ensured.folders);
     return true;
   } catch (e) {
     return false;
   }
+};
+
+export const getClassHubFolders = () => getFolders()
+  .filter(isClassHubFolder)
+  .sort((a, b) => {
+    const orderDifference = Number(a?.order) - Number(b?.order);
+    if (Number.isFinite(orderDifference) && orderDifference !== 0) {
+      return orderDifference;
+    }
+    return String(a?.name || '').localeCompare(String(b?.name || ''), undefined, {
+      sensitivity: 'base',
+    });
+  });
+
+export const createClassHubFolder = (name, options = {}) => {
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  if (!normalizedName) {
+    return { status: 'invalid', folder: null };
+  }
+
+  const normalizedOptions = options && typeof options === 'object' && !Array.isArray(options)
+    ? options
+    : {};
+  const requestedId = typeof normalizedOptions.id === 'string'
+    ? normalizedOptions.id.trim()
+    : '';
+  const folders = getFolders();
+  const normalizedNameKey = normalizedName.toLowerCase();
+  const existingFolder = folders.find((folder) => (
+    String(folder?.name || '').trim().toLowerCase() === normalizedNameKey
+    || (requestedId && String(folder?.id || '') === requestedId)
+  ));
+
+  if (existingFolder) {
+    if (isClassHubFolder(existingFolder)) {
+      return { status: 'duplicate', folder: existingFolder };
+    }
+    const isReservedFolder = existingFolder.id === 'unsorted'
+      || CORE_NOTEBOOKS.some((folder) => folder.id === existingFolder.id);
+    if (isReservedFolder) {
+      return { status: 'reserved', folder: existingFolder };
+    }
+    const upgradedFolder = { ...existingFolder, kind: CLASS_HUB_FOLDER_KIND };
+    const upgradedFolders = folders.map((folder) => (
+      String(folder?.id || '') === String(existingFolder.id)
+        ? upgradedFolder
+        : folder
+    ));
+    if (!saveFolders(upgradedFolders)) {
+      return { status: 'error', folder: null };
+    }
+    const savedFolder = getFolders().find((entry) => String(entry?.id || '') === String(existingFolder.id)) || upgradedFolder;
+    return { status: 'created', folder: savedFolder, upgraded: true };
+  }
+
+  const metadata = normalizedOptions.metadata
+    && typeof normalizedOptions.metadata === 'object'
+    && !Array.isArray(normalizedOptions.metadata)
+    ? normalizedOptions.metadata
+    : {};
+  const folder = {
+    ...metadata,
+    id: requestedId || `folder-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    name: normalizedName,
+    order: folders.length,
+    kind: CLASS_HUB_FOLDER_KIND,
+  };
+
+  if (!saveFolders([...folders, folder])) {
+    return { status: 'error', folder: null };
+  }
+
+  const savedFolder = getFolders().find((entry) => String(entry?.id || '') === folder.id) || folder;
+  return { status: 'created', folder: savedFolder };
 };
 
 export const assignNoteToFolder = (noteId, folderId) => {
