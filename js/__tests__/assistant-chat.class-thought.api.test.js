@@ -128,6 +128,8 @@ test('organises only the supplied class thought into a bounded review draft', as
   });
   expect(openAiBody.text.format.schema.properties.followUps.maxItems).toBe(3);
   expect(openAiText).toContain('smallest useful follow-up list');
+  expect(openAiText).toContain('one intended action, return exactly that one follow-up');
+  expect(openAiText).toContain('Background incident details are not new tasks');
   expect(openAiText).toContain('Do not infer extra administration');
   expect(openAiText).toContain('Two students left during the outdoor lesson.');
   expect(openAiText).toContain('Year 8 HPE');
