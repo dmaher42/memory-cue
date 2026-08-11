@@ -187,6 +187,7 @@
 .class-hub-completed { margin-top: 0.5rem; }
 .class-hub-completed summary { min-height: 44px; padding: 0.62rem 0.2rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 .class-hub-status { min-height: 1.05rem; margin: 0.35rem 0 0; color: var(--accent-color, #0f766e); font-size: 0.76rem; }
+.class-hub-status:empty { min-height: 0; margin-top: 0; }
 .class-hub-dialog {
   width: min(92vw, 430px);
   padding: 0;
