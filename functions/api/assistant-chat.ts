@@ -952,7 +952,7 @@ export const onRequestPost = async (context: { request: Request; env: Record<str
         error instanceof Error ? getClassThoughtFailureCode(error) : 'unknown_failure',
       );
       return jsonResponse({
-        error: "I couldn't organise this right now. Your original thought is still here.",
+        error: "I couldn't prepare this note right now. Your original note is still here.",
         code: getClassThoughtFailureCode(error),
       }, 502, corsHeaders);
     }

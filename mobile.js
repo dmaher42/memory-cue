@@ -1051,13 +1051,13 @@ function initAssistant() {
       if (modeIsActive) {
         thinkingBarInput.placeholder = activeClassThoughtDraft
           ? 'Review the draft above before continuing'
-          : `Dump anything about ${activeClassThoughtContext.hubName}…`;
+          : `Add anything about ${activeClassThoughtContext.hubName}…`;
         if (thinkingBarLabel instanceof HTMLElement) {
           thinkingBarLabel.textContent = activeClassThoughtDraft
-            ? 'Review the organised class thought'
-            : `Add a thought about ${activeClassThoughtContext.hubName}`;
+            ? 'Review your note'
+            : `Add note for ${activeClassThoughtContext.hubName}`;
         }
-        thinkingBarContainer?.setAttribute('aria-label', 'Class thought organiser');
+        thinkingBarContainer?.setAttribute('aria-label', 'Class note');
         thinkingBarInput.maxLength = 2400;
       } else if (!activeWordRescueMode) {
         thinkingBarInput.placeholder = DEFAULT_THINKING_BAR_PLACEHOLDER;
@@ -1209,7 +1209,7 @@ function initAssistant() {
         document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
           detail: {
             hubId,
-            status: 'Class thought kept. Tap Organise a thought to resume where you left off.',
+            status: 'Note kept. Tap Add note to continue.',
           },
         }));
       }
@@ -1235,7 +1235,7 @@ function initAssistant() {
         if (!activeClassThoughtDraft.savedNote) {
           const combinedText = [
             activeClassThoughtDraft.note.body,
-            'Original thought:',
+            'Original note:',
             activeClassThoughtDraft.originalThought,
           ].filter(Boolean).join('\n\n');
           const tags = [hub.name, ...activeClassThoughtDraft.note.tags]
@@ -1308,7 +1308,7 @@ function initAssistant() {
 
         const savedFollowUpCount = activeClassThoughtDraft.followUps.filter((item) => item.saved).length;
         returnToClassThoughtHub(
-          `Organised thought saved: 1 note and ${savedFollowUpCount} follow-up${savedFollowUpCount === 1 ? '' : 's'}.`,
+          `Saved: 1 note and ${savedFollowUpCount} follow-up${savedFollowUpCount === 1 ? '' : 's'}.`,
         );
       } finally {
         isClassThoughtSaving = false;
@@ -1596,15 +1596,15 @@ function initAssistant() {
       title.className = 'class-thought-review-title';
       title.dataset.classThoughtReviewHeading = 'true';
       title.tabIndex = -1;
-      title.textContent = 'Review your organised thought';
+      title.textContent = 'Review your note';
 
       const copy = document.createElement('p');
       copy.className = 'class-thought-review-copy';
-      copy.textContent = 'The note will keep your original thought underneath the organised summary. Choose which follow-ups to add.';
+      copy.textContent = 'Choose any follow-ups you want to add.';
 
       const privacy = document.createElement('p');
       privacy.className = 'class-thought-review-privacy';
-      privacy.textContent = `Only this thought and the class name "${draft.hubName}" were sent to AI. Nothing is added to Notes or Reminders until you choose Save.`;
+      privacy.textContent = `Sent to AI: this note and "${draft.hubName}" only. Not saved yet.`;
 
       const noteSection = document.createElement('section');
       noteSection.className = 'class-thought-review-section';
@@ -1628,7 +1628,7 @@ function initAssistant() {
       if (!draft.followUps.length) {
         const noFollowUps = document.createElement('p');
         noFollowUps.className = 'class-thought-review-copy';
-        noFollowUps.textContent = 'No clear follow-ups were found. You can save the organised note on its own.';
+        noFollowUps.textContent = 'No clear follow-ups were found. You can save the note on its own.';
         followSection.appendChild(noFollowUps);
       } else {
         const list = document.createElement('ul');
@@ -2121,7 +2121,7 @@ function initAssistant() {
       },
       beforeActivate: () => {
         if (activeClassThoughtContext) {
-          setThinkingBarStatus('Finish or discard the class thought before opening Memory coach.');
+          setThinkingBarStatus('Finish or discard this note before opening Memory coach.');
           return false;
         }
         if (activeWordRescueMode || isWordRescueChoiceOpen) {
@@ -2529,7 +2529,7 @@ function initAssistant() {
       }
 
       if (activeClassThoughtDraft) {
-        activeClassThoughtDraft.status = 'Review or discard this draft before organising another thought.';
+        activeClassThoughtDraft.status = 'Review or discard this note before adding another.';
         renderConversationHistory();
         return;
       }
@@ -2638,7 +2638,7 @@ function initAssistant() {
           isClassThoughtGenerating = false;
           updateClassThoughtModeUi();
           renderConversationHistory();
-          appendAssistantMessage("I couldn't organise this right now. Your original thought is still here.", 'assistant-message assistant-message--error');
+          appendAssistantMessage("I couldn't prepare this note right now. Your original note is still here.", 'assistant-message assistant-message--error');
           setThinkingBarStatus('Nothing was added. You can try again or return to the class hub.');
           thinkingBarInput.focus();
         } else if (!classThoughtContextForRequest) {
@@ -2704,7 +2704,7 @@ function initAssistant() {
       isClassThoughtGenerating = false;
       isClassThoughtSaving = false;
       detail.accepted = true;
-      setThinkingBarStatus('Add one thought. AI will draft a Note and optional follow-ups for you to review.');
+      setThinkingBarStatus('');
       if (isCaptureViewActive()) {
         resumeClassThoughtComposer();
       }
@@ -2719,7 +2719,7 @@ function initAssistant() {
 
     wordRescueLauncher?.addEventListener('click', () => {
       if (activeClassThoughtContext) {
-        setThinkingBarStatus('Finish or discard the class thought before opening Word help.');
+        setThinkingBarStatus('Finish or discard this note before opening Word help.');
         return;
       }
       if (memoryCoachUi?.isActive?.()) {
@@ -2745,7 +2745,7 @@ function initAssistant() {
         if (activeClassThoughtDraft || thinkingBarInput.value.trim()) {
           pauseAndReturnToClassThoughtHub();
         } else {
-          returnToClassThoughtHub('Class organiser closed. No Note or follow-up was added.');
+          returnToClassThoughtHub('Note closed. Nothing was added.');
         }
       }
     });
@@ -2758,7 +2758,7 @@ function initAssistant() {
       if (activeClassThoughtDraft || thinkingBarInput.value.trim()) {
         pauseAndReturnToClassThoughtHub();
       } else {
-        returnToClassThoughtHub('Class organiser closed. No Note or follow-up was added.');
+        returnToClassThoughtHub('Note closed. Nothing was added.');
       }
     });
 

@@ -188,7 +188,7 @@ test.each([
 
   expect(response.status).toBe(502);
   expect(payload.code).toBe(expectedCode);
-  expect(payload.error).toBe("I couldn't organise this right now. Your original thought is still here.");
+  expect(payload.error).toBe("I couldn't prepare this note right now. Your original note is still here.");
   expect(JSON.stringify(payload)).not.toContain(thought);
   expect(JSON.stringify(payload)).not.toContain('CANARY_REFUSAL_DETAIL');
 });

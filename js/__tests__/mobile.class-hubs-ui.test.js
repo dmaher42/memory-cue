@@ -241,14 +241,15 @@ describe('mobile Class Hubs UI', () => {
     expect(document.querySelector('[data-class-hub-note-open="autosaved-class-note"]')).not.toBeNull();
   });
 
-  test('starts review-first AI organising from the hub without adding another freeform input', () => {
+  test('starts a review-first note from the hub without instructions or another freeform input', () => {
     document.querySelector('[data-class-hub-open="class-existing"]').click();
 
     const action = document.querySelector('[data-class-hub-ai-organize]');
-    const privacyCopy = document.querySelector('.class-hub-ai-organize-privacy');
-    expect(action.textContent).toBe('Organise a thought');
-    expect(privacyCopy.textContent).toContain('sent to AI');
-    expect(privacyCopy.textContent).toContain('review everything');
+    expect(action.textContent).toBe('Add note');
+    expect(action.getAttribute('aria-label')).toBe('Add note to Year 9 English');
+    expect(document.querySelector('.class-hub-ai-organize-title')).toBeNull();
+    expect(document.querySelector('.class-hub-ai-organize-privacy')).toBeNull();
+    expect(document.querySelector('[data-class-hub-full-note]').textContent).toBe('Open editor');
     expect(document.querySelector('#classHubsPanel textarea')).toBeNull();
 
     action.click();
@@ -260,7 +261,7 @@ describe('mobile Class Hubs UI', () => {
     }));
   });
 
-  test('stays in the hub with an inline status when Class thought cannot start', () => {
+  test('stays in the hub with an inline status when a note cannot start', () => {
     startAiOrganize.mockReturnValue(false);
     document.querySelector('[data-class-hub-open="class-existing"]').click();
 
@@ -276,7 +277,7 @@ describe('mobile Class Hubs UI', () => {
     document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
       detail: {
         hubId: 'class-existing',
-        status: 'Organised thought saved: 1 note and 2 follow-ups.',
+        status: 'Saved: 1 note and 2 follow-ups.',
       },
     }));
     await flush();
@@ -284,16 +285,16 @@ describe('mobile Class Hubs UI', () => {
     const heading = document.querySelector('[data-class-hub-heading]');
     expect(heading.textContent).toBe('Year 9 English');
     expect(document.querySelector('[data-class-hub-status]').textContent)
-      .toBe('Organised thought saved: 1 note and 2 follow-ups.');
+      .toBe('Saved: 1 note and 2 follow-ups.');
     expect(document.activeElement).toBe(heading);
     expect(document.getElementById('main').scrollTop).toBe(0);
   });
 
-  test('places Class thought mode beside the one existing Capture input', () => {
+  test('places New note mode beside the one existing Capture input', () => {
     const html = fs.readFileSync(path.resolve(__dirname, '../../mobile.html'), 'utf8');
     expect(html.match(/id="thinkingBarInput"/g)).toHaveLength(1);
     expect(html).toContain('id="classThoughtModeBar"');
-    expect(html).toContain('Class thought:');
+    expect(html).toContain('New note:');
     expect(html).toContain('id="classThoughtExitButton"');
     expect(html).not.toContain('id="classThoughtInput"');
   });

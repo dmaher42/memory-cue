@@ -496,24 +496,15 @@ export function initMobileClassHubsUi(options = {}) {
     rootElement.append(header, buildStatus());
 
     const aiSection = createElement('section', 'class-hub-ai-organize');
-    const aiCopy = createElement('div', 'class-hub-ai-organize-copy');
-    aiCopy.append(
-      createElement('h4', 'class-hub-ai-organize-title', 'Organise a class thought'),
-      createElement(
-        'p',
-        'class-hub-ai-organize-privacy',
-        'Your thought is sent to AI to suggest a note and follow-ups. Avoid student names or sensitive details. You review everything before it is added.',
-      ),
-    );
-    const organizeThought = createElement(
+    const addNote = createElement(
       'button',
       'class-hub-action class-hub-action--primary class-hub-ai-organize-button',
-      'Organise a thought',
+      'Add note',
     );
-    organizeThought.type = 'button';
-    organizeThought.dataset.classHubAiOrganize = 'true';
-    organizeThought.setAttribute('aria-label', `Organise a thought for ${hub.name}`);
-    aiSection.append(aiCopy, organizeThought);
+    addNote.type = 'button';
+    addNote.dataset.classHubAiOrganize = 'true';
+    addNote.setAttribute('aria-label', `Add note to ${hub.name}`);
+    aiSection.appendChild(addNote);
     rootElement.appendChild(aiSection);
 
     const followSection = createElement('section', 'class-hub-section');
@@ -548,14 +539,12 @@ export function initMobileClassHubsUi(options = {}) {
     const notesSection = createElement('section', 'class-hub-section');
     const notesHeading = createElement('div', 'class-hub-section-heading');
     notesHeading.appendChild(createElement('h4', 'class-hub-section-title', 'Notes'));
-    const addNote = createElement('button', 'class-hub-action', '+ Add note');
-    addNote.type = 'button';
-    addNote.dataset.classHubFullNote = 'true';
-    notesHeading.appendChild(addNote);
-    notesSection.append(
-      notesHeading,
-      createElement('p', 'class-hub-section-copy', 'New notes open in the regular Notes editor and are filed in this class.'),
-    );
+    const openEditor = createElement('button', 'class-hub-action', 'Open editor');
+    openEditor.type = 'button';
+    openEditor.dataset.classHubFullNote = 'true';
+    openEditor.setAttribute('aria-label', `Open the full note editor for ${hub.name}`);
+    notesHeading.appendChild(openEditor);
+    notesSection.appendChild(notesHeading);
     if (!notes.length) {
       notesSection.appendChild(createElement('p', 'class-hub-section-copy', 'No class notes yet.'));
     } else {
@@ -627,7 +616,7 @@ export function initMobileClassHubsUi(options = {}) {
           updateStatus('Finish the current Capture first, then try again.');
         }
       } catch {
-        updateStatus('Class thought could not start. Try again.');
+        updateStatus('Note could not start. Try again.');
       }
       return;
     }

@@ -31,7 +31,7 @@ describe('mobile capture result rendering', () => {
           <button id="memoryCoachExitButton" type="button">Back to Capture</button>
         </div>
         <div id="classThoughtModeBar" class="hidden">
-          <span>Class thought: <strong id="classThoughtModeLabel">Class</strong></span>
+          <span>New note: <strong id="classThoughtModeLabel">Class</strong></span>
           <button id="classThoughtExitButton" type="button">Back to class</button>
         </div>
         <form id="thinkingBarForm">
@@ -814,7 +814,7 @@ describe('mobile capture result rendering', () => {
 
     expect(document.getElementById('classThoughtModeBar')?.classList.contains('hidden')).toBe(false);
     expect(document.getElementById('classThoughtModeLabel')?.textContent).toBe('Year 8 HPE');
-    expect(input.placeholder).toBe('Dump anything about Year 8 HPE…');
+    expect(input.placeholder).toBe('Add anything about Year 8 HPE…');
     expect(input.maxLength).toBe(2400);
     expect(input.value).toBe('');
 
