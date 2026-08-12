@@ -873,6 +873,14 @@ const NOTEBOOK_POLISH_CSS = `
       box-shadow: none !important;
     }
 
+    body[data-active-view="notebooks"] #view-notebook[data-notes-mode="overview"] {
+      padding-bottom: calc(
+        var(--mobile-bottom-nav-height, 48px)
+        + 0.75rem
+        + env(safe-area-inset-bottom, 0px)
+      ) !important;
+    }
+
     body[data-active-view="notebooks"] .note-editor-card {
       flex: 0 0 auto;
       width: 100%;

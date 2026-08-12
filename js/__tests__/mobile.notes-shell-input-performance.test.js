@@ -288,6 +288,8 @@ test('installs the full-page Notes writing canvas styles', () => {
   expect(style.textContent).toContain('display: none !important');
   expect(style.textContent).toContain('.notes-overview-search-input');
   expect(style.textContent).toContain('.notes-overview-item-actions');
+  expect(style.textContent).toContain('#view-notebook[data-notes-mode="overview"]');
+  expect(style.textContent).toContain('var(--mobile-bottom-nav-height, 48px)');
   expect(style.textContent).toContain('.note-action-create-lesson-cue');
   expect(style.textContent).toContain('.note-action-set-active-lesson');
 });
