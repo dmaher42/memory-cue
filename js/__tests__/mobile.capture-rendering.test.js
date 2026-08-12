@@ -586,7 +586,7 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelector('.word-rescue-choice-title')?.textContent)
       .toBe('How would you like help?');
     expect(Array.from(document.querySelectorAll('.word-rescue-choice-button')).map((button) => button.textContent))
-      .toEqual(['Find it now', 'Coach me']);
+      .toEqual(['Help me say it now', 'Help me work it out']);
     expect(document.getElementById('wordRescueLauncher')?.getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -599,16 +599,17 @@ describe('mobile capture result rendering', () => {
         { role: 'assistant', content: 'Hint 1 of 3: It means avoiding a direct commitment.', timestamp: Date.now() },
       );
       return {
-        message: 'Hint 1 of 3: It means avoiding a direct commitment.',
+        message: 'Meaning first: You want to describe someone avoiding a clear commitment.',
         wordRescue: {
           mode: 'coach',
-          hints: [
-            'It means avoiding a direct commitment.',
-            'The witness continued to _____ instead of saying yes or no.',
-            'It begins with the sound ee and has four syllables.',
+          interpretation: 'You want to describe someone avoiding a clear commitment.',
+          prompts: [
+            'What effect does the unclear answer have?',
+            'Is the broader idea avoidance, uncertainty, or dishonesty?',
+            'Complete this: The witness continued to _____ instead of saying yes or no.',
           ],
           answer: {
-            word: 'equivocate',
+            expression: 'equivocate',
             explanation: 'To speak ambiguously so you do not commit clearly.',
             example: 'The spokesperson continued to equivocate.',
           },
@@ -645,14 +646,14 @@ describe('mobile capture result rendering', () => {
       'someone who avoids giving a direct answer',
       { assistantTask: 'word_rescue', assistantMode: 'coach' },
     );
-    expect(document.getElementById('wordRescueModeLabel')?.textContent).toBe('Coach me');
-    expect(document.querySelector('[data-word-rescue-action="hint"]')?.textContent).toBe('Another hint');
-    expect(document.querySelector('[data-word-rescue-action="reveal"]')?.textContent).toBe('Show word');
+    expect(document.getElementById('wordRescueModeLabel')?.textContent).toBe('Help me work it out');
+    expect(document.querySelector('[data-word-rescue-action="hint"]')?.textContent).toBe('Give me a thinking prompt');
+    expect(document.querySelector('[data-word-rescue-action="reveal"]')?.textContent).toBe('Show a possible phrasing');
     expect(document.body.textContent).not.toContain('equivocate');
 
     document.querySelector('[data-word-rescue-action="hint"]').focus();
     document.querySelector('[data-word-rescue-action="hint"]').click();
-    expect(document.body.textContent).toContain('The witness continued to _____');
+    expect(document.body.textContent).toContain('What effect does the unclear answer have?');
     expect(handleChatMessage).toHaveBeenCalledTimes(1);
     expect(document.activeElement?.getAttribute('data-word-rescue-action')).toBe('hint');
 
@@ -665,14 +666,16 @@ describe('mobile capture result rendering', () => {
 
     document.querySelector('[data-word-rescue-learn="coach-answer"]').click();
     expect(saveVocabulary).toHaveBeenCalledWith({
+      expression: 'equivocate',
       word: 'equivocate',
+      kind: 'expression',
       cue: 'someone who avoids giving a direct answer',
       explanation: 'To speak ambiguously so you do not commit clearly.',
       example: 'The spokesperson continued to equivocate.',
       hints: [
-        'It means avoiding a direct commitment.',
-        'The witness continued to _____ instead of saying yes or no.',
-        'It begins with the sound ee and has four syllables.',
+        'What effect does the unclear answer have?',
+        'Is the broader idea avoidance, uncertainty, or dishonesty?',
+        'Complete this: The witness continued to _____ instead of saying yes or no.',
       ],
       alternatives: ['prevaricate'],
     });
@@ -701,8 +704,8 @@ describe('mobile capture result rendering', () => {
         wordRescue: {
           mode: 'fast',
           candidates: [
-            { word: 'precise', meaning: 'Exact and accurate.', example: 'Use precise language.' },
-            { word: 'meticulous', meaning: 'Very careful about details.', example: 'She kept meticulous notes.' },
+            { expression: 'precise', meaning: 'Exact and accurate.', example: 'Use precise language.' },
+            { expression: 'meticulous', meaning: 'Very careful about details.', example: 'She kept meticulous notes.' },
           ],
         },
       };
@@ -723,7 +726,9 @@ describe('mobile capture result rendering', () => {
     expect(document.querySelectorAll('[data-word-rescue-learn]')).toHaveLength(2);
     document.querySelector('[data-word-rescue-learn="fast-0"]').click();
     expect(saveVocabulary).toHaveBeenCalledWith({
+      expression: 'precise',
       word: 'precise',
+      kind: 'expression',
       cue: 'a word for careful and exact',
       explanation: 'Exact and accurate.',
       example: 'Use precise language.',

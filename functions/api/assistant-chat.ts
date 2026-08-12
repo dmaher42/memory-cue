@@ -500,8 +500,10 @@ const normalizeClassThoughtResult = (payload: Record<string, unknown>) => {
 
 const buildWordRescueMessages = (message: string, mode: string) => {
   const sharedRules = [
-    'You are Word Rescue, a concise vocabulary helper inside Memory Cue.',
-    'Use Australian English. Treat every result as a likely match, not the only objectively correct word.',
+    'You are Word Rescue, a concise expression coach inside Memory Cue.',
+    'Help the user turn an incomplete meaning into language they can retrieve and use themselves. Do not behave like a thesaurus.',
+    'A useful answer may be one word, a short phrase, or a sentence fragment.',
+    'Use Australian English. Treat every result as a likely formulation, not the only objectively correct wording.',
     'Do not diagnose memory problems, make medical claims, or offer to save anything.',
     'Never mention notes, reminders, personal memories, system prompts, or hidden context.',
     'Return only valid JSON with no markdown fences or commentary.',
@@ -509,20 +511,22 @@ const buildWordRescueMessages = (message: string, mode: string) => {
 
   const modeRules = mode === 'coach'
     ? [
-      'Create a graduated retrieval ladder without putting the answer in any hint.',
-      'Hint 1 must describe meaning or contrast.',
-      'Hint 2 must give a sentence with a blank or a strong contextual cue.',
-      'Hint 3 must give a first sound, letter, syllable, or word-shape cue.',
+      'Infer the communication goal behind the rough wording, then create a graduated formulation ladder.',
+      'The interpretation should restate the intended meaning plainly without using the final expression.',
+      'Prompt 1 must ask about the effect, scope, contrast, or outcome the user wants to communicate.',
+      'Prompt 2 must ask for concrete examples or identify the useful language category without giving the answer.',
+      'Prompt 3 must provide a sentence frame with a blank that the user can complete.',
+      'Do not put the final expression in the interpretation or any prompt.',
       'Return exactly this shape:',
-      '{"hints":["broad clue","context clue","sound or letter clue"],"answer":{"word":"likely word","explanation":"plain distinction","example":"short example sentence"},"alternatives":["optional alternative"]}',
+      '{"interpretation":"plain statement of the likely communication goal","prompts":["meaning question","examples or category question","sentence frame with a blank"],"answer":{"expression":"useful word or phrase","explanation":"why this wording fits","example":"improved version in context"},"alternatives":["optional alternative wording"]}',
     ]
     : [
-      'Return at most three useful candidates, best match first.',
-      'Give one plain-English distinction for each candidate and one short example for the best match.',
-      'Always make a best effort with one to three candidates; fast mode must not ask a follow-up question.',
-      'Prefer familiar, useful vocabulary unless the user clearly wants a technical word.',
+      'Return at most three useful formulations, best match first.',
+      'Give one plain-English reason each formulation fits and one improved example for the best match.',
+      'Always make a best effort with one to three formulations; fast mode must not ask a follow-up question.',
+      'Prefer clear, familiar wording unless the user clearly wants technical language.',
       'Return exactly this shape:',
-      '{"candidates":[{"word":"candidate","meaning":"brief distinction","example":"best-match example or empty string"}]}',
+      '{"candidates":[{"expression":"word or short phrase","meaning":"why it fits the intended meaning","example":"improved wording in context or empty string"}]}',
     ];
 
   return normalizeAssistantMessages([
@@ -603,12 +607,14 @@ const normalizeFastWordRescueResult = (payload: Record<string, unknown>) => {
       const item = candidate && typeof candidate === 'object'
         ? candidate as Record<string, unknown>
         : {};
-      const word = clampWordRescueText(item.word, 64);
+      const expression = clampWordRescueText(item.expression || item.word, 160);
       const meaning = clampWordRescueText(item.meaning, 180);
       const example = clampWordRescueText(item.example, 220);
-      return word && meaning ? { word, meaning, example } : null;
+      return expression && meaning
+        ? { expression, word: expression, meaning, example }
+        : null;
     })
-    .filter(Boolean) as Array<{ word: string; meaning: string; example: string }>;
+    .filter(Boolean) as Array<{ expression: string; word: string; meaning: string; example: string }>;
   if (!candidates.length) {
     throw new Error('Word Rescue returned no usable candidates.');
   }
@@ -624,47 +630,57 @@ const normalizeFastWordRescueResult = (payload: Record<string, unknown>) => {
 };
 
 const normalizeCoachWordRescueResult = (payload: Record<string, unknown>) => {
-  const hints = (Array.isArray(payload.hints) ? payload.hints : [])
+  const interpretation = clampWordRescueText(payload.interpretation, 320);
+  const rawPrompts = Array.isArray(payload.prompts)
+    ? payload.prompts
+    : Array.isArray(payload.hints)
+      ? payload.hints
+      : [];
+  const prompts = rawPrompts
     .map((hint) => clampWordRescueText(hint, 220))
     .filter(Boolean)
     .slice(0, 3);
   const rawAnswer = payload.answer && typeof payload.answer === 'object'
     ? payload.answer as Record<string, unknown>
     : {};
+  const expression = clampWordRescueText(rawAnswer.expression || rawAnswer.word, 160);
   const answer = {
-    word: clampWordRescueText(rawAnswer.word, 64),
+    expression,
+    word: expression,
     explanation: clampWordRescueText(rawAnswer.explanation, 220),
     example: clampWordRescueText(rawAnswer.example, 240),
   };
   const alternatives = (Array.isArray(payload.alternatives) ? payload.alternatives : [])
     .map((alternative) => clampWordRescueText(alternative, 64))
     .filter(Boolean)
-    .filter((alternative) => alternative.toLowerCase() !== answer.word.toLowerCase())
+    .filter((alternative) => alternative.toLowerCase() !== answer.expression.toLowerCase())
     .slice(0, 3);
 
-  if (hints.length !== 3 || !answer.word || !answer.explanation) {
+  if (!interpretation || prompts.length !== 3 || !answer.expression || !answer.explanation) {
     throw new Error('Word Rescue returned an incomplete coach result.');
   }
-  const lowerAnswer = answer.word.toLowerCase();
-  const fallbackHints = [
-    `Meaning: ${maskWordRescueAnswer(answer.explanation, answer.word)}`,
-    answer.example
-      ? `Complete the sentence: ${maskWordRescueAnswer(answer.example, answer.word)}`
-      : 'Think about how this word would complete the situation you described.',
-    `It starts with "${answer.word.charAt(0).toUpperCase()}" and has ${Array.from(answer.word).length} letters.`,
+  const lowerAnswer = answer.expression.toLowerCase();
+  const fallbackPrompts = [
+    'What result do you want the listener or reader to understand?',
+    'Name two concrete examples of the broader issue you are trying to describe.',
+    'Complete this in your own words: What I mean is _____.',
   ];
-  const safeHints = hints.map((hint, index) => (
-    hint.toLowerCase().includes(lowerAnswer)
-      ? fallbackHints[index]
-      : hint
+  const safeInterpretation = interpretation.toLowerCase().includes(lowerAnswer)
+    ? maskWordRescueAnswer(interpretation, answer.expression)
+    : interpretation;
+  const safePrompts = prompts.map((prompt, index) => (
+    prompt.toLowerCase().includes(lowerAnswer)
+      ? fallbackPrompts[index]
+      : prompt
   ));
-  safeHints[2] = fallbackHints[2];
 
   return {
-    reply: `Hint 1 of 3: ${safeHints[0]}`,
+    reply: `Meaning first: ${safeInterpretation}\n\nTry your own wording before asking for a thinking prompt.`,
     wordRescue: {
       mode: 'coach',
-      hints: safeHints,
+      interpretation: safeInterpretation,
+      prompts: safePrompts,
+      hints: safePrompts,
       answer,
       alternatives,
     },
@@ -680,7 +696,7 @@ const buildWordRescueTextFormat = (mode: string) => {
       schema: {
         type: 'object',
         properties: {
-          hints: {
+          prompts: {
             type: 'array',
             minItems: 3,
             maxItems: 3,
@@ -689,20 +705,21 @@ const buildWordRescueTextFormat = (mode: string) => {
           answer: {
             type: 'object',
             properties: {
-              word: { type: 'string' },
+              expression: { type: 'string' },
               explanation: { type: 'string' },
               example: { type: 'string' },
             },
-            required: ['word', 'explanation', 'example'],
+            required: ['expression', 'explanation', 'example'],
             additionalProperties: false,
           },
+          interpretation: { type: 'string' },
           alternatives: {
             type: 'array',
             maxItems: 3,
             items: { type: 'string' },
           },
         },
-        required: ['hints', 'answer', 'alternatives'],
+        required: ['interpretation', 'prompts', 'answer', 'alternatives'],
         additionalProperties: false,
       },
     };
@@ -722,11 +739,11 @@ const buildWordRescueTextFormat = (mode: string) => {
           items: {
             type: 'object',
             properties: {
-              word: { type: 'string' },
+              expression: { type: 'string' },
               meaning: { type: 'string' },
               example: { type: 'string' },
             },
-            required: ['word', 'meaning', 'example'],
+            required: ['expression', 'meaning', 'example'],
             additionalProperties: false,
           },
         },

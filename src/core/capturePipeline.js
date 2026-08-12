@@ -818,8 +818,8 @@ const runAssistantQuery = async (text, decision = {}, metadata = {}) => {
     const body = buildWordRescueAssistantRequest(text, { mode });
     return requestAssistantChatResult(body, {
       fallbackReply: mode === 'coach'
-        ? 'Let us work towards the word one clue at a time.'
-        : 'Here are the closest words I found.',
+        ? 'Let us build the meaning into clear wording one prompt at a time.'
+        : 'Here are the clearest formulations I found.',
     });
   }
 

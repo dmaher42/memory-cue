@@ -129,7 +129,7 @@ export const normalizeMemoryCoachMetadata = (value, options = {}) => {
 
   return {
     schemaVersion: MEMORY_COACH_SCHEMA_VERSION,
-    kind: value.kind === 'vocabulary' ? 'vocabulary' : 'memory',
+    kind: value.kind === 'vocabulary' || value.kind === 'expression' ? value.kind : 'memory',
     prompt,
     answer,
     explanation,
@@ -384,9 +384,10 @@ export const addVocabularyPracticeEntry = (entries = [], payload = {}, options =
 
   const createdAt = new Date(now).toISOString();
   const example = normalizeText(payload.example, 600);
+  const kind = payload.kind === 'expression' ? 'expression' : 'vocabulary';
   const memoryCoach = normalizeMemoryCoachMetadata({
     schemaVersion: MEMORY_COACH_SCHEMA_VERSION,
-    kind: 'vocabulary',
+    kind,
     prompt,
     answer: word,
     explanation,
@@ -407,7 +408,7 @@ export const addVocabularyPracticeEntry = (entries = [], payload = {}, options =
     text: explanation ? `${word}: ${explanation}` : `Practice word: ${word}`,
     source: 'assistant',
     parsedType: 'unknown',
-    tags: ['memory-coach', 'vocabulary'],
+    tags: ['memory-coach', kind],
     createdAt: now,
     updatedAt: now,
     entryPoint: 'memoryCoach.saveVocabulary',

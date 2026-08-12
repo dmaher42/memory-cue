@@ -928,15 +928,22 @@ function initAssistant() {
       if (!value || typeof value !== 'object' || value.mode !== 'coach') {
         return null;
       }
-      const hints = Array.isArray(value.hints)
-        ? value.hints
-          .map((hint) => (typeof hint === 'string' ? hint.trim() : ''))
+      const promptSource = Array.isArray(value.prompts) ? value.prompts : value.hints;
+      const prompts = Array.isArray(promptSource)
+        ? promptSource
+          .map((prompt) => (typeof prompt === 'string' ? prompt.trim() : ''))
           .filter(Boolean)
           .slice(0, 3)
         : [];
       const answerSource = value.answer && typeof value.answer === 'object' ? value.answer : {};
+      const expression = typeof answerSource.expression === 'string'
+        ? answerSource.expression.trim()
+        : typeof answerSource.word === 'string'
+          ? answerSource.word.trim()
+          : '';
       const answer = {
-        word: typeof answerSource.word === 'string' ? answerSource.word.trim() : '',
+        expression,
+        word: expression,
         explanation: typeof answerSource.explanation === 'string' ? answerSource.explanation.trim() : '',
         example: typeof answerSource.example === 'string' ? answerSource.example.trim() : '',
       };
@@ -947,16 +954,21 @@ function initAssistant() {
           .slice(0, 3)
         : [];
 
-      if (hints.length !== 3 || !answer.word || !answer.explanation) {
+      const interpretation = typeof value.interpretation === 'string'
+        ? value.interpretation.trim()
+        : 'Clarify the meaning you want the other person to understand.';
+      if (prompts.length !== 3 || !answer.expression || !answer.explanation) {
         return null;
       }
       return {
         mode: 'coach',
         cue: typeof cue === 'string' ? cue.trim() : '',
-        hints,
+        interpretation,
+        prompts,
+        hints: prompts,
         answer,
         alternatives,
-        hintIndex: 0,
+        hintIndex: -1,
         revealed: false,
       };
     };
@@ -967,12 +979,20 @@ function initAssistant() {
       }
       const candidates = Array.isArray(value.candidates)
         ? value.candidates
-          .map((candidate) => ({
-            word: typeof candidate?.word === 'string' ? candidate.word.trim() : '',
-            meaning: typeof candidate?.meaning === 'string' ? candidate.meaning.trim() : '',
-            example: typeof candidate?.example === 'string' ? candidate.example.trim() : '',
-          }))
-          .filter((candidate) => candidate.word && candidate.meaning)
+          .map((candidate) => {
+            const expression = typeof candidate?.expression === 'string'
+              ? candidate.expression.trim()
+              : typeof candidate?.word === 'string'
+                ? candidate.word.trim()
+                : '';
+            return {
+              expression,
+              word: expression,
+              meaning: typeof candidate?.meaning === 'string' ? candidate.meaning.trim() : '',
+              example: typeof candidate?.example === 'string' ? candidate.example.trim() : '',
+            };
+          })
+          .filter((candidate) => candidate.expression && candidate.meaning)
           .slice(0, 3)
         : [];
       if (!candidates.length) {
@@ -1124,7 +1144,7 @@ function initAssistant() {
 
     const updateWordRescueModeUi = () => {
       const modeIsActive = Boolean(activeWordRescueMode) && isCaptureViewActive();
-      const modeName = activeWordRescueMode === 'coach' ? 'Coach me' : 'Find it now';
+      const modeName = activeWordRescueMode === 'coach' ? 'Help me work it out' : 'Help me say it now';
       wordRescueModeBar?.classList.toggle('hidden', !modeIsActive);
       if (wordRescueModeLabel instanceof HTMLElement) {
         wordRescueModeLabel.textContent = modeName;
@@ -1136,16 +1156,16 @@ function initAssistant() {
       document.body?.classList.toggle('word-rescue-mode-active', modeIsActive);
       if (modeIsActive) {
         thinkingBarInput.placeholder = activeWordRescueMode === 'coach'
-          ? 'Describe the word and retrieve it with clues…'
-          : 'Describe the meaning or paste your sentence…';
+          ? 'Write the rough wording or meaning...'
+          : 'Paste rough wording or describe the meaning...';
       } else if (!activeClassThoughtContext) {
         thinkingBarInput.placeholder = DEFAULT_THINKING_BAR_PLACEHOLDER;
       }
       if (thinkingBarLabel instanceof HTMLElement) {
         if (modeIsActive) {
           thinkingBarLabel.textContent = activeWordRescueMode === 'coach'
-            ? 'Describe the word you want to retrieve with coaching clues'
-            : 'Describe the word you need or paste the sentence';
+            ? 'Describe the idea you want to express more clearly'
+            : 'Describe what you need to communicate';
         } else if (!activeClassThoughtContext) {
           thinkingBarLabel.textContent = DEFAULT_THINKING_BAR_LABEL;
         }
@@ -1388,7 +1408,7 @@ function initAssistant() {
 
       const copy = document.createElement('p');
       copy.className = 'word-rescue-choice-copy';
-      copy.textContent = 'Get likely words immediately, or retrieve the word through progressively stronger clues.';
+      copy.textContent = 'Get clear wording immediately, or practise building it from the meaning yourself.';
 
       const actions = document.createElement('div');
       actions.className = 'word-rescue-choice-actions';
@@ -1397,14 +1417,14 @@ function initAssistant() {
       findButton.type = 'button';
       findButton.className = 'word-rescue-choice-button word-rescue-choice-button--primary';
       findButton.dataset.wordRescueAction = 'find';
-      findButton.textContent = 'Find it now';
+      findButton.textContent = 'Help me say it now';
       findButton.addEventListener('click', () => activateWordRescueMode('fast'));
 
       const coachButton = document.createElement('button');
       coachButton.type = 'button';
       coachButton.className = 'word-rescue-choice-button';
       coachButton.dataset.wordRescueAction = 'coach';
-      coachButton.textContent = 'Coach me';
+      coachButton.textContent = 'Help me work it out';
       coachButton.addEventListener('click', () => activateWordRescueMode('coach'));
 
       actions.append(findButton, coachButton);
@@ -1413,13 +1433,17 @@ function initAssistant() {
     };
 
     const createLearnWordButton = (payload, actionId) => {
-      const word = typeof payload?.word === 'string' ? payload.word.trim() : '';
-      if (!word) {
+      const expression = typeof payload?.expression === 'string'
+        ? payload.expression.trim()
+        : typeof payload?.word === 'string'
+          ? payload.word.trim()
+          : '';
+      if (!expression) {
         return null;
       }
       const saveState = typeof memoryCoachUi?.getVocabularyState === 'function'
-        ? memoryCoachUi.getVocabularyState(word)
-        : memoryCoachUi?.hasSavedWord?.(word)
+        ? memoryCoachUi.getVocabularyState(expression)
+        : memoryCoachUi?.hasSavedWord?.(expression)
           ? 'saved'
           : 'new';
       const button = document.createElement('button');
@@ -1430,18 +1454,23 @@ function initAssistant() {
         button.setAttribute('aria-disabled', 'true');
       }
       button.textContent = saveState === 'saved'
-        ? `${word} — Saved for practice`
+        ? `${expression} — Saved for practice`
         : saveState === 'paused'
-          ? `Resume “${word}”`
-          : `Learn “${word}”`;
+          ? `Resume “${expression}”`
+          : `Practise “${expression}”`;
       button.addEventListener('click', () => {
         if (saveState === 'saved') {
-          setThinkingBarStatus(`${word} is already saved for practice.`);
+          setThinkingBarStatus(`${expression} is already saved for practice.`);
           return;
         }
-        const result = memoryCoachUi?.saveVocabulary?.(payload);
+        const result = memoryCoachUi?.saveVocabulary?.({
+          ...payload,
+          expression,
+          word: expression,
+          kind: 'expression',
+        });
         if (!result || result.status === 'invalid' || result.status === 'save_failed') {
-          setThinkingBarStatus('That word could not be saved for practice.');
+          setThinkingBarStatus('That wording could not be saved for practice.');
           return;
         }
         renderConversationHistory();
@@ -1468,24 +1497,25 @@ function initAssistant() {
       const region = document.createElement('section');
       region.className = 'word-rescue-coach-controls word-rescue-fast-save';
       region.setAttribute('role', 'region');
-      region.setAttribute('aria-label', 'Save a word for memory practice');
+      region.setAttribute('aria-label', 'Save wording for expression practice');
       const title = document.createElement('h3');
       title.className = 'word-rescue-coach-title';
-      title.textContent = 'Keep one for later';
+      title.textContent = 'Turn useful wording into practice';
       const copy = document.createElement('p');
       copy.className = 'word-rescue-coach-copy';
-      copy.textContent = 'Save only the word you want Memory Coach to bring back for retrieval practice.';
+      copy.textContent = 'Choose wording you want to produce yourself in a future situation.';
       const actions = document.createElement('div');
       actions.className = 'word-rescue-learn-actions';
       session.candidates.forEach((candidate, index) => {
         const button = createLearnWordButton({
+          expression: candidate.expression,
           word: candidate.word,
           cue: session.cue,
           explanation: candidate.meaning,
           example: candidate.example,
           alternatives: session.candidates
             .filter((_, candidateIndex) => candidateIndex !== index)
-            .map((item) => item.word),
+            .map((item) => item.expression),
         }, `fast-${index}`);
         if (button) {
           actions.appendChild(button);
@@ -1506,8 +1536,8 @@ function initAssistant() {
         return;
       }
 
-      for (let index = 1; index <= session.hintIndex; index += 1) {
-        appendConversationMessage('assistant', `Hint ${index + 1} of 3: ${session.hints[index]}`);
+      for (let index = 0; index <= session.hintIndex; index += 1) {
+        appendConversationMessage('assistant', `Thinking prompt ${index + 1} of 3: ${session.prompts[index]}`);
       }
 
       if (session.revealed) {
@@ -1517,7 +1547,7 @@ function initAssistant() {
 
         const word = document.createElement('strong');
         word.className = 'word-rescue-reveal-word';
-        word.textContent = session.answer.word;
+        word.textContent = session.answer.expression;
 
         const explanation = document.createElement('span');
         explanation.className = 'word-rescue-reveal-detail';
@@ -1542,30 +1572,32 @@ function initAssistant() {
       const controls = document.createElement('section');
       controls.className = 'word-rescue-coach-controls';
       controls.setAttribute('role', 'region');
-      controls.setAttribute('aria-label', 'Word coaching controls');
+      controls.setAttribute('aria-label', 'Expression coaching controls');
 
       const title = document.createElement('h3');
       title.className = 'word-rescue-coach-title';
-      title.textContent = session.revealed ? 'Ready for another?' : 'Keep retrieving';
+      title.textContent = session.revealed ? 'Use it in your own sentence' : 'Build the meaning first';
       const copy = document.createElement('p');
       copy.className = 'word-rescue-coach-copy';
       copy.textContent = session.revealed
-        ? 'Start a new coached search using the same message bar.'
-        : `${session.hintIndex + 1} of 3 clues shown. The answer stays hidden until you choose to reveal it.`;
+        ? 'Say or write a new version in your own words. Save it only if you want Memory Coach to test this situation later.'
+        : session.hintIndex < 0
+          ? `What you seem to mean: ${session.interpretation} Try saying it plainly before asking for help.`
+          : `${session.hintIndex + 1} of 3 thinking prompts shown. A possible phrasing stays hidden until you reveal it.`;
       const actions = document.createElement('div');
       actions.className = 'word-rescue-coach-actions';
 
-      if (!session.revealed && session.hintIndex < session.hints.length - 1) {
+      if (!session.revealed && session.hintIndex < session.prompts.length - 1) {
         const hintButton = document.createElement('button');
         hintButton.type = 'button';
         hintButton.className = 'word-rescue-coach-button word-rescue-coach-button--primary';
         hintButton.dataset.wordRescueAction = 'hint';
-        hintButton.textContent = 'Another hint';
+        hintButton.textContent = session.hintIndex < 0 ? 'Give me a thinking prompt' : 'Another thinking prompt';
         hintButton.addEventListener('click', () => {
           session.hintIndex += 1;
           renderConversationHistory();
-          setThinkingBarStatus(`Hint ${session.hintIndex + 1} of 3 shown.`);
-          const nextAction = session.hintIndex < session.hints.length - 1 ? 'hint' : 'reveal';
+          setThinkingBarStatus(`Thinking prompt ${session.hintIndex + 1} of 3 shown.`);
+          const nextAction = session.hintIndex < session.prompts.length - 1 ? 'hint' : 'reveal';
           chatConversationContainer
             ?.querySelector(`[data-word-rescue-action="${nextAction}"]`)
             ?.focus();
@@ -1579,11 +1611,11 @@ function initAssistant() {
         revealButton.type = 'button';
         revealButton.className = 'word-rescue-coach-button';
         revealButton.dataset.wordRescueAction = 'reveal';
-        revealButton.textContent = 'Show word';
+        revealButton.textContent = 'Show a possible phrasing';
         revealButton.addEventListener('click', () => {
           session.revealed = true;
           renderConversationHistory();
-          setThinkingBarStatus('Word revealed.');
+          setThinkingBarStatus('Possible phrasing revealed.');
           chatConversationContainer
             ?.querySelector('[data-word-rescue-action="restart"]')
             ?.focus();
@@ -1592,11 +1624,12 @@ function initAssistant() {
         actions.appendChild(revealButton);
       } else {
         const learnButton = createLearnWordButton({
+          expression: session.answer.expression,
           word: session.answer.word,
           cue: session.cue,
           explanation: session.answer.explanation,
           example: session.answer.example,
-          hints: session.hints,
+          hints: session.prompts,
           alternatives: session.alternatives,
         }, 'coach-answer');
         if (learnButton) {
@@ -1606,7 +1639,7 @@ function initAssistant() {
         restartButton.type = 'button';
         restartButton.className = 'word-rescue-coach-button word-rescue-coach-button--primary';
         restartButton.dataset.wordRescueAction = 'restart';
-        restartButton.textContent = 'Try another word';
+        restartButton.textContent = 'Try another idea';
         restartButton.addEventListener('click', () => {
           activeWordRescueSession = null;
           renderConversationHistory();

@@ -175,7 +175,7 @@ test('opens an empty coach with one existing textarea and a direct Word Help pat
   expect(beforeActivate).toHaveBeenCalledTimes(1);
   expect(document.body.classList.contains('memory-coach-mode-active')).toBe(true);
   expect(document.querySelectorAll('textarea')).toHaveLength(1);
-  expect(document.querySelector('.memory-coach-title').textContent).toBe('Save your first word to practise');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Save your first expression to practise');
   expect(document.getElementById('thinkingBarContainer').getAttribute('aria-label')).toBe('Memory Coach controls');
   document.querySelector('[data-memory-coach-action="find-word"]').click();
   expect(onFindWord).toHaveBeenCalledTimes(1);
@@ -241,7 +241,7 @@ test('pausing offers an immediate undo and returns the word to practice', () => 
 
   undo.click();
   expect(controller.getVocabularyState('evasive')).toBe('saved');
-  expect(document.querySelector('.memory-coach-title').textContent).toBe('Recall the word');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Express the meaning');
 });
 
 test('navigation closes practice and restores the Capture controls label', () => {

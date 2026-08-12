@@ -119,6 +119,36 @@ test('Word Rescue bypasses Help and excludes personal context from the OpenAI re
   });
 });
 
+test('fast expression help accepts a useful phrase instead of forcing a single synonym', async () => {
+  const fetchMock = jest.fn(async () => ({
+    ok: true,
+    json: async () => ({
+      output_text: JSON.stringify({
+        candidates: [{
+          expression: 'usability issues or opportunities for improvement',
+          meaning: 'Covers problems and improvements beyond the examples already listed.',
+          example: 'Identify any other usability issues or opportunities for improvement.',
+        }],
+      }),
+    }),
+  }));
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+
+  const response = await onRequestPost(makeContext({
+    assistantTask: 'word_rescue',
+    mode: 'fast',
+    message: 'Check wording, settings, and other aspects that need fixing.',
+  }));
+  const payload = await response.json();
+
+  expect(response.status).toBe(200);
+  expect(payload.wordRescue.candidates[0]).toMatchObject({
+    expression: 'usability issues or opportunities for improvement',
+    word: 'usability issues or opportunities for improvement',
+  });
+  expect(payload.reply).toContain('usability issues or opportunities for improvement');
+});
+
 test('rejects an invalid Word Rescue mode without calling OpenAI', async () => {
   const fetchMock = jest.fn();
   const { onRequestPost } = loadAssistantChat(fetchMock);
@@ -192,7 +222,7 @@ test('reads output text from a raw Responses API message after a reasoning item'
   expect(payload.reply).toContain('meticulous');
 });
 
-test('returns a three-step coach bundle while exposing only the first hint in the reply', async () => {
+test('returns a meaning-first expression coach bundle without exposing the formulation', async () => {
   let openAiBody = null;
   const fetchMock = jest.fn(async (_url, options) => {
     openAiBody = JSON.parse(options.body);
@@ -200,13 +230,14 @@ test('returns a three-step coach bundle while exposing only the first hint in th
       ok: true,
       json: async () => ({
         output_text: JSON.stringify({
-          hints: [
-            'It means avoiding a firm or direct commitment.',
-            'The witness continued to _____ when asked for a yes or no answer.',
-            'It begins with the sound ee and has four syllables.',
+          interpretation: 'The speaker wants to describe avoiding a clear commitment.',
+          prompts: [
+            'What effect does the unclear answer have on the listener?',
+            'Is the broader idea avoidance, uncertainty, or dishonesty?',
+            'Complete this: The witness continued to _____ instead of answering clearly.',
           ],
           answer: {
-            word: 'equivocate',
+            expression: 'equivocate',
             explanation: 'To speak ambiguously so you do not commit clearly.',
             example: 'The spokesperson continued to equivocate.',
           },
@@ -225,20 +256,20 @@ test('returns a three-step coach bundle while exposing only the first hint in th
   const payload = await response.json();
 
   expect(response.status).toBe(200);
-  expect(payload.reply).toBe(`Hint 1 of 3: ${payload.wordRescue.hints[0]}`);
-  expect(payload.wordRescue.hints).toHaveLength(3);
-  expect(payload.wordRescue.answer.word).toBe('equivocate');
-  payload.wordRescue.hints.forEach((hint) => {
-    expect(hint.toLowerCase()).not.toContain('equivocate');
+  expect(payload.reply).toContain('Meaning first:');
+  expect(payload.reply).not.toContain('equivocate');
+  expect(payload.wordRescue.prompts).toHaveLength(3);
+  expect(payload.wordRescue.answer.expression).toBe('equivocate');
+  payload.wordRescue.prompts.forEach((prompt) => {
+    expect(prompt.toLowerCase()).not.toContain('equivocate');
   });
-  expect(payload.wordRescue.hints[2]).toBe('It starts with "E" and has 10 letters.');
   expect(openAiBody.max_output_tokens).toBe(1600);
   expect(openAiBody.text.format).toMatchObject({
     type: 'json_schema',
     name: 'word_rescue_coach',
     strict: true,
   });
-  expect(openAiBody.text.format.schema.properties.hints).toMatchObject({
+  expect(openAiBody.text.format.schema.properties.prompts).toMatchObject({
     minItems: 3,
     maxItems: 3,
   });
@@ -310,13 +341,14 @@ test('does not report a generic assistant success when OpenAI returns no visible
   expect(JSON.stringify(payload)).not.toContain('OpenAI returned no usable text');
 });
 
-test('replaces a coach hint that accidentally reveals the answer', async () => {
+test('replaces a coach prompt that accidentally reveals the answer', async () => {
   const fetchMock = jest.fn(async () => ({
     ok: true,
     json: async () => ({
       output_text: JSON.stringify({
-        hints: ['The word is equivocate.', 'Context clue', 'Letter clue'],
-        answer: { word: 'equivocate', explanation: 'Avoid a direct answer.', example: '' },
+        interpretation: 'The speaker wants to describe avoiding a clear answer.',
+        prompts: ['The expression is equivocate.', 'Give two examples of the effect.', 'Complete: They continued to equivocate when _____.'],
+        answer: { expression: 'equivocate', explanation: 'Avoid a direct answer.', example: '' },
         alternatives: [],
       }),
     }),
@@ -331,12 +363,12 @@ test('replaces a coach hint that accidentally reveals the answer', async () => {
   const payload = await response.json();
 
   expect(response.status).toBe(200);
-  expect(payload.wordRescue.answer.word).toBe('equivocate');
-  expect(payload.wordRescue.hints).toHaveLength(3);
-  payload.wordRescue.hints.forEach((hint) => {
-    expect(hint.toLowerCase()).not.toContain('equivocate');
+  expect(payload.wordRescue.answer.expression).toBe('equivocate');
+  expect(payload.wordRescue.prompts).toHaveLength(3);
+  payload.wordRescue.prompts.forEach((prompt) => {
+    expect(prompt.toLowerCase()).not.toContain('equivocate');
   });
-  expect(payload.wordRescue.hints[0]).toContain('Avoid a direct answer.');
+  expect(payload.wordRescue.prompts[0]).toContain('What result');
 });
 
 test('keeps provider failure details out of a Word Rescue error', async () => {

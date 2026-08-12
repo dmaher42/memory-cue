@@ -116,6 +116,27 @@ test('creates an opt-in Inbox practice entry without changing existing entries',
   }));
 });
 
+test('stores coached phrasing as an expression card using the original communication situation', () => {
+  const createEntry = jest.fn((payload) => ({ id: 'expression-card', type: 'inbox', ...payload }));
+
+  const result = service.addVocabularyPracticeEntry([], {
+    kind: 'expression',
+    word: 'usability issues or opportunities for improvement',
+    cue: 'Check wording, settings, and other aspects that need fixing.',
+    explanation: 'Invites a broader review beyond the examples already listed.',
+    example: 'Identify any other usability issues or opportunities for improvement.',
+    hints: ['What broader effect might unlisted menu problems have?'],
+  }, { now: NOW, createEntry });
+
+  expect(result.status).toBe('created');
+  expect(result.entry.metadata.memoryCoach).toMatchObject({
+    kind: 'expression',
+    prompt: 'Check wording, settings, and other aspects that need fixing.',
+    answer: 'usability issues or opportunities for improvement',
+  });
+  expect(result.entry.tags).toEqual(['memory-coach', 'expression']);
+});
+
 test('prevents duplicate vocabulary cards regardless of case', () => {
   const existing = makeCoachEntry('word-card', { answer: 'Evasive' });
   const createEntry = jest.fn();

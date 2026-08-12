@@ -305,11 +305,11 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const renderEmptyState = (card) => {
-    appendCardHeader(card, 'Personal recall', 'Save your first word to practise');
+    appendCardHeader(card, 'Personal recall', 'Save your first expression to practise');
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      'Find a useful word, then choose “Learn”. Memory Cue will bring it back when it is time to practise.',
+      'Find useful wording, then choose “Practise”. Memory Cue will bring the original situation back when it is time to retrieve it yourself.',
     ));
     const actions = createElement('div', 'memory-coach-actions');
     appendButton(actions, 'Find a word', 'find-word', { primary: true, focus: true });
@@ -323,16 +323,16 @@ export const createMemoryCoachUi = (options = {}) => {
       'memory-coach-copy',
       summary.nextDueAt
         ? `Your next word returns ${formatNextReview(summary.nextDueAt, now())}.`
-        : 'There are no words waiting for review.',
+        : 'There are no expressions waiting for review.',
     ));
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
-    appendButton(actions, 'Find another word', 'find-word', { primary: true, focus: true });
+    appendButton(actions, 'Practise another idea', 'find-word', { primary: true, focus: true });
     card.appendChild(actions);
   };
 
   const renderPrompt = (card, item) => {
-    appendCardHeader(card, `Card ${currentIndex + 1} of ${session.total}`, 'Recall the word');
+    appendCardHeader(card, `Card ${currentIndex + 1} of ${session.total}`, 'Express the meaning');
     card.appendChild(createElement('p', 'memory-coach-prompt', item.prompt));
     card.appendChild(createElement(
       'p',
@@ -409,7 +409,7 @@ export const createMemoryCoachUi = (options = {}) => {
     if (summary.due > 0) {
       appendButton(actions, 'Continue practice', 'continue', { primary: true, focus: true });
     }
-    appendButton(actions, 'Find another word', 'find-word', {
+    appendButton(actions, 'Practise another idea', 'find-word', {
       primary: summary.due === 0,
       focus: summary.due === 0,
     });
