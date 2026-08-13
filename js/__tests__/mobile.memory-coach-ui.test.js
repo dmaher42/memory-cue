@@ -208,6 +208,52 @@ test('creates a general memory card from a prompt and hidden answer', () => {
   expect(document.querySelector('.memory-coach-card').textContent).not.toContain('Priya Shah');
 });
 
+test('creates and reviews a list without exposing its items before reveal', () => {
+  const { controller, getStoredEntries } = setup();
+  controller.activate();
+
+  document.querySelector('[data-memory-coach-action="add-list"]').click();
+  document.getElementById('memoryCoachListPrompt').value = 'What do I need for football training?';
+  document.getElementById('memoryCoachListItems').value = '1. Boots\n- Water bottle\n• Towel';
+  document.getElementById('memoryCoachListOrder').checked = true;
+  document.querySelector('[data-memory-coach-form="list"]').dispatchEvent(new window.Event('submit', {
+    bubbles: true,
+    cancelable: true,
+  }));
+
+  const coach = getStoredEntries()[0].metadata.memoryCoach;
+  expect(coach).toMatchObject({
+    kind: 'list',
+    items: ['Boots', 'Water bottle', 'Towel'],
+    orderMatters: true,
+  });
+  expect(document.querySelector('.memory-coach-prompt').textContent).toContain('football training');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('Water bottle');
+  expect(document.querySelector('.memory-coach-copy').textContent).toContain('all 3 items in order');
+
+  document.querySelector('[data-memory-coach-action="reveal"]').click();
+  expect([...document.querySelectorAll('.memory-coach-answer-list li')].map((item) => item.textContent))
+    .toEqual(['Boots', 'Water bottle', 'Towel']);
+  expect(document.querySelector('.memory-coach-answer-list').tagName).toBe('OL');
+});
+
+test('keeps a list draft when fewer than two items are supplied', () => {
+  const { controller } = setup();
+  controller.activate();
+  document.querySelector('[data-memory-coach-action="add-list"]').click();
+  document.getElementById('memoryCoachListPrompt').value = 'Packing list';
+  document.getElementById('memoryCoachListItems').value = 'Boots';
+  document.querySelector('[data-memory-coach-form="list"]').dispatchEvent(new window.Event('submit', {
+    bubbles: true,
+    cancelable: true,
+  }));
+
+  expect(document.querySelector('.memory-coach-create-error').textContent)
+    .toBe('Add a prompt and at least two list items.');
+  expect(document.getElementById('memoryCoachListPrompt').value).toBe('Packing list');
+  expect(document.getElementById('memoryCoachListItems').value).toBe('Boots');
+});
+
 test('keeps the memory draft when validation fails', () => {
   const { controller } = setup();
   controller.activate();

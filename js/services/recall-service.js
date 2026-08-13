@@ -110,7 +110,9 @@ export const normalizeMemoryCoachMetadata = (value, options = {}) => {
     return null;
   }
 
-  const answer = normalizeText(value.answer, 120);
+  const items = normalizeTextList(value.items, 20, 120);
+  const answer = normalizeText(value.answer, 120)
+    || (items.length ? normalizeText(items.join(' • '), 120) : '');
   const explanation = normalizeText(value.explanation, 600);
   const fallbackPrompt = explanation ? `Which word means: ${explanation}` : '';
   const prompt = maskPracticeAnswer(normalizeText(value.prompt, 600) || fallbackPrompt, answer);
@@ -129,9 +131,11 @@ export const normalizeMemoryCoachMetadata = (value, options = {}) => {
 
   return {
     schemaVersion: MEMORY_COACH_SCHEMA_VERSION,
-    kind: value.kind === 'vocabulary' || value.kind === 'expression' ? value.kind : 'memory',
+    kind: ['vocabulary', 'expression', 'list'].includes(value.kind) ? value.kind : 'memory',
     prompt,
     answer,
+    items,
+    orderMatters: value.kind === 'list' && value.orderMatters === true,
     explanation,
     example: normalizeText(value.example, 600),
     hints: normalizeTextList(value.hints).map((hint) => maskPracticeAnswer(hint, answer)),
@@ -357,20 +361,28 @@ export const getPracticeSummary = (entries = [], options = {}) => {
 
 export const addMemoryPracticeEntry = (entries = [], payload = {}, options = {}) => {
   const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
-  const answer = normalizeText(payload.answer || payload.word, 120);
+  const items = normalizeTextList(payload.items, 20, 120);
+  const isList = payload.kind === 'list';
+  const answer = normalizeText(
+    payload.answer || payload.word || (isList ? items.join(' • ') : ''),
+    120,
+  );
   const explanation = normalizeText(payload.explanation || payload.meaning, 600);
   const promptSource = normalizeText(payload.prompt || payload.cue, 600);
   const prompt = maskPracticeAnswer(
     promptSource || (explanation ? `What are you trying to remember about: ${explanation}` : ''),
     answer,
   );
-  if (!answer || !prompt || typeof options.createEntry !== 'function') {
+  if (!answer || !prompt || (isList && items.length < 2) || typeof options.createEntry !== 'function') {
     return { entries: Array.isArray(entries) ? entries : [], entry: null, status: 'invalid' };
   }
 
   const existing = getMemoryCoachItems(entries, { includePaused: true, now })
     .find((item) => (
-      normalizeAnswerKey(item.answer) === normalizeAnswerKey(answer)
+      (isList
+        ? item.kind === 'list'
+          && item.items.map(normalizeAnswerKey).join('|') === items.map(normalizeAnswerKey).join('|')
+        : normalizeAnswerKey(item.answer) === normalizeAnswerKey(answer))
       && (
         options.matchAnswerOnly === true
         || normalizeAnswerKey(item.prompt) === normalizeAnswerKey(prompt)
@@ -390,12 +402,14 @@ export const addMemoryPracticeEntry = (entries = [], payload = {}, options = {})
 
   const createdAt = new Date(now).toISOString();
   const example = normalizeText(payload.example, 600);
-  const kind = ['vocabulary', 'expression'].includes(payload.kind) ? payload.kind : 'memory';
+  const kind = ['vocabulary', 'expression', 'list'].includes(payload.kind) ? payload.kind : 'memory';
   const memoryCoach = normalizeMemoryCoachMetadata({
     schemaVersion: MEMORY_COACH_SCHEMA_VERSION,
     kind,
     prompt,
     answer,
+    items,
+    orderMatters: kind === 'list' && payload.orderMatters === true,
     explanation,
     example,
     hints: payload.hints,
@@ -411,7 +425,11 @@ export const addMemoryPracticeEntry = (entries = [], payload = {}, options = {})
     history: [],
   }, { now });
   const entry = options.createEntry({
-    text: explanation ? `${answer}: ${explanation}` : `Practise remembering: ${answer}`,
+    text: explanation
+      ? `${answer}: ${explanation}`
+      : kind === 'list'
+        ? `Practise list: ${prompt}`
+        : `Practise remembering: ${answer}`,
     source: options.source === 'word-rescue' ? 'assistant' : 'user',
     parsedType: 'unknown',
     tags: ['memory-coach', kind],

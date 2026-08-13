@@ -849,6 +849,45 @@ html.dark #thinkingBarVoiceButton.is-listening {
   outline-offset: 1px;
 }
 
+#memoryCoachContainer .memory-coach-create-textarea {
+  min-height: 7.5rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+#memoryCoachContainer .memory-coach-order-field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+#memoryCoachContainer .memory-coach-order-field input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent-color, #0f766e);
+}
+
+#memoryCoachContainer .memory-coach-answer-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding-inline-start: 1.35rem;
+  font-size: 0.95rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+#memoryCoachContainer ol.memory-coach-answer-list {
+  list-style: decimal;
+}
+
+#memoryCoachContainer ul.memory-coach-answer-list {
+  list-style: disc;
+}
+
 #memoryCoachContainer .memory-coach-create-error {
   margin: 0;
   color: #b91c1c;

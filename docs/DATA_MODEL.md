@@ -75,6 +75,8 @@ Memory Coach does not introduce a separate record store. A card is a hidden defe
       "kind": "vocabulary",
       "prompt": "retrieval prompt without the answer",
       "answer": "word",
+      "items": [],
+      "orderMatters": false,
       "explanation": "short meaning",
       "example": "example sentence",
       "hints": [],
@@ -93,7 +95,7 @@ Memory Coach does not introduce a separate record store. A card is a hidden defe
 }
 ```
 
-Only an explicit `Learn` action creates this metadata. Review ratings update the single Inbox entry. Normal Inbox readers filter these cards, while full Inbox sync and backup retain them.
+Only an explicit practice action creates this metadata. A list card uses `kind: "list"`, stores up to 20 individual `items`, and records whether `orderMatters`. Review ratings update the single Inbox entry. Normal Inbox readers filter these cards, while full Inbox sync and backup retain them.
 
 ## AssistantConversation
 ```json

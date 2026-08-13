@@ -141,6 +141,49 @@ test('creates a general recall card without a parallel store', () => {
   });
 });
 
+test('creates an ordered list card inside the existing practice store', () => {
+  const result = service.addMemoryPracticeEntry([], {
+    kind: 'list',
+    prompt: 'What do I need for football training?',
+    items: ['Boots', 'Water bottle', 'Towel'],
+    orderMatters: true,
+  }, {
+    now: NOW,
+    createEntry: (payload) => ({ id: 'list-card', type: 'inbox', ...payload }),
+  });
+
+  expect(result.status).toBe('created');
+  expect(result.entry.text).toBe('Practise list: What do I need for football training?');
+  expect(result.entry.metadata.memoryCoach).toMatchObject({
+    kind: 'list',
+    prompt: 'What do I need for football training?',
+    items: ['Boots', 'Water bottle', 'Towel'],
+    orderMatters: true,
+  });
+});
+
+test('requires at least two items and prevents a duplicate list', () => {
+  const createEntry = (payload) => ({ id: 'list-card', type: 'inbox', ...payload });
+  const invalid = service.addMemoryPracticeEntry([], {
+    kind: 'list',
+    prompt: 'Packing list',
+    items: ['Boots'],
+  }, { now: NOW, createEntry });
+  expect(invalid.status).toBe('invalid');
+
+  const first = service.addMemoryPracticeEntry([], {
+    kind: 'list',
+    prompt: 'Packing list',
+    items: ['Boots', 'Water'],
+  }, { now: NOW, createEntry });
+  const duplicate = service.addMemoryPracticeEntry(first.entries, {
+    kind: 'list',
+    prompt: 'Packing list',
+    items: ['boots', 'water'],
+  }, { now: NOW, createEntry });
+  expect(duplicate.status).toBe('existing');
+});
+
 test('stores coached phrasing as an expression card using the original communication situation', () => {
   const createEntry = jest.fn((payload) => ({ id: 'expression-card', type: 'inbox', ...payload }));
 

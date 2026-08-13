@@ -48,6 +48,12 @@ const formatNextReview = (value, now = Date.now()) => {
 
 const getPracticeHints = (item) => {
   const hints = Array.isArray(item?.hints) ? [...item.hints] : [];
+  if (item?.kind === 'list' && Array.isArray(item.items)) {
+    hints.unshift(`There are ${item.items.length} items${item.orderMatters ? ', and their order matters' : ''}.`);
+    if (item.items.length) {
+      hints.push(`Initials: ${item.items.map((listItem) => listItem.charAt(0).toLocaleUpperCase()).join(', ')}`);
+    }
+  }
   const maskedExample = maskPracticeAnswer(item?.example, item?.answer);
   if (maskedExample && maskedExample !== item?.example) {
     hints.push(`Complete the example: ${maskedExample}`);
@@ -104,7 +110,7 @@ export const createMemoryCoachUi = (options = {}) => {
   let preferredFocusAction = '';
   let lastPausedItem = null;
   let creationError = '';
-  let creationDraft = { prompt: '', answer: '' };
+  let creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
   const defaultControlsLabel = controlsRegion instanceof HTMLElement
     ? controlsRegion.getAttribute('aria-label') || ''
     : '';
@@ -272,9 +278,12 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const saveMemory = (payload = {}) => {
+    const isList = payload.kind === 'list';
     creationDraft = {
       prompt: typeof payload.prompt === 'string' ? payload.prompt : '',
       answer: typeof payload.answer === 'string' ? payload.answer : '',
+      itemsText: typeof payload.itemsText === 'string' ? payload.itemsText : '',
+      orderMatters: payload.orderMatters === true,
     };
     const result = addMemoryPracticeEntry(getEntries(), payload, {
       createEntry,
@@ -290,19 +299,21 @@ export const createMemoryCoachUi = (options = {}) => {
         return { ...result, status: 'save_failed' };
       }
       creationError = '';
-      creationDraft = { prompt: '', answer: '' };
+      creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
       startSession();
       requestCoachRender('start');
       return result;
     }
     if (result.status !== 'created') {
-      creationError = 'Add both a memory prompt and what you want to remember.';
+      creationError = isList
+        ? 'Add a prompt and at least two list items.'
+        : 'Add both a memory prompt and what you want to remember.';
       requestCoachRender('memory-prompt');
       return result;
     }
     creationError = '';
-    creationDraft = { prompt: '', answer: '' };
-    announceUpdatedItems('Saved for recall practice.');
+    creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
+    announceUpdatedItems(isList ? 'List saved for recall practice.' : 'Saved for recall practice.');
     startSession();
     requestCoachRender('start');
     return result;
@@ -354,6 +365,7 @@ export const createMemoryCoachUi = (options = {}) => {
     ));
     const actions = createElement('div', 'memory-coach-actions');
     appendButton(actions, 'Add memory', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Remember a list', 'add-list');
     appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
@@ -370,6 +382,7 @@ export const createMemoryCoachUi = (options = {}) => {
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
     appendButton(actions, 'Add memory', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Remember a list', 'add-list');
     appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
@@ -441,13 +454,88 @@ export const createMemoryCoachUi = (options = {}) => {
     window.requestAnimationFrame?.(() => promptInput.focus());
   };
 
+  const parseListItems = (value) => (
+    typeof value === 'string'
+      ? value
+        .split(/\r?\n/)
+        .map((item) => item.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim())
+        .filter((item, index, list) => item && list.indexOf(item) === index)
+        .slice(0, 20)
+      : []
+  );
+
+  const renderCreateList = (card) => {
+    appendCardHeader(card, 'New list', 'What list would you like to remember?');
+    card.appendChild(createElement(
+      'p',
+      'memory-coach-copy',
+      'Add one item per line. The whole list stays hidden until you reveal it.',
+    ));
+    const form = createElement('form', 'memory-coach-create-form');
+    form.dataset.memoryCoachForm = 'list';
+    const promptInput = appendCreationField(form, {
+      id: 'memoryCoachListPrompt',
+      label: 'List prompt',
+      help: 'What should make you recall this list?',
+      placeholder: 'e.g. What do I need for football training?',
+      maxLength: 600,
+    });
+    const itemsField = createElement('label', 'memory-coach-create-field');
+    itemsField.setAttribute('for', 'memoryCoachListItems');
+    itemsField.append(
+      createElement('span', 'memory-coach-create-label', 'List items'),
+      createElement('span', 'memory-coach-create-help', 'One item per line; add at least two.'),
+    );
+    const itemsInput = createElement('textarea', 'memory-coach-create-input memory-coach-create-textarea');
+    itemsInput.id = 'memoryCoachListItems';
+    itemsInput.name = 'memoryCoachListItems';
+    itemsInput.placeholder = 'Boots\nWater bottle\nTowel';
+    itemsInput.maxLength = 2400;
+    itemsInput.rows = 5;
+    itemsField.appendChild(itemsInput);
+    form.appendChild(itemsField);
+
+    const orderField = createElement('label', 'memory-coach-order-field');
+    const orderInput = createElement('input');
+    orderInput.type = 'checkbox';
+    orderInput.id = 'memoryCoachListOrder';
+    orderInput.checked = creationDraft.orderMatters;
+    orderField.append(orderInput, createElement('span', '', 'Remember these in order'));
+    form.appendChild(orderField);
+
+    promptInput.value = creationDraft.prompt;
+    itemsInput.value = creationDraft.itemsText;
+    promptInput.enterKeyHint = 'next';
+    promptInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      event.preventDefault();
+      itemsInput.focus();
+    });
+    if (creationError) {
+      const error = createElement('p', 'memory-coach-create-error', creationError);
+      error.setAttribute('role', 'alert');
+      form.appendChild(error);
+    }
+    const actions = createElement('div', 'memory-coach-actions');
+    const save = appendButton(actions, 'Save list for practice', 'save-list', { primary: true });
+    save.type = 'submit';
+    appendButton(actions, 'Cancel', 'cancel-add-memory');
+    form.appendChild(actions);
+    card.appendChild(form);
+    window.requestAnimationFrame?.(() => promptInput.focus());
+  };
+
   const renderPrompt = (card, item) => {
     appendCardHeader(card, `Memory ${currentIndex + 1} of ${session.total}`, 'Retrieve it before revealing');
     card.appendChild(createElement('p', 'memory-coach-prompt', item.prompt));
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      'Say the answer aloud or bring it clearly to mind before revealing it.',
+      item.kind === 'list'
+        ? `Recall all ${item.items.length} items${item.orderMatters ? ' in order' : ''} before revealing them.`
+        : 'Say the answer aloud or bring it clearly to mind before revealing it.',
     ));
     const actions = createElement('div', 'memory-coach-actions');
     const hints = getPracticeHints(item);
@@ -481,7 +569,13 @@ export const createMemoryCoachUi = (options = {}) => {
   const renderAnswer = (card, item) => {
     appendCardHeader(card, `Memory ${currentIndex + 1} of ${session.total}`, 'How did recall feel?');
     const answer = createElement('div', 'memory-coach-answer');
-    answer.appendChild(createElement('strong', 'memory-coach-answer-word', item.answer));
+    if (item.kind === 'list' && item.items.length) {
+      const list = createElement(item.orderMatters ? 'ol' : 'ul', 'memory-coach-answer-list');
+      item.items.forEach((listItem) => list.appendChild(createElement('li', '', listItem)));
+      answer.appendChild(list);
+    } else {
+      answer.appendChild(createElement('strong', 'memory-coach-answer-word', item.answer));
+    }
     if (item.explanation) {
       answer.appendChild(createElement('span', 'memory-coach-answer-detail', item.explanation));
     }
@@ -523,6 +617,7 @@ export const createMemoryCoachUi = (options = {}) => {
       primary: summary.due === 0,
       focus: summary.due === 0,
     });
+    appendButton(actions, 'Remember a list', 'add-list');
     appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
@@ -589,7 +684,7 @@ export const createMemoryCoachUi = (options = {}) => {
     if (!result.updated || !persistEntry(result.item?.entry)) {
       return;
     }
-    lastPausedItem = { id: item.id, answer: item.answer };
+    lastPausedItem = { id: item.id, answer: item.kind === 'list' ? item.prompt : item.answer };
     session.itemIds.splice(currentIndex, 1);
     session.total = session.itemIds.length;
     resetCardState();
@@ -644,12 +739,17 @@ export const createMemoryCoachUi = (options = {}) => {
       requestCoachRender('hint');
     } else if (action === 'add-memory') {
       creationError = '';
-      creationDraft = { prompt: '', answer: '' };
+      creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
       phase = 'create';
       requestCoachRender('memory-prompt');
+    } else if (action === 'add-list') {
+      creationError = '';
+      creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
+      phase = 'create-list';
+      requestCoachRender('list-prompt');
     } else if (action === 'cancel-add-memory') {
       creationError = '';
-      creationDraft = { prompt: '', answer: '' };
+      creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
       startSession();
       requestCoachRender('start');
     } else if (action === 'find-word') {
@@ -673,6 +773,8 @@ export const createMemoryCoachUi = (options = {}) => {
     const summary = getPracticeSummary(entries, { now: now() });
     if (phase === 'create') {
       renderCreateMemory(card);
+    } else if (phase === 'create-list') {
+      renderCreateList(card);
     } else if (!summary.total) {
       renderEmptyState(card);
     } else if (!session?.total && phase !== 'complete') {
@@ -703,17 +805,28 @@ export const createMemoryCoachUi = (options = {}) => {
   container.addEventListener('click', handleCardClick);
   container.addEventListener('submit', (event) => {
     const form = event.target instanceof Element
-      ? event.target.closest('[data-memory-coach-form="create"]')
+      ? event.target.closest('[data-memory-coach-form]')
       : null;
     if (!(form instanceof HTMLFormElement)) {
       return;
     }
     event.preventDefault();
-    saveMemory({
-      prompt: form.querySelector('#memoryCoachNewPrompt')?.value,
-      answer: form.querySelector('#memoryCoachNewAnswer')?.value,
-      kind: 'memory',
-    });
+    if (form.dataset.memoryCoachForm === 'list') {
+      const itemsText = form.querySelector('#memoryCoachListItems')?.value || '';
+      saveMemory({
+        prompt: form.querySelector('#memoryCoachListPrompt')?.value,
+        itemsText,
+        items: parseListItems(itemsText),
+        orderMatters: form.querySelector('#memoryCoachListOrder')?.checked === true,
+        kind: 'list',
+      });
+    } else {
+      saveMemory({
+        prompt: form.querySelector('#memoryCoachNewPrompt')?.value,
+        answer: form.querySelector('#memoryCoachNewAnswer')?.value,
+        kind: 'memory',
+      });
+    }
   });
   launcher?.addEventListener('click', () => {
     if (active) {
