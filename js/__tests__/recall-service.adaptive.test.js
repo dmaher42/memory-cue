@@ -25,6 +25,7 @@ module.exports = {
   recordPracticeResult,
   setPracticeItemEnabled,
   getPracticeSummary,
+  addMemoryPracticeEntry,
   addVocabularyPracticeEntry,
   getRecallItems,
 };`;
@@ -114,6 +115,30 @@ test('creates an opt-in Inbox practice entry without changing existing entries',
     source: 'assistant',
     entryPoint: 'memoryCoach.saveVocabulary',
   }));
+});
+
+test('creates a general recall card without a parallel store', () => {
+  const result = service.addMemoryPracticeEntry([], {
+    prompt: 'What is the capital of South Australia?',
+    answer: 'Adelaide',
+  }, {
+    now: NOW,
+    createEntry: (payload) => ({ id: 'memory-gate', type: 'inbox', ...payload }),
+  });
+
+  expect(result.status).toBe('created');
+  expect(result.entry).toMatchObject({
+    type: 'inbox',
+    metadata: {
+      type: 'memory-card',
+      source: 'memory-coach',
+      memoryCoach: {
+        kind: 'memory',
+        prompt: 'What is the capital of South Australia?',
+        answer: 'Adelaide',
+      },
+    },
+  });
 });
 
 test('stores coached phrasing as an expression card using the original communication situation', () => {

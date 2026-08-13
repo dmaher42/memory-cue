@@ -209,6 +209,7 @@ Legacy shells remain for reference only.
     }
 
     body[data-active-view="notebooks"] #thinkingBarContainer,
+    body[data-active-view="coach"] #thinkingBarContainer,
     body[data-active-view="reminders"] #thinkingBarContainer,
     body[data-active-view="notebooks"] .chat-composer,
     body[data-active-view="reminders"] .chat-composer {
@@ -4859,14 +4860,6 @@ body, main, section, div, p, span, li {
       <h1 class="header-title title">Capture</h1>
       <div class="capture-header-actions" role="group" aria-label="Capture tools">
         <button
-          id="memoryCoachLauncher"
-          type="button"
-          class="memory-coach-launcher"
-          aria-expanded="false"
-          aria-pressed="false"
-          aria-controls="chatConversationContainer"
-        >Memory coach</button>
-        <button
           id="wordRescueLauncher"
           type="button"
           class="word-rescue-launcher"
@@ -4970,6 +4963,22 @@ body, main, section, div, p, span, li {
     <section data-view="capture" id="view-capture" class="view-panel">
       <div class="capture-container capture-chat-layout">
         <section id="chatConversationContainer" aria-label="Capture conversation" aria-live="polite"></section>
+      </div>
+    </section>
+    <section data-view="coach" id="view-memory-coach" class="view-panel hidden" aria-hidden="true">
+      <div class="memory-coach-page">
+        <header class="memory-coach-page-intro">
+          <span class="memory-coach-page-eyebrow">Memory and recall</span>
+          <h2>Strengthen memories that matter to you</h2>
+          <p>Practise retrieving names, facts, useful wording, steps, and personal details. Short, spaced sessions adapt to what you find difficult.</p>
+          <div class="memory-coach-scope" aria-label="Things you can practise">
+            <span>Names and people</span>
+            <span>Facts and knowledge</span>
+            <span>Words and phrases</span>
+            <span>Steps and routines</span>
+          </div>
+        </header>
+        <section id="memoryCoachContainer" class="memory-coach-surface" aria-label="Memory Coach practice" aria-live="polite"></section>
       </div>
     </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
@@ -5517,10 +5526,6 @@ body, main, section, div, p, span, li {
       <span>Word help: <strong id="wordRescueModeLabel">Help me say it now</strong></span>
       <button id="wordRescueExitButton" type="button" class="word-rescue-exit-button">Back to Capture</button>
     </div>
-    <div id="memoryCoachModeBar" class="memory-coach-mode-bar hidden" aria-live="polite">
-      <span>Memory coach: <strong id="memoryCoachModeLabel">Practice</strong></span>
-      <button id="memoryCoachExitButton" type="button" class="memory-coach-exit-button">Back to Capture</button>
-    </div>
     <div id="classThoughtModeBar" class="class-thought-mode-bar hidden" aria-live="polite">
       <span>New note: <strong id="classThoughtModeLabel">Class</strong></span>
       <button id="classThoughtExitButton" type="button" class="class-thought-exit-button">Close</button>
@@ -5571,6 +5576,15 @@ body, main, section, div, p, span, li {
         data-tab="capture"
         aria-label="Go to Capture"
       >Capture</button>
+
+      <button
+        type="button"
+        class="floating-card nav-item btn-coach"
+        id="memoryCoachLauncher"
+        data-nav-target="coach"
+        data-tab="coach"
+        aria-label="Go to Memory Coach"
+      >Coach</button>
 
       <button
         type="button"

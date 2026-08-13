@@ -355,21 +355,27 @@ export const getPracticeSummary = (entries = [], options = {}) => {
   };
 };
 
-export const addVocabularyPracticeEntry = (entries = [], payload = {}, options = {}) => {
+export const addMemoryPracticeEntry = (entries = [], payload = {}, options = {}) => {
   const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
-  const word = normalizeText(payload.word, 120);
+  const answer = normalizeText(payload.answer || payload.word, 120);
   const explanation = normalizeText(payload.explanation || payload.meaning, 600);
   const promptSource = normalizeText(payload.prompt || payload.cue, 600);
   const prompt = maskPracticeAnswer(
-    promptSource || (explanation ? `Which word means: ${explanation}` : ''),
-    word,
+    promptSource || (explanation ? `What are you trying to remember about: ${explanation}` : ''),
+    answer,
   );
-  if (!word || !prompt || typeof options.createEntry !== 'function') {
+  if (!answer || !prompt || typeof options.createEntry !== 'function') {
     return { entries: Array.isArray(entries) ? entries : [], entry: null, status: 'invalid' };
   }
 
   const existing = getMemoryCoachItems(entries, { includePaused: true, now })
-    .find((item) => normalizeAnswerKey(item.answer) === normalizeAnswerKey(word));
+    .find((item) => (
+      normalizeAnswerKey(item.answer) === normalizeAnswerKey(answer)
+      && (
+        options.matchAnswerOnly === true
+        || normalizeAnswerKey(item.prompt) === normalizeAnswerKey(prompt)
+      )
+    ));
   if (existing) {
     if (!existing.enabled) {
       const resumed = setPracticeItemEnabled(entries, existing.id, true, { now });
@@ -384,12 +390,12 @@ export const addVocabularyPracticeEntry = (entries = [], payload = {}, options =
 
   const createdAt = new Date(now).toISOString();
   const example = normalizeText(payload.example, 600);
-  const kind = payload.kind === 'expression' ? 'expression' : 'vocabulary';
+  const kind = ['vocabulary', 'expression'].includes(payload.kind) ? payload.kind : 'memory';
   const memoryCoach = normalizeMemoryCoachMetadata({
     schemaVersion: MEMORY_COACH_SCHEMA_VERSION,
     kind,
     prompt,
-    answer: word,
+    answer,
     explanation,
     example,
     hints: payload.hints,
@@ -405,16 +411,16 @@ export const addVocabularyPracticeEntry = (entries = [], payload = {}, options =
     history: [],
   }, { now });
   const entry = options.createEntry({
-    text: explanation ? `${word}: ${explanation}` : `Practice word: ${word}`,
-    source: 'assistant',
+    text: explanation ? `${answer}: ${explanation}` : `Practise remembering: ${answer}`,
+    source: options.source === 'word-rescue' ? 'assistant' : 'user',
     parsedType: 'unknown',
     tags: ['memory-coach', kind],
     createdAt: now,
     updatedAt: now,
-    entryPoint: 'memoryCoach.saveVocabulary',
+    entryPoint: options.entryPoint || 'memoryCoach.saveMemory',
     metadata: {
       type: 'memory-card',
-      source: 'word-rescue',
+      source: options.source || 'memory-coach',
       memoryCoach,
     },
   });
@@ -423,6 +429,19 @@ export const addVocabularyPracticeEntry = (entries = [], payload = {}, options =
   }
   return { entries: [entry, ...(Array.isArray(entries) ? entries : [])], entry, status: 'created' };
 };
+
+export const addVocabularyPracticeEntry = (entries = [], payload = {}, options = {}) => (
+  addMemoryPracticeEntry(entries, {
+    ...payload,
+    answer: payload.word,
+    kind: payload.kind === 'expression' ? 'expression' : 'vocabulary',
+  }, {
+    ...options,
+    matchAnswerOnly: true,
+    entryPoint: 'memoryCoach.saveVocabulary',
+    source: 'word-rescue',
+  })
+);
 
 // Compatibility helper for the retired passive recall experiment. Keep this export until
 // mobile.js no longer has older callers that expect age-based suggestions.

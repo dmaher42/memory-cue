@@ -229,7 +229,8 @@ body.app-shell .content .card,
   box-shadow: 0 5px 12px rgba(15, 23, 42, 0.18) !important;
 }
 
-body[data-active-view="notebooks"] #thinkingBarContainer {
+body[data-active-view="notebooks"] #thinkingBarContainer,
+body[data-active-view="coach"] #thinkingBarContainer {
   display: none !important;
 }
 
@@ -333,4 +334,3 @@ body[data-active-view="notebooks"] #thinkingBarContainer {
   background: #5eead4;
   color: #0f172a;
 }
-

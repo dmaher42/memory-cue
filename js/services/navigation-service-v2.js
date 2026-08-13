@@ -1,5 +1,11 @@
 (function () {
-  const VIEW_ORDER = ['capture', 'reminders', 'notebooks'];
+  const VIEW_ORDER = ['capture', 'coach', 'reminders', 'notebooks'];
+  const VIEW_TITLES = Object.freeze({
+    capture: 'Capture',
+    coach: 'Memory Coach',
+    reminders: 'Reminders',
+    notebooks: 'Notes',
+  });
 
   const normalizeViewName = (name) => {
     if (!name) return 'capture';
@@ -38,6 +44,10 @@
 
     document.body?.setAttribute('data-active-view', viewName);
     document.getElementById('main')?.setAttribute('data-active-view', viewName);
+    const headerTitle = document.querySelector('#reminders-slim-header .header-title');
+    if (headerTitle instanceof HTMLElement && VIEW_TITLES[viewName]) {
+      headerTitle.textContent = VIEW_TITLES[viewName];
+    }
     updateActiveNav(viewName);
 
     window.dispatchEvent(new CustomEvent('memorycue:navigation:changed', { detail: { view: viewName } }));

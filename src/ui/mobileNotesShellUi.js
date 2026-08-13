@@ -1853,15 +1853,16 @@ export const initMobileNotesShellUi = (options = {}) => {
   }
 
   const renderNotesAppHeader = () => {
-    const notesViewIsActive = document.body?.dataset.activeView === 'notebooks';
+    const activeView = document.body?.dataset.activeView || 'capture';
+    const notesViewIsActive = activeView === 'notebooks';
     if (notesHeaderActions instanceof HTMLElement) {
       notesHeaderActions.hidden = !notesViewIsActive;
       notesHeaderActions.setAttribute('aria-hidden', notesViewIsActive ? 'false' : 'true');
     }
-    if (appHeaderTitle instanceof HTMLElement) {
-      appHeaderTitle.textContent = notesViewIsActive
-        ? (notesMode === 'overview' ? 'Saved notes' : 'Notes')
-        : (appHeaderTitle.dataset.defaultTitle || 'Memory Cue');
+    if (appHeaderTitle instanceof HTMLElement && notesViewIsActive) {
+      appHeaderTitle.textContent = notesMode === 'overview' ? 'Saved notes' : 'Notes';
+    } else if (appHeaderTitle instanceof HTMLElement && activeView === 'capture') {
+      appHeaderTitle.textContent = appHeaderTitle.dataset.defaultTitle || 'Memory Cue';
     }
   };
 

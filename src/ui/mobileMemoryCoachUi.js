@@ -1,4 +1,5 @@
 import {
+  addMemoryPracticeEntry,
   addVocabularyPracticeEntry,
   createPracticeSession,
   getMemoryCoachItems,
@@ -52,7 +53,7 @@ const getPracticeHints = (item) => {
     hints.push(`Complete the example: ${maskedExample}`);
   }
   const answer = typeof item?.answer === 'string' ? item.answer.trim() : '';
-  if (answer) {
+  if (answer && ['vocabulary', 'expression'].includes(item?.kind)) {
     hints.push(`It starts with “${answer.charAt(0).toLocaleUpperCase()}” and has ${answer.length} letters.`);
   }
   return hints
@@ -76,6 +77,7 @@ export const createMemoryCoachUi = (options = {}) => {
     requestRender = () => {},
     beforeActivate = () => {},
     onFindWord = () => {},
+    navigationView = '',
     now = () => Date.now(),
   } = options;
 
@@ -101,6 +103,7 @@ export const createMemoryCoachUi = (options = {}) => {
   let secureCount = 0;
   let preferredFocusAction = '';
   let lastPausedItem = null;
+  let creationError = '';
   const defaultControlsLabel = controlsRegion instanceof HTMLElement
     ? controlsRegion.getAttribute('aria-label') || ''
     : '';
@@ -267,6 +270,28 @@ export const createMemoryCoachUi = (options = {}) => {
     return result;
   };
 
+  const saveMemory = (payload = {}) => {
+    const result = addMemoryPracticeEntry(getEntries(), payload, {
+      createEntry,
+      now: now(),
+    });
+    if (result.status === 'existing') {
+      creationError = 'That memory cue is already saved.';
+      requestCoachRender('memory-answer');
+      return result;
+    }
+    if (result.status !== 'created') {
+      creationError = 'Add both a memory prompt and what you want to remember.';
+      requestCoachRender('memory-prompt');
+      return result;
+    }
+    creationError = '';
+    announceUpdatedItems('Saved for recall practice.');
+    startSession();
+    requestCoachRender('start');
+    return result;
+  };
+
   const appendButton = (actions, label, action, { primary = false, focus = false } = {}) => {
     const button = createElement('button', `memory-coach-button${primary ? ' memory-coach-button--primary' : ''}`, label);
     button.type = 'button';
@@ -305,14 +330,15 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const renderEmptyState = (card) => {
-    appendCardHeader(card, 'Personal recall', 'Save your first expression to practise');
+    appendCardHeader(card, 'Build your recall', 'Choose something meaningful to remember');
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      'Find useful wording, then choose “Practise”. Memory Cue will bring the original situation back when it is time to retrieve it yourself.',
+      'Practise names, facts, useful wording, steps, or personal details. Memory Cue brings them back at spaced intervals so you retrieve them instead of simply rereading them.',
     ));
     const actions = createElement('div', 'memory-coach-actions');
-    appendButton(actions, 'Find a word', 'find-word', { primary: true, focus: true });
+    appendButton(actions, 'Add something to remember', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
 
@@ -322,22 +348,79 @@ export const createMemoryCoachUi = (options = {}) => {
       'p',
       'memory-coach-copy',
       summary.nextDueAt
-        ? `Your next word returns ${formatNextReview(summary.nextDueAt, now())}.`
-        : 'There are no expressions waiting for review.',
+        ? `Your next memory returns ${formatNextReview(summary.nextDueAt, now())}.`
+        : 'There is nothing waiting for review.',
     ));
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
-    appendButton(actions, 'Practise another idea', 'find-word', { primary: true, focus: true });
+    appendButton(actions, 'Add something to remember', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
 
+  const appendCreationField = (form, { id, label, help, placeholder, maxLength }) => {
+    const field = createElement('label', 'memory-coach-create-field');
+    field.setAttribute('for', id);
+    field.appendChild(createElement('span', 'memory-coach-create-label', label));
+    if (help) {
+      field.appendChild(createElement('span', 'memory-coach-create-help', help));
+    }
+    const input = createElement('input', 'memory-coach-create-input');
+    input.id = id;
+    input.name = id;
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.maxLength = maxLength;
+    input.autocomplete = 'off';
+    field.appendChild(input);
+    form.appendChild(field);
+    return input;
+  };
+
+  const renderCreateMemory = (card) => {
+    appendCardHeader(card, 'New memory', 'What would you like to recall?');
+    card.appendChild(createElement(
+      'p',
+      'memory-coach-copy',
+      'Use a specific prompt. The answer stays hidden while you practise retrieving it.',
+    ));
+    const form = createElement('form', 'memory-coach-create-form');
+    form.dataset.memoryCoachForm = 'create';
+    const promptInput = appendCreationField(form, {
+      id: 'memoryCoachNewPrompt',
+      label: 'Memory prompt',
+      help: 'What question or situation should trigger the memory?',
+      placeholder: 'e.g. What is my new colleague’s name?',
+      maxLength: 600,
+    });
+    appendCreationField(form, {
+      id: 'memoryCoachNewAnswer',
+      label: 'What you want to remember',
+      help: 'This remains hidden until you reveal it.',
+      placeholder: 'e.g. Priya Shah',
+      maxLength: 120,
+    });
+    if (creationError) {
+      const error = createElement('p', 'memory-coach-create-error', creationError);
+      error.setAttribute('role', 'alert');
+      form.appendChild(error);
+    }
+    const actions = createElement('div', 'memory-coach-actions');
+    const save = appendButton(actions, 'Save for practice', 'save-memory', { primary: true });
+    save.type = 'submit';
+    appendButton(actions, 'Cancel', 'cancel-add-memory');
+    form.appendChild(actions);
+    card.appendChild(form);
+    window.requestAnimationFrame?.(() => promptInput.focus());
+  };
+
   const renderPrompt = (card, item) => {
-    appendCardHeader(card, `Card ${currentIndex + 1} of ${session.total}`, 'Express the meaning');
+    appendCardHeader(card, `Memory ${currentIndex + 1} of ${session.total}`, 'Retrieve it before revealing');
     card.appendChild(createElement('p', 'memory-coach-prompt', item.prompt));
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      'Say the word aloud or bring it clearly to mind before revealing it.',
+      'Say the answer aloud or bring it clearly to mind before revealing it.',
     ));
     const actions = createElement('div', 'memory-coach-actions');
     const hints = getPracticeHints(item);
@@ -345,13 +428,13 @@ export const createMemoryCoachUi = (options = {}) => {
       appendButton(actions, 'Need a clue', 'hint', { focus: true });
     }
     appendButton(actions, 'Show answer', 'reveal', { primary: true, focus: !hints.length });
-    appendButton(actions, 'Pause this word', 'pause');
+    appendButton(actions, 'Pause this memory', 'pause');
     card.appendChild(actions);
   };
 
   const renderHint = (card, item) => {
     const hints = getPracticeHints(item);
-    appendCardHeader(card, `Card ${currentIndex + 1} of ${session.total}`, 'Use a clue, then retrieve');
+    appendCardHeader(card, `Memory ${currentIndex + 1} of ${session.total}`, 'Use a clue, then retrieve');
     card.appendChild(createElement('p', 'memory-coach-prompt', item.prompt));
     const hint = createElement('div', 'memory-coach-hint');
     hint.append(
@@ -364,12 +447,12 @@ export const createMemoryCoachUi = (options = {}) => {
       appendButton(actions, 'Another clue', 'hint', { focus: true });
     }
     appendButton(actions, 'Show answer', 'reveal', { primary: true, focus: hintIndex >= hints.length - 1 });
-    appendButton(actions, 'Pause this word', 'pause');
+    appendButton(actions, 'Pause this memory', 'pause');
     card.appendChild(actions);
   };
 
   const renderAnswer = (card, item) => {
-    appendCardHeader(card, `Card ${currentIndex + 1} of ${session.total}`, 'How did recall feel?');
+    appendCardHeader(card, `Memory ${currentIndex + 1} of ${session.total}`, 'How did recall feel?');
     const answer = createElement('div', 'memory-coach-answer');
     answer.appendChild(createElement('strong', 'memory-coach-answer-word', item.answer));
     if (item.explanation) {
@@ -383,8 +466,8 @@ export const createMemoryCoachUi = (options = {}) => {
       'p',
       'memory-coach-copy',
       hintUsed
-        ? 'Using a clue means this word will return sooner.'
-        : 'Choose the honest answer. This adjusts when the word returns.',
+        ? 'Using a clue means this memory will return sooner.'
+        : 'Choose the honest answer. This adjusts when the memory returns.',
     ));
     const actions = createElement('div', 'memory-coach-actions memory-coach-rating-actions');
     Object.entries(RATING_LABELS).forEach(([rating, label], index) => {
@@ -402,17 +485,18 @@ export const createMemoryCoachUi = (options = {}) => {
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      `You reviewed ${reviewedCount} ${reviewedCount === 1 ? 'word' : 'words'}. ${secureCount} felt secure without needing another pass.`,
+      `You reviewed ${reviewedCount} ${reviewedCount === 1 ? 'memory' : 'memories'}. ${secureCount} felt secure without needing another pass.`,
     ));
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
     if (summary.due > 0) {
       appendButton(actions, 'Continue practice', 'continue', { primary: true, focus: true });
     }
-    appendButton(actions, 'Practise another idea', 'find-word', {
+    appendButton(actions, 'Add something to remember', 'add-memory', {
       primary: summary.due === 0,
       focus: summary.due === 0,
     });
+    appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
 
@@ -531,6 +615,14 @@ export const createMemoryCoachUi = (options = {}) => {
     } else if (action === 'continue') {
       startSession();
       requestCoachRender('hint');
+    } else if (action === 'add-memory') {
+      creationError = '';
+      phase = 'create';
+      requestCoachRender('memory-prompt');
+    } else if (action === 'cancel-add-memory') {
+      creationError = '';
+      startSession();
+      requestCoachRender('start');
     } else if (action === 'find-word') {
       deactivate({ restoreFocus: false });
       onFindWord();
@@ -550,7 +642,9 @@ export const createMemoryCoachUi = (options = {}) => {
 
     const entries = getEntries();
     const summary = getPracticeSummary(entries, { now: now() });
-    if (!summary.total) {
+    if (phase === 'create') {
+      renderCreateMemory(card);
+    } else if (!summary.total) {
       renderEmptyState(card);
     } else if (!session?.total && phase !== 'complete') {
       renderCaughtUpState(card, summary);
@@ -578,6 +672,20 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   container.addEventListener('click', handleCardClick);
+  container.addEventListener('submit', (event) => {
+    const form = event.target instanceof Element
+      ? event.target.closest('[data-memory-coach-form="create"]')
+      : null;
+    if (!(form instanceof HTMLFormElement)) {
+      return;
+    }
+    event.preventDefault();
+    saveMemory({
+      prompt: form.querySelector('#memoryCoachNewPrompt')?.value,
+      answer: form.querySelector('#memoryCoachNewAnswer')?.value,
+      kind: 'memory',
+    });
+  });
   launcher?.addEventListener('click', () => {
     if (active) {
       deactivate();
@@ -597,7 +705,10 @@ export const createMemoryCoachUi = (options = {}) => {
   document.addEventListener('keydown', handleEscape);
 
   const handleNavigation = (event) => {
-    if (active && event?.detail?.view !== 'capture') {
+    const targetView = event?.detail?.view || '';
+    if (navigationView && targetView === navigationView) {
+      activate();
+    } else if (active && targetView !== (navigationView || 'capture')) {
       deactivate({ restoreFocus: false });
     }
   };
@@ -610,6 +721,7 @@ export const createMemoryCoachUi = (options = {}) => {
     render,
     isActive: () => active,
     saveVocabulary,
+    saveMemory,
     hasSavedWord,
     getVocabularyState,
   };

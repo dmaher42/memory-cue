@@ -117,6 +117,7 @@ function initAssistant() {
     const thinkingBarStatus = document.getElementById('thinkingBarStatus');
     const thinkingBarLabel = document.querySelector('label[for="thinkingBarInput"]');
     const memoryCoachLauncher = document.getElementById('memoryCoachLauncher');
+    const memoryCoachContainer = document.getElementById('memoryCoachContainer');
     const memoryCoachModeBar = document.getElementById('memoryCoachModeBar');
     const memoryCoachModeLabel = document.getElementById('memoryCoachModeLabel');
     const memoryCoachExitButton = document.getElementById('memoryCoachExitButton');
@@ -2172,19 +2173,14 @@ function initAssistant() {
     };
 
     memoryCoachUi = createMemoryCoachUi({
-      container: chatConversationContainer,
-      launcher: memoryCoachLauncher,
-      controlsRegion: thinkingBarContainer,
-      modeBar: memoryCoachModeBar,
-      modeLabel: memoryCoachModeLabel,
-      exitButton: memoryCoachExitButton,
+      container: memoryCoachContainer,
+      navigationView: 'coach',
       loadEntries: () => getInboxEntries({ includeMemoryCoach: true }),
       createEntry: saveInboxEntry,
       updateEntry: updateMemoryCoachInboxEntry,
       setStatus: setThinkingBarStatus,
       requestRender: () => {
-        renderConversationHistory();
-        revealLatestCaptureMessage();
+        memoryCoachUi?.render();
       },
       beforeActivate: () => {
         if (activeClassThoughtContext) {
@@ -2197,6 +2193,7 @@ function initAssistant() {
         return true;
       },
       onFindWord: () => {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
         isWordRescueChoiceOpen = true;
         updateWordRescueModeUi();
         renderConversationHistory();

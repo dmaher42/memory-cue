@@ -12,6 +12,7 @@ function loadRecallService() {
     .replace(/export\s+const\s+/g, 'const ');
   source += `
 module.exports = {
+  addMemoryPracticeEntry,
   addVocabularyPracticeEntry,
   createPracticeSession,
   getMemoryCoachItems,
@@ -45,6 +46,7 @@ function loadMemoryCoachUi(recallApi) {
     .replace(/export\s+const\s+/g, 'const ');
   source = `
 const {
+  addMemoryPracticeEntry,
   addVocabularyPracticeEntry,
   createPracticeSession,
   getMemoryCoachItems,
@@ -76,6 +78,7 @@ module.exports = { createMemoryCoachUi };
     CustomEvent: window.CustomEvent,
     HTMLElement: window.HTMLElement,
     HTMLButtonElement: window.HTMLButtonElement,
+    HTMLFormElement: window.HTMLFormElement,
     Element: window.Element,
   });
   context.globalThis = context;
@@ -175,11 +178,33 @@ test('opens an empty coach with one existing textarea and a direct Word Help pat
   expect(beforeActivate).toHaveBeenCalledTimes(1);
   expect(document.body.classList.contains('memory-coach-mode-active')).toBe(true);
   expect(document.querySelectorAll('textarea')).toHaveLength(1);
-  expect(document.querySelector('.memory-coach-title').textContent).toBe('Save your first expression to practise');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Choose something meaningful to remember');
   expect(document.getElementById('thinkingBarContainer').getAttribute('aria-label')).toBe('Memory Coach controls');
   document.querySelector('[data-memory-coach-action="find-word"]').click();
   expect(onFindWord).toHaveBeenCalledTimes(1);
   expect(controller.isActive()).toBe(false);
+});
+
+test('creates a general memory card from a prompt and hidden answer', () => {
+  const { controller, getStoredEntries } = setup();
+  controller.activate();
+
+  document.querySelector('[data-memory-coach-action="add-memory"]').click();
+  document.getElementById('memoryCoachNewPrompt').value = 'What is my new colleague’s name?';
+  document.getElementById('memoryCoachNewAnswer').value = 'Priya Shah';
+  document.querySelector('[data-memory-coach-form="create"]').dispatchEvent(new window.Event('submit', {
+    bubbles: true,
+    cancelable: true,
+  }));
+
+  const entry = getStoredEntries()[0];
+  expect(entry.metadata.memoryCoach).toMatchObject({
+    kind: 'memory',
+    prompt: 'What is my new colleague’s name?',
+    answer: 'Priya Shah',
+  });
+  expect(document.querySelector('.memory-coach-prompt').textContent).toContain('new colleague');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('Priya Shah');
 });
 
 test('saves a Word Rescue result as a hidden Inbox practice entry and prevents duplicates', () => {
@@ -241,7 +266,7 @@ test('pausing offers an immediate undo and returns the word to practice', () => 
 
   undo.click();
   expect(controller.getVocabularyState('evasive')).toBe('saved');
-  expect(document.querySelector('.memory-coach-title').textContent).toBe('Express the meaning');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Retrieve it before revealing');
 });
 
 test('navigation closes practice and restores the Capture controls label', () => {
