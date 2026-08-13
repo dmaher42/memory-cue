@@ -104,6 +104,7 @@ export const createMemoryCoachUi = (options = {}) => {
   let preferredFocusAction = '';
   let lastPausedItem = null;
   let creationError = '';
+  let creationDraft = { prompt: '', answer: '' };
   const defaultControlsLabel = controlsRegion instanceof HTMLElement
     ? controlsRegion.getAttribute('aria-label') || ''
     : '';
@@ -271,6 +272,10 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const saveMemory = (payload = {}) => {
+    creationDraft = {
+      prompt: typeof payload.prompt === 'string' ? payload.prompt : '',
+      answer: typeof payload.answer === 'string' ? payload.answer : '',
+    };
     const result = addMemoryPracticeEntry(getEntries(), payload, {
       createEntry,
       now: now(),
@@ -280,12 +285,23 @@ export const createMemoryCoachUi = (options = {}) => {
       requestCoachRender('memory-answer');
       return result;
     }
+    if (result.status === 'resumed') {
+      if (!persistEntry(result.entry, 'Returned to recall practice.')) {
+        return { ...result, status: 'save_failed' };
+      }
+      creationError = '';
+      creationDraft = { prompt: '', answer: '' };
+      startSession();
+      requestCoachRender('start');
+      return result;
+    }
     if (result.status !== 'created') {
       creationError = 'Add both a memory prompt and what you want to remember.';
       requestCoachRender('memory-prompt');
       return result;
     }
     creationError = '';
+    creationDraft = { prompt: '', answer: '' };
     announceUpdatedItems('Saved for recall practice.');
     startSession();
     requestCoachRender('start');
@@ -337,7 +353,7 @@ export const createMemoryCoachUi = (options = {}) => {
       'Practise names, facts, useful wording, steps, or personal details. Memory Cue brings them back at spaced intervals so you retrieve them instead of simply rereading them.',
     ));
     const actions = createElement('div', 'memory-coach-actions');
-    appendButton(actions, 'Add something to remember', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Add memory', 'add-memory', { primary: true, focus: true });
     appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
@@ -353,7 +369,7 @@ export const createMemoryCoachUi = (options = {}) => {
     ));
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
-    appendButton(actions, 'Add something to remember', 'add-memory', { primary: true, focus: true });
+    appendButton(actions, 'Add memory', 'add-memory', { primary: true, focus: true });
     appendButton(actions, 'Use Word Help', 'find-word');
     card.appendChild(actions);
   };
@@ -393,13 +409,24 @@ export const createMemoryCoachUi = (options = {}) => {
       placeholder: 'e.g. What is my new colleague’s name?',
       maxLength: 600,
     });
-    appendCreationField(form, {
+    const answerInput = appendCreationField(form, {
       id: 'memoryCoachNewAnswer',
       label: 'What you want to remember',
       help: 'This remains hidden until you reveal it.',
       placeholder: 'e.g. Priya Shah',
       maxLength: 120,
     });
+    promptInput.enterKeyHint = 'next';
+    answerInput.enterKeyHint = 'done';
+    promptInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      event.preventDefault();
+      answerInput.focus();
+    });
+    promptInput.value = creationDraft.prompt;
+    answerInput.value = creationDraft.answer;
     if (creationError) {
       const error = createElement('p', 'memory-coach-create-error', creationError);
       error.setAttribute('role', 'alert');
@@ -492,7 +519,7 @@ export const createMemoryCoachUi = (options = {}) => {
     if (summary.due > 0) {
       appendButton(actions, 'Continue practice', 'continue', { primary: true, focus: true });
     }
-    appendButton(actions, 'Add something to remember', 'add-memory', {
+    appendButton(actions, 'Add memory', 'add-memory', {
       primary: summary.due === 0,
       focus: summary.due === 0,
     });
@@ -617,10 +644,12 @@ export const createMemoryCoachUi = (options = {}) => {
       requestCoachRender('hint');
     } else if (action === 'add-memory') {
       creationError = '';
+      creationDraft = { prompt: '', answer: '' };
       phase = 'create';
       requestCoachRender('memory-prompt');
     } else if (action === 'cancel-add-memory') {
       creationError = '';
+      creationDraft = { prompt: '', answer: '' };
       startSession();
       requestCoachRender('start');
     } else if (action === 'find-word') {
@@ -700,7 +729,11 @@ export const createMemoryCoachUi = (options = {}) => {
       return;
     }
     event.preventDefault();
-    deactivate();
+    if (navigationView) {
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'capture' } }));
+    } else {
+      deactivate();
+    }
   };
   document.addEventListener('keydown', handleEscape);
 

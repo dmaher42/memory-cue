@@ -684,61 +684,13 @@ html.dark #thinkingBarVoiceButton.is-listening {
   margin: 0 auto;
 }
 
-.memory-coach-page-intro {
-  display: grid;
-  gap: 0.5rem;
-  padding: 1rem;
-  border: 1px solid color-mix(in srgb, var(--accent-color, #0f766e) 18%, var(--card-border, #e2e8f0) 82%);
-  border-radius: 1rem;
-  background: var(--surface-elevated, #ffffff);
-}
-
-.memory-coach-page-eyebrow {
-  color: var(--accent-color, #0f766e);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-}
-
-.memory-coach-page-intro h2,
-.memory-coach-page-intro p {
-  margin: 0;
-}
-
-.memory-coach-page-intro h2 {
-  font-size: 1.2rem;
-  line-height: 1.25;
-}
-
-.memory-coach-page-intro p {
-  color: var(--text-muted, #6b7280);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.memory-coach-scope {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.memory-coach-scope span {
-  padding: 0.32rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-color, #0f766e) 9%, var(--surface-elevated, #ffffff) 91%);
-  color: var(--text-main, #1f2937);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
 #memoryCoachContainer {
   display: grid;
 }
 
 #memoryCoachContainer .memory-coach-card {
   display: grid;
-  align-self: center;
+  align-self: start;
   gap: 0.7rem;
   width: min(100%, 30rem);
   padding: 1rem;

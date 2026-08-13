@@ -108,7 +108,7 @@ const makePracticeEntry = () => recallApi.addVocabularyPracticeEntry([], {
   createEntry: (payload) => createStoredEntry(payload),
 }).entry;
 
-function setup(entries = []) {
+function setup(entries = [], uiOptions = {}) {
   document.body.innerHTML = `
     <button id="memoryCoachLauncher" type="button" aria-expanded="false">Memory coach</button>
     <section id="chatConversationContainer" aria-live="polite"></section>
@@ -153,6 +153,7 @@ function setup(entries = []) {
     beforeActivate,
     onFindWord,
     now: () => NOW,
+    ...uiOptions,
   });
   return {
     controller,
@@ -205,6 +206,60 @@ test('creates a general memory card from a prompt and hidden answer', () => {
   });
   expect(document.querySelector('.memory-coach-prompt').textContent).toContain('new colleague');
   expect(document.querySelector('.memory-coach-card').textContent).not.toContain('Priya Shah');
+});
+
+test('keeps the memory draft when validation fails', () => {
+  const { controller } = setup();
+  controller.activate();
+
+  document.querySelector('[data-memory-coach-action="add-memory"]').click();
+  document.getElementById('memoryCoachNewPrompt').value = 'What is my colleague’s name?';
+  document.querySelector('[data-memory-coach-form="create"]').dispatchEvent(new window.Event('submit', {
+    bubbles: true,
+    cancelable: true,
+  }));
+
+  expect(document.querySelector('.memory-coach-create-error').textContent)
+    .toBe('Add both a memory prompt and what you want to remember.');
+  expect(document.getElementById('memoryCoachNewPrompt').value).toBe('What is my colleague’s name?');
+  expect(document.getElementById('memoryCoachNewAnswer').value).toBe('');
+});
+
+test('moves from the prompt to the answer when Enter is pressed', () => {
+  const { controller } = setup();
+  controller.activate();
+  document.querySelector('[data-memory-coach-action="add-memory"]').click();
+  const prompt = document.getElementById('memoryCoachNewPrompt');
+  const answer = document.getElementById('memoryCoachNewAnswer');
+
+  prompt.focus();
+  prompt.dispatchEvent(new window.KeyboardEvent('keydown', {
+    key: 'Enter',
+    bubbles: true,
+    cancelable: true,
+  }));
+
+  expect(document.activeElement).toBe(answer);
+  expect(document.querySelector('.memory-coach-create-error')).toBeNull();
+});
+
+test('re-adding a paused general memory returns it to practice', () => {
+  const createEntry = (payload) => createStoredEntry({ id: 'entry-adelaide', ...payload });
+  const created = recallApi.addMemoryPracticeEntry([], {
+    prompt: 'What is the capital of South Australia?',
+    answer: 'Adelaide',
+  }, { now: NOW, createEntry }).entry;
+  const paused = recallApi.setPracticeItemEnabled([created], created.id, false, { now: NOW }).entries[0];
+  const { controller, getStoredEntries, updateEntry } = setup([paused]);
+
+  const result = controller.saveMemory({
+    prompt: 'What is the capital of South Australia?',
+    answer: 'Adelaide',
+  });
+
+  expect(result.status).toBe('resumed');
+  expect(getStoredEntries()[0].metadata.memoryCoach.enabled).toBe(true);
+  expect(updateEntry).toHaveBeenCalledTimes(1);
 });
 
 test('saves a Word Rescue result as a hidden Inbox practice entry and prevents duplicates', () => {
@@ -282,4 +337,16 @@ test('navigation closes practice and restores the Capture controls label', () =>
   expect(document.getElementById('memoryCoachModeBar').classList.contains('hidden')).toBe(true);
   expect(document.getElementById('thinkingBarContainer').getAttribute('aria-label'))
     .toBe('AI reminder, note, and question capture');
+});
+
+test('Escape returns a dedicated Coach view to Capture', () => {
+  const navigate = jest.fn();
+  window.addEventListener('app:navigate', navigate, { once: true });
+  const { controller } = setup([makePracticeEntry()], { navigationView: 'coach' });
+  controller.activate();
+
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+  expect(navigate).toHaveBeenCalledTimes(1);
+  expect(navigate.mock.calls[0][0].detail).toEqual({ view: 'capture' });
 });
