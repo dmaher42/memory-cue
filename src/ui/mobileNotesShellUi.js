@@ -1010,12 +1010,19 @@ export const initMobileNotesShellUi = (options = {}) => {
     noteFolderButton = null,
     noteOptionsOverlay = null,
     noteOptionsSheet = null,
+    renameNoteModal = null,
+    renameNoteInput = null,
+    renameNoteError = null,
+    renameNoteSaveBtn = null,
+    renameNoteCancelBtn = null,
+    noteActionRenameBtn = null,
     noteActionCreateLessonCueBtn: initialNoteActionCreateLessonBtn = null,
     noteActionSetActiveLessonBtn: initialNoteActionSetActiveLessonBtn = null,
     noteActionMoveBtn = null,
     noteActionTogglePinBtn = null,
     noteActionDeleteBtn = null,
     getAllNotes = () => [],
+    loadNotes = () => getAllNotes(),
     renderFilteredNotes = () => {},
     getCurrentEditingNoteFolderId = () => 'unsorted',
     setCurrentEditingNoteFolderId = () => {},
@@ -1040,6 +1047,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     flushCurrentNote = () => {},
     refreshFromStorage = () => {},
     saveAllNotes = () => {},
+    showNoteToast = () => {},
     onOpenNoteOptionsMove = null,
     onOpenNoteFromDashboard = null,
     onOpenTeacherNoteView = null,
@@ -1050,6 +1058,7 @@ export const initMobileNotesShellUi = (options = {}) => {
   let savedNotesSheetFocusRestoreEl = null;
   let currentNoteOptionsNoteId = null;
   let currentNoteOptionsFocusRestoreEl = null;
+  let pendingRenameNoteId = null;
   let notesOverviewCollapsed = true;
   let teacherEditorToolsExpanded = false;
   let teacherEditorToolsNoteId = '';
@@ -2269,6 +2278,94 @@ export const initMobileNotesShellUi = (options = {}) => {
       }
     });
   }
+
+  const closeRenameNoteDialog = () => {
+    pendingRenameNoteId = null;
+    if (renameNoteError instanceof HTMLElement) {
+      renameNoteError.textContent = '';
+      renameNoteError.classList.add('sr-only');
+    }
+    if (renameNoteModal instanceof HTMLDialogElement && renameNoteModal.open) {
+      renameNoteModal.close();
+    }
+    renameNoteModal?.setAttribute('aria-hidden', 'true');
+  };
+
+  const openRenameNoteDialog = (noteId) => {
+    const note = getAllNotes().find((item) => item?.id === noteId);
+    if (!note || !(renameNoteModal instanceof HTMLDialogElement) || !(renameNoteInput instanceof HTMLInputElement)) {
+      return;
+    }
+    pendingRenameNoteId = noteId;
+    renameNoteInput.value = String(note.title || '').trim();
+    if (renameNoteError instanceof HTMLElement) {
+      renameNoteError.textContent = '';
+      renameNoteError.classList.add('sr-only');
+    }
+    renameNoteModal.setAttribute('aria-hidden', 'false');
+    if (!renameNoteModal.open) {
+      renameNoteModal.showModal();
+    }
+    window.setTimeout(() => {
+      renameNoteInput.focus();
+      renameNoteInput.select();
+    }, 0);
+  };
+
+  const saveRenamedNote = () => {
+    const nextTitle = String(renameNoteInput?.value || '').replace(/\s+/g, ' ').trim();
+    if (!nextTitle) {
+      if (renameNoteError instanceof HTMLElement) {
+        renameNoteError.textContent = 'Enter a title for this note.';
+        renameNoteError.classList.remove('sr-only');
+      }
+      renameNoteInput?.focus();
+      return;
+    }
+    flushCurrentNote();
+    const noteId = pendingRenameNoteId;
+    let changed = false;
+    const existingNotes = loadNotes();
+    const updatedNotes = (Array.isArray(existingNotes) ? existingNotes : []).map((note) => {
+      if (note?.id !== noteId) {
+        return note;
+      }
+      changed = true;
+      return { ...note, title: nextTitle, updatedAt: new Date().toISOString() };
+    });
+    if (changed && saveAllNotes(updatedNotes)) {
+      closeRenameNoteDialog();
+      refreshFromStorage({ preserveDraft: false });
+      showNoteToast('Note renamed');
+    }
+  };
+
+  noteActionRenameBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    const noteId = currentNoteOptionsNoteId;
+    closeNoteOptionsMenu();
+    if (noteId) {
+      openRenameNoteDialog(noteId);
+    }
+  });
+  renameNoteSaveBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveRenamedNote();
+  });
+  renameNoteCancelBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeRenameNoteDialog();
+  });
+  renameNoteInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      saveRenamedNote();
+    }
+  });
+  renameNoteModal?.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeRenameNoteDialog();
+  });
 
   if (noteOptionsSheet && noteActionCreateLessonCueBtn) {
     noteActionCreateLessonCueBtn.addEventListener('click', async (event) => {

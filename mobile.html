@@ -5184,6 +5184,14 @@ body, main, section, div, p, span, li {
                     </svg>
                   </summary>
                   <div class="rte-more-panel" role="group" aria-label="More text tools">
+                    <button
+                      class="rte-btn"
+                      data-action="use-selection-as-title"
+                      type="button"
+                      title="Use highlighted text as the note title"
+                    >
+                      Use as title
+                    </button>
                     <button class="rte-btn" data-cmd="removeFormat" type="button" title="Remove formatting" aria-label="Remove formatting">
                       Clear
                     </button>
@@ -5485,11 +5493,28 @@ body, main, section, div, p, span, li {
                 <div class="note-options-subtitle">Choose what to do with this note.</div>
               </div>
               <div class="note-options-actions">
+                <button type="button" class="note-action-btn note-action-rename">Rename</button>
                 <button type="button" class="note-action-btn note-action-toggle-pin">Pin</button>
                 <button type="button" class="note-action-btn note-action-move">Move</button>
                 <button type="button" class="note-action-btn note-action-delete">Delete</button>
               </div>
             </div>
+
+            <dialog id="renameNoteModal" class="memory-glass-card" aria-hidden="true" aria-labelledby="renameNoteTitle">
+              <div class="p-4">
+                <h3 id="renameNoteTitle" class="text-lg font-semibold">Rename note</h3>
+                <p class="mt-1 text-xs opacity-80">Choose the title shown in Saved notes.</p>
+                <div class="mt-3">
+                  <label for="renameNoteName" class="sr-only">Note title</label>
+                  <input id="renameNoteName" type="text" class="input input-sm w-full" placeholder="Note title" autocomplete="off" />
+                  <p id="renameNoteError" class="text-xs text-error mt-2 sr-only" aria-live="polite"></p>
+                </div>
+                <div class="modal-actions mt-4 flex justify-end gap-3">
+                  <button id="renameNoteCancel" type="button" class="btn btn-ghost">Cancel</button>
+                  <button id="renameNoteSave" type="button" class="btn btn-primary">Save title</button>
+                </div>
+              </div>
+            </dialog>
     
 
     <section data-view="settings" id="view-settings" class="view-panel hidden" aria-hidden="true">

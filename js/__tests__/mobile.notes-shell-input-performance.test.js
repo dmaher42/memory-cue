@@ -37,6 +37,8 @@ function loadMobileNotesShellUi() {
     Node: window.Node,
     HTMLElement: window.HTMLElement,
     HTMLButtonElement: window.HTMLButtonElement,
+    HTMLDialogElement: window.HTMLDialogElement,
+    HTMLInputElement: window.HTMLInputElement,
     HTMLStyleElement: window.HTMLStyleElement,
     Event: window.Event,
     setTimeout,
@@ -408,4 +410,64 @@ test('creating a category from a new unsaved draft assigns the new category to t
   expect(handleMoveNoteToFolder).not.toHaveBeenCalled();
   expect(editingFolderId).toBe('folder-trips');
   expect(folderButton.textContent).toBe('Trips');
+});
+
+test('renames a note from the Saved notes actions menu', () => {
+  document.body.innerHTML = `
+    <section id="view-notebook">
+      <section id="notesOverviewPanel"><div id="notesOverviewList"></div></section>
+      <div id="noteEditorSheet"></div>
+      <section id="savedNotesSheet" class="hidden"></section>
+    </section>
+    <div id="note-options-overlay" aria-hidden="true"></div>
+    <div id="note-options-sheet" aria-hidden="true">
+      <div class="note-options-actions">
+        <button type="button" class="note-action-btn note-action-rename">Rename</button>
+      </div>
+    </div>
+    <dialog id="renameNoteModal" aria-hidden="true">
+      <input id="renameNoteName" />
+      <p id="renameNoteError" class="sr-only"></p>
+      <button id="renameNoteSave" type="button">Save title</button>
+      <button id="renameNoteCancel" type="button">Cancel</button>
+    </dialog>
+  `;
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const dialog = document.getElementById('renameNoteModal');
+  dialog.showModal = jest.fn(() => { dialog.open = true; });
+  dialog.close = jest.fn(() => { dialog.open = false; });
+  const notes = [{ id: 'note-1', title: 'Automatic title', bodyText: 'Body stays unchanged' }];
+  const saveAllNotes = jest.fn(() => true);
+  const refreshFromStorage = jest.fn();
+
+  const { openNoteOptionsMenu } = initMobileNotesShellUi({
+    noteEditorSheet: document.getElementById('noteEditorSheet'),
+    notesOverviewPanel: document.getElementById('notesOverviewPanel'),
+    savedNotesSheet: document.getElementById('savedNotesSheet'),
+    noteOptionsOverlay: document.getElementById('note-options-overlay'),
+    noteOptionsSheet: document.getElementById('note-options-sheet'),
+    noteActionRenameBtn: document.querySelector('.note-action-rename'),
+    renameNoteModal: dialog,
+    renameNoteInput: document.getElementById('renameNoteName'),
+    renameNoteError: document.getElementById('renameNoteError'),
+    renameNoteSaveBtn: document.getElementById('renameNoteSave'),
+    renameNoteCancelBtn: document.getElementById('renameNoteCancel'),
+    getAllNotes: () => notes,
+    saveAllNotes,
+    refreshFromStorage,
+  });
+
+  openNoteOptionsMenu('note-1');
+  document.querySelector('.note-action-rename').click();
+  expect(dialog.showModal).toHaveBeenCalledTimes(1);
+  expect(document.getElementById('renameNoteName').value).toBe('Automatic title');
+
+  document.getElementById('renameNoteName').value = 'My specific title';
+  document.getElementById('renameNoteSave').click();
+
+  expect(saveAllNotes).toHaveBeenCalledWith([
+    expect.objectContaining({ id: 'note-1', title: 'My specific title', bodyText: 'Body stays unchanged' }),
+  ]);
+  expect(refreshFromStorage).toHaveBeenCalledWith({ preserveDraft: false });
+  expect(dialog.close).toHaveBeenCalledTimes(1);
 });

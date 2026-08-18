@@ -7,6 +7,7 @@ const { loadMobileModule } = require('./helpers/load-mobile-module');
 
 describe('mobile notes formatting toolbar', () => {
   beforeEach(() => {
+    delete window.__memoryCueMobileNotesInit;
     document.body.innerHTML = `
       <textarea id="noteTitleMobile"></textarea>
       <button id="noteSaveMobile" type="button">Save</button>
@@ -21,9 +22,10 @@ describe('mobile notes formatting toolbar', () => {
         </div>
         <div class="rte-menu rte-align-menu">
           <button id="rteAlignmentTrigger" class="rte-menu-trigger" type="button" data-alignment="left" aria-expanded="false"></button>
-          <div class="rte-menu-panel" hidden>
-            <button class="rte-menu-option rte-align-option" type="button" data-cmd="justifyCenter" data-alignment="center" aria-checked="false"></button>
-          </div>
+        <div class="rte-menu-panel" hidden>
+          <button class="rte-menu-option rte-align-option" type="button" data-cmd="justifyCenter" data-alignment="center" aria-checked="false"></button>
+        </div>
+        <button type="button" data-action="use-selection-as-title">Use as title</button>
         </div>
       </div>
       <div id="notebook-editor-body" contenteditable="true"><p>Sample text</p></div>
@@ -70,6 +72,11 @@ describe('mobile notes formatting toolbar', () => {
   });
 
   afterEach(() => {
+    if (window.__memoryCueNotesWatcher) {
+      clearInterval(window.__memoryCueNotesWatcher);
+      delete window.__memoryCueNotesWatcher;
+    }
+    delete window.__memoryCueMobileNotesInit;
     document.body.innerHTML = '';
     delete window.__mobileMocks;
     delete document.execCommand;
@@ -86,6 +93,7 @@ describe('mobile notes formatting toolbar', () => {
     expect(html).toContain('data-text-style="small"');
     expect(html).toContain('id="rteAlignmentTrigger"');
     expect(html).toContain('data-cmd="justifyCenter"');
+    expect(html).toContain('data-action="use-selection-as-title"');
     expect(html).not.toContain('id="rteFontSizeSelect"');
   });
 
@@ -119,5 +127,27 @@ describe('mobile notes formatting toolbar', () => {
     expect(document.execCommand).toHaveBeenCalledWith('justifyCenter', false, null);
     expect(alignmentTrigger.dataset.alignment).toBe('center');
     expect(alignmentPanel.hidden).toBe(true);
+  });
+
+  test('uses highlighted note text as the saved title without removing it from the note', () => {
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const editor = document.getElementById('notebook-editor-body');
+    editor.innerHTML = '<p>Sample text</p>';
+    const editorText = editor.querySelector('p').firstChild;
+    const range = document.createRange();
+    range.setStart(editorText, 0);
+    range.setEnd(editorText, 6);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const titleButton = document.querySelector('[data-action="use-selection-as-title"]');
+    titleButton.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+    titleButton.click();
+
+    expect(document.getElementById('noteTitleMobile').value).toBe('Sample');
+    expect(editor.textContent).toBe('Sample text');
   });
 });

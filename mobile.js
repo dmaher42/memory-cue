@@ -3644,6 +3644,7 @@ const initMobileNotes = () => {
     document.getElementById('moveFolderSheet'),
     document.getElementById('note-options-overlay'),
     document.getElementById('note-options-sheet'),
+    document.getElementById('renameNoteModal'),
     document.getElementById('newFolderModal'),
     document.getElementById('renameFolderModal'),
     document.getElementById('deleteFolderModal'),
@@ -4093,6 +4094,14 @@ const initMobileNotes = () => {
   // Wire up formatting toolbar controls while preserving the editor selection.
   const toolbarEl = document.getElementById('scratchNotesToolbar');
   if (toolbarEl && scratchNotesEditorElement) {
+    let selectedTitleText = '';
+    const captureSelectedTitleText = () => {
+      const selection = typeof window !== 'undefined' ? window.getSelection() : null;
+      selectedTitleText = selectionBelongsToEditor(selection) && !selection.isCollapsed
+        ? selection.toString().replace(/\s+/g, ' ').trim()
+        : '';
+    };
+
     const closeToolbarMenus = (menuToKeep = null) => {
       toolbarEl.querySelectorAll('.rte-menu').forEach((menu) => {
         if (menu === menuToKeep) {
@@ -4110,12 +4119,43 @@ const initMobileNotes = () => {
     };
 
     toolbarEl.addEventListener('mousedown', (event) => {
+      if (event.target.closest('[data-action="use-selection-as-title"]')) {
+        captureSelectedTitleText();
+      }
       if (event.target.closest('.rte-menu-trigger, .rte-menu-option')) {
         event.preventDefault();
       }
     });
 
+    toolbarEl.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('[data-action="use-selection-as-title"]')) {
+        captureSelectedTitleText();
+      }
+    });
+
     toolbarEl.addEventListener('click', (event) => {
+      const useAsTitleButton = event.target.closest('[data-action="use-selection-as-title"]');
+      if (useAsTitleButton instanceof HTMLButtonElement) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!selectedTitleText) {
+          captureSelectedTitleText();
+        }
+        if (!selectedTitleText) {
+          showNoteToast('Highlight some note text first');
+          return;
+        }
+        titleInput.value = selectedTitleText;
+        titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+        showNoteToast('Note title updated');
+        const moreMenu = useAsTitleButton.closest('.rte-more');
+        if (moreMenu && 'open' in moreMenu) {
+          moreMenu.open = false;
+        }
+        selectedTitleText = '';
+        return;
+      }
+
       const menuTrigger = event.target.closest('.rte-menu-trigger');
       if (menuTrigger instanceof HTMLButtonElement) {
         event.preventDefault();
@@ -5963,10 +6003,17 @@ const initMobileNotes = () => {
     noteFolderButton: noteFolderBtn,
     noteOptionsOverlay: document.getElementById('note-options-overlay'),
     noteOptionsSheet: document.getElementById('note-options-sheet'),
+    renameNoteModal: document.getElementById('renameNoteModal'),
+    renameNoteInput: document.getElementById('renameNoteName'),
+    renameNoteError: document.getElementById('renameNoteError'),
+    renameNoteSaveBtn: document.getElementById('renameNoteSave'),
+    renameNoteCancelBtn: document.getElementById('renameNoteCancel'),
+    noteActionRenameBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-rename'),
     noteActionMoveBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-move'),
     noteActionTogglePinBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-toggle-pin'),
     noteActionDeleteBtn: document.getElementById('note-options-sheet')?.querySelector('.note-action-delete'),
     getAllNotes: () => allNotes,
+    loadNotes: loadAllNotes,
     renderFilteredNotes: () => renderFilteredNotes(),
     getCurrentEditingNoteFolderId: () => currentEditingNoteFolderId,
     setCurrentEditingNoteFolderId: (value) => {
@@ -5999,6 +6046,7 @@ const initMobileNotes = () => {
     flushCurrentNote: () => flushNoteAutoSave(),
     refreshFromStorage,
     saveAllNotes,
+    showNoteToast,
     onOpenNoteOptionsMove: (noteId, note, triggerEl) => {
       openFolderSelectorForNote(noteId, {
         initialFolderId:
