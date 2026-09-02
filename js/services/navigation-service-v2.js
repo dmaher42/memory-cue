@@ -84,7 +84,7 @@
 
   const init = () => {
     bindNavButtons();
-    const initial = document.querySelector('[data-nav-target].active')?.getAttribute('data-nav-target') || 'capture';
+    const initial = document.querySelector('[data-nav-target].active')?.getAttribute('data-nav-target') || 'reminders';
     navigate(initial);
   };
 

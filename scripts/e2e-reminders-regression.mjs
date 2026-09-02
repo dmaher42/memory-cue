@@ -197,6 +197,34 @@ async function main() {
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => typeof window.memoryCueQuickAddNow === 'function');
+    await page.waitForFunction(() => (
+      document.body.dataset.activeView === 'reminders'
+      && !document.getElementById('view-reminders')?.classList.contains('hidden')
+    ));
+    const initialViewState = await page.evaluate(() => ({
+      activeView: document.body.dataset.activeView || '',
+      headerTitle: document.querySelector('#reminders-slim-header .header-title')?.textContent?.trim() || '',
+      remindersVisible: !document.getElementById('view-reminders')?.classList.contains('hidden'),
+      captureHidden: document.getElementById('view-capture')?.classList.contains('hidden') || false,
+      remindersNavActive: document.getElementById('mobile-footer-reminders')?.classList.contains('active') || false,
+      captureNavActive: document.getElementById('mobile-footer-capture')?.classList.contains('active') || false,
+    }));
+    if (
+      initialViewState.activeView !== 'reminders'
+      || initialViewState.headerTitle !== 'Reminders'
+      || !initialViewState.remindersVisible
+      || !initialViewState.captureHidden
+      || !initialViewState.remindersNavActive
+      || initialViewState.captureNavActive
+    ) {
+      throw new Error(`Expected reminders to be the default view: ${JSON.stringify(initialViewState)}`);
+    }
+    await page.click('#mobile-footer-capture');
+    await page.waitForFunction(() => (
+      document.body.dataset.activeView === 'capture'
+      && !document.getElementById('view-capture')?.classList.contains('hidden')
+      && document.querySelector('#reminders-slim-header .header-title')?.textContent?.trim() === 'Capture'
+    ));
     await page.evaluate(() => {
       window.memoryCueQuickAddNow({ forceText: 'add remider tomorrow at 8:30 am get naplan' });
       return true;

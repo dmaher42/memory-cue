@@ -3999,7 +3999,7 @@ body, main, section, div, p, span, li {
   }
 </style>
 </head>
-<body class="app app-shell min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient">
+<body class="app app-shell min-h-full text-base-content show-full mobile-theme mobile-shell overflow-x-hidden memory-page-gradient" data-active-view="reminders">
   <a class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-content" href="#main">Skip to main content</a>
 
   <!-- Clean Mobile Header -->
@@ -4857,7 +4857,7 @@ body, main, section, div, p, span, li {
   <!-- Unified Mobile Header -->
   <header id="reminders-slim-header" class="mobile-header app-header" role="banner">
       <button id="overflowMenuBtn" type="button" class="menu icon-button control-icon-button" aria-haspopup="true" aria-expanded="false" aria-controls="overflowMenu" aria-label="Open menu">☰</button>
-      <h1 class="header-title title">Capture</h1>
+      <h1 class="header-title title" data-default-title="Capture">Reminders</h1>
       <div class="capture-header-actions" role="group" aria-label="Capture tools">
         <button
           id="wordRescueLauncher"
@@ -4954,13 +4954,13 @@ body, main, section, div, p, span, li {
   <!-- quickAddBar is now integrated in the header -->
   <main id="main" class="app-content content main-content mx-auto w-full max-w-none"
         tabindex="-1"
-        data-active-view="capture"
+        data-active-view="reminders"
       >
     <div class="content-container">
       <div id="contentFeed">
     <!-- BEGIN GPT CHANGE: create form moved to bottom sheet -->
     <!-- END GPT CHANGE -->
-    <section data-view="capture" id="view-capture" class="view-panel">
+    <section data-view="capture" id="view-capture" class="view-panel hidden" aria-hidden="true">
       <div class="capture-container capture-chat-layout">
         <section id="chatConversationContainer" aria-label="Capture conversation" aria-live="polite"></section>
       </div>
@@ -4971,7 +4971,7 @@ body, main, section, div, p, span, li {
       </div>
     </section>
     <!-- BEGIN GPT CHANGE: reminders view -->
-    <section data-view="reminders" id="view-reminders" class="view-panel hidden" aria-hidden="true">
+    <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
         <div id="inboxSearchResults"></div>
 
@@ -5584,7 +5584,7 @@ body, main, section, div, p, span, li {
     <div class="floating-footer bottom-nav-list">
       <button
         type="button"
-        class="floating-card nav-item btn-capture active nav-active"
+        class="floating-card nav-item btn-capture"
         id="mobile-footer-capture"
         data-nav-target="capture"
         data-tab="capture"
@@ -5602,7 +5602,7 @@ body, main, section, div, p, span, li {
 
       <button
         type="button"
-        class="floating-card nav-item btn-reminders"
+        class="floating-card nav-item btn-reminders active nav-active"
         id="mobile-footer-reminders"
         data-nav-target="reminders"
         data-tab="reminders"
