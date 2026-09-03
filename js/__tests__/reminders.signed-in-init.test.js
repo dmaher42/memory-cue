@@ -84,7 +84,7 @@ test('initReminders survives onSessionChange firing synchronously during init (p
   expect(JSON.parse(localStorage.getItem('memoryCue:reminderBoardLabels'))).toEqual({ school: 'Work' });
 });
 
-test('local reminders render and save before deferred auth is ready', async () => {
+test('the unresolved account cache stays private while a new local reminder can still be saved', async () => {
   document.body.innerHTML = `
     <input id="title" />
     <input id="date" type="date" />
@@ -148,7 +148,7 @@ test('local reminders render and save before deferred auth is ready', async () =
     firebaseDeps: createFirebaseStubs(),
   });
 
-  expect(document.getElementById('reminderList').textContent).toContain('Already Saved Locally');
+  expect(document.getElementById('reminderList').textContent).not.toContain('Already Saved Locally');
   document.getElementById('title').value = 'Saved before sync';
   document.getElementById('saveBtn').click();
   expect(controller.__testing.getItems().map((item) => item.title)).toContain('Saved before sync');

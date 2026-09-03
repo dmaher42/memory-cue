@@ -2,7 +2,10 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const FIRESTORE_API_ROOT = 'https://firestore.googleapis.com/v1';
 const MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_PUSH_TARGETS = 20;
-const PUSH_TTL_SECONDS = 4 * 60;
+const PUSH_SYNC_TTL_SECONDS = 7 * 24 * 60 * 60;
+const PUSH_SYNC_OUTBOX_COLLECTION = '_memoryCuePushSyncOutbox';
+const PUSH_SYNC_RETRY_DELAY_MS = 60 * 1000;
+const PUSH_SYNC_OUTBOX_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const GOOGLE_AUTH_LOOKUP_URL = (apiKey) => (
   `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`
 );
@@ -78,17 +81,106 @@ function base64UrlEncodeBytes(bytes) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-async function createWebPushTopic(userId, reminderId) {
+async function createWebPushTopic(userId, reminderId, reminderUpdatedAt) {
   const identity = [
     'memory-cue',
     normalizeText(userId),
     normalizeText(reminderId),
+    String(normalizeTimestamp(reminderUpdatedAt) ?? 0),
   ].join('|');
   const digest = await crypto.subtle.digest(
     'SHA-256',
     new TextEncoder().encode(identity)
   );
   return base64UrlEncodeBytes(new Uint8Array(digest)).slice(0, 32);
+}
+
+async function createPushSyncOutboxId({ userId, action, reminder } = {}) {
+  const identity = [
+    'memory-cue-push-sync-v1',
+    normalizeText(userId),
+    normalizeText(reminder?.id),
+    action === 'delete' ? 'delete' : 'upsert',
+    String(normalizeTimestamp(reminder?.updatedAt) ?? 0),
+  ].join('|');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(identity)
+  );
+  return 'v1_' + base64UrlEncodeBytes(new Uint8Array(digest));
+}
+
+function toFirestoreValue(value) {
+  if (value === null || typeof value === 'undefined') {
+    return { nullValue: null };
+  }
+  if (typeof value === 'boolean') {
+    return { booleanValue: value };
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return { nullValue: null };
+    }
+    return Number.isInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+  }
+  if (Array.isArray(value)) {
+    return {
+      arrayValue: {
+        values: value.map(toFirestoreValue),
+      },
+    };
+  }
+  if (typeof value === 'object') {
+    return {
+      mapValue: {
+        fields: Object.fromEntries(
+          Object.entries(value)
+            .filter(([, item]) => typeof item !== 'undefined')
+            .map(([key, item]) => [key, toFirestoreValue(item)])
+        ),
+      },
+    };
+  }
+  return { stringValue: String(value) };
+}
+
+function toFirestoreFields(record = {}) {
+  return Object.fromEntries(
+    Object.entries(record)
+      .filter(([, value]) => typeof value !== 'undefined')
+      .map(([key, value]) => [key, toFirestoreValue(value)])
+  );
+}
+
+function pushSyncOutboxDocumentUrl(projectId, outboxId) {
+  return FIRESTORE_API_ROOT
+    + '/projects/' + encodeURIComponent(projectId)
+    + '/databases/(default)/documents/' + PUSH_SYNC_OUTBOX_COLLECTION
+    + '/' + encodeURIComponent(outboxId);
+}
+
+async function writePushSyncOutbox({ accessToken, projectId, outboxId, record }) {
+  const response = await fetch(pushSyncOutboxDocumentUrl(projectId, outboxId), {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ fields: toFirestoreFields(record) }),
+  });
+  return response.ok;
+}
+
+async function deletePushSyncOutbox({ accessToken, projectId, outboxId }) {
+  const response = await fetch(pushSyncOutboxDocumentUrl(projectId, outboxId), {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.ok || response.status === 404;
 }
 
 async function readBoundedJsonRequest(request, maximumBytes = MAX_REQUEST_BYTES) {
@@ -328,11 +420,12 @@ async function sendPushMessage({
     type: 'memoryCue:reminder-sync',
     action,
     reminder: JSON.stringify(reminder || {}),
+    ownerUserId: userId,
   };
   if (badgeCount !== null) {
     data.badgeCount = String(badgeCount);
   }
-  const topic = await createWebPushTopic(userId, reminder?.id);
+  const topic = await createWebPushTopic(userId, reminder?.id, reminder?.updatedAt);
   const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/messages:send`, {
     method: 'POST',
     headers: {
@@ -346,7 +439,7 @@ async function sendPushMessage({
         webpush: {
           headers: {
             Urgency: 'high',
-            TTL: String(PUSH_TTL_SECONDS),
+            TTL: String(PUSH_SYNC_TTL_SECONDS),
             Topic: topic,
           },
         },
@@ -426,8 +519,37 @@ export async function onRequestPost(context) {
       return jsonResponse({ sent: 0, failures: [] });
     }
 
+    const now = Date.now();
+    const outboxId = await createPushSyncOutboxId({ userId, action, reminder });
+    const baseOutboxRecord = {
+      schemaVersion: 1,
+      userId,
+      action,
+      reminder,
+      badgeCount,
+      targets,
+      attemptCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      nextAttemptAt: now + PUSH_SYNC_RETRY_DELAY_MS,
+      expiresAt: now + PUSH_SYNC_OUTBOX_RETENTION_MS,
+    };
+    const outboxSaved = await writePushSyncOutbox({
+      accessToken,
+      projectId: serviceAccount.projectId,
+      outboxId,
+      record: baseOutboxRecord,
+    });
+    if (!outboxSaved) {
+      return jsonResponse(
+        { error: 'Unable to queue cross-device reminder sync', retryable: true },
+        { status: 503 }
+      );
+    }
+
     let sent = 0;
     const failures = [];
+    const failedTargets = [];
     for (const target of targets) {
       const result = await sendPushMessage({
         accessToken,
@@ -441,6 +563,7 @@ export async function onRequestPost(context) {
       if (result.ok) {
         sent += 1;
       } else {
+        failedTargets.push(target);
         failures.push({
           deviceId: target.deviceId,
           status: result.status,
@@ -448,7 +571,35 @@ export async function onRequestPost(context) {
       }
     }
 
-    return jsonResponse({ sent, failures });
+    if (!failedTargets.length) {
+      const cleared = await deletePushSyncOutbox({
+        accessToken,
+        projectId: serviceAccount.projectId,
+        outboxId,
+      });
+      return jsonResponse({ sent, failures, queued: !cleared }, {
+        status: cleared ? 200 : 202,
+      });
+    }
+
+    const retryQueued = await writePushSyncOutbox({
+      accessToken,
+      projectId: serviceAccount.projectId,
+      outboxId,
+      record: {
+        ...baseOutboxRecord,
+        targets: failedTargets,
+        attemptCount: 1,
+        updatedAt: Date.now(),
+        nextAttemptAt: Date.now() + PUSH_SYNC_RETRY_DELAY_MS,
+      },
+    });
+    if (!retryQueued) {
+      // The pre-send record still contains every target, so a later scheduler run
+      // can retry safely even if narrowing the record to failures did not persist.
+      return jsonResponse({ sent, failures, queued: true }, { status: 202 });
+    }
+    return jsonResponse({ sent, failures, queued: true }, { status: 202 });
   } catch (error) {
     return jsonResponse(
       { error: 'Push sync failed', details: error.message },

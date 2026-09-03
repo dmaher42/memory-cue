@@ -112,6 +112,9 @@ function createReminderMocks(overrides = {}) {
       urgentStartedAt: reminder.urgentStartedAt === null || typeof reminder.urgentStartedAt === 'undefined' || reminder.urgentStartedAt === ''
         ? null
         : Number.isFinite(Number(reminder.urgentStartedAt)) ? Number(reminder.urgentStartedAt) : null,
+      userId: typeof reminder.userId === 'string' && reminder.userId.trim()
+        ? reminder.userId.trim()
+        : null,
       metadata: reminder.metadata && typeof reminder.metadata === 'object' ? { ...reminder.metadata } : null,
     };
   });
@@ -309,6 +312,8 @@ function loadReminderController(overrides = {}) {
     localStorage,
     navigator,
     Notification: global.Notification,
+    ServiceWorkerRegistration: global.ServiceWorkerRegistration,
+    TimestampTrigger: global.TimestampTrigger,
     HTMLElement: window.HTMLElement,
     Element: window.Element,
     HTMLInputElement: window.HTMLInputElement,

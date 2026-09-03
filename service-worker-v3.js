@@ -12,15 +12,18 @@
 'use strict';
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
-const CACHE_NAME = 'memory-cue-v5';
+const CACHE_NAME = 'memory-cue-v6';
 const RUNTIME_CACHE = CACHE_NAME;
 const NAVIGATION_TIMEOUT_MS = 4000;
 const SERVICE_WORKER_RELEASE = new URL(self.location.href).searchParams.get('v') || '';
-const IMMEDIATE_ACTIVATION_RELEASE = '20260903b';
+const IMMEDIATE_ACTIVATION_RELEASE = '20260904a';
 
 const SHOW_URGENT_REMINDER_MESSAGE_TYPE = 'memoryCue:showUrgentReminder';
 const UPDATE_URGENT_BADGE_MESSAGE_TYPE = 'memoryCue:updateUrgentBadge';
 const URGENT_ACTION_MESSAGE_TYPE = 'memoryCue:urgentAction';
+const REQUEST_PENDING_URGENT_ACTIONS_MESSAGE_TYPE = 'memoryCue:requestPendingUrgentActions';
+const URGENT_ACTION_COMPLETED_MESSAGE_TYPE = 'memoryCue:urgentActionCompleted';
+const CANCEL_SCHEDULED_REMINDER_MESSAGE_TYPE = 'memoryCue:cancelScheduledReminder';
 const REMINDER_SYNC_PUSH_TYPE = 'memoryCue:reminder-sync';
 const URGENT_NOTIFICATION_DATA_TYPE = 'memoryCue:urgentReminder';
 const URGENT_NOTIFICATION_ACTIONS = Object.freeze([
@@ -44,17 +47,22 @@ self.addEventListener('message', (event) => {
 });
 
 const REMINDER_DB_NAME = 'memory-cue-reminders';
-const REMINDER_DB_VERSION = 3;
+const REMINDER_DB_VERSION = 5;
 const REMINDER_STORE_NAME = 'scheduled';
+const REMINDER_META_STORE_NAME = 'metadata';
+const ACTIVE_REMINDER_OWNER_META_KEY = 'activeReminderOwner';
 const PROCESSED_URGENT_DELIVERY_STORE_NAME = 'processedUrgentDeliveries';
 const URGENT_STAGE_CLAIM_STORE_NAME = 'urgentStageClaims';
+const PENDING_URGENT_ACTION_STORE_NAME = 'pendingUrgentActions';
 const PROCESSED_URGENT_DELIVERY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const PROCESSED_URGENT_DELIVERY_LIMIT = 512;
 const URGENT_STAGE_CLAIM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const URGENT_STAGE_CLAIM_PENDING_TIMEOUT_MS = 2 * MINUTE_MS;
 const URGENT_STAGE_CLAIM_LIMIT = 1024;
 const URGENT_STAGE_CLAIM_PRUNE_TARGET = 896;
-const URGENT_DELIVERY_ID_PATTERN = /^v1_[A-Za-z0-9_-]{43}$/;
+const PENDING_URGENT_ACTION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const PENDING_URGENT_ACTION_LIMIT = 256;
+const URGENT_DELIVERY_ID_PATTERN = /^v[12]_[A-Za-z0-9_-]{43}$/;
 const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
 const DEFAULT_REMINDER_CATEGORY = 'General';
 const DEFAULT_REMINDER_URL_PATH = 'mobile.html';
@@ -63,6 +71,12 @@ let reminderDbPromise = null;
 const inFlightUrgentDeliveries = new Map();
 const inFlightUrgentStages = new Map();
 let urgentStageClaimSequence = 0;
+let urgentActionSequence = 0;
+let activeReminderOwnerState = {
+  known: false,
+  ownerUserId: '',
+  notificationTriggersSupported: false,
+};
 
 const SHELL_URLS = [
   `${APP_PATH}`,
@@ -221,6 +235,12 @@ function sanitizeUrgentReminderPayload(rawPayload) {
 
   return {
     reminderId,
+    ownerUserId:
+      normalizeText(payload.ownerUserId)
+      || normalizeText(payload.userId)
+      || normalizeText(reminder.ownerUserId)
+      || normalizeText(reminder.userId)
+      || '',
     title: normalizeText(reminder.title) || normalizeText(payload.title) || 'Memory Cue Reminder',
     body: bodyParts.join(' — ') || 'Due now',
     due,
@@ -233,11 +253,16 @@ function sanitizeUrgentReminderPayload(rawPayload) {
     stageKind: normalizeText(stage.kind),
     badgeCount: normalizeBadgeCount(payload.badgeCount),
     timestamp,
+    updatedAt:
+      parseTimestamp(reminder.updatedAt)
+      ?? parseTimestamp(payload.updatedAt)
+      ?? 0,
   };
 }
 
 function buildUrgentStageClaimId(urgent) {
   const reminderId = normalizeText(urgent?.reminderId);
+  const ownerUserId = normalizeText(urgent?.ownerUserId);
   const stageKey = normalizeText(urgent?.stageKey);
   if (!reminderId || !stageKey) {
     return '';
@@ -246,7 +271,19 @@ function buildUrgentStageClaimId(urgent) {
   const dueIdentity = dueAt === null
     ? normalizeText(String(urgent?.due ?? '')) || 'unknown-due'
     : String(dueAt);
-  return JSON.stringify([reminderId, dueIdentity, stageKey]);
+  const revisionIdentity = parseTimestamp(urgent?.updatedAt) ?? 'unknown-revision';
+  return ownerUserId
+    ? JSON.stringify([ownerUserId, reminderId, dueIdentity, stageKey, revisionIdentity])
+    : JSON.stringify([reminderId, dueIdentity, stageKey, revisionIdentity]);
+}
+
+function buildUrgentNotificationTag(reminderId, ownerUserId = '') {
+  const normalizedReminderId = normalizeText(reminderId);
+  const normalizedOwnerUserId = normalizeText(ownerUserId);
+  if (!normalizedOwnerUserId) {
+    return `memory-cue-urgent-${normalizedReminderId}`;
+  }
+  return `memory-cue-urgent-${encodeURIComponent(normalizedOwnerUserId)}-${normalizedReminderId}`;
 }
 
 function createUrgentStageClaimToken(now = Date.now()) {
@@ -471,7 +508,7 @@ async function displayUrgentReminder(urgent) {
     body: urgent.body,
     icon: `${APP_PATH}icons/icon-192.png`,
     badge: `${APP_PATH}icons/icon-192.png`,
-    tag: `memory-cue-urgent-${urgent.reminderId}`,
+    tag: buildUrgentNotificationTag(urgent.reminderId, urgent.ownerUserId),
     renotify: true,
     requireInteraction: true,
     silent: false,
@@ -479,12 +516,14 @@ async function displayUrgentReminder(urgent) {
     data: {
       type: URGENT_NOTIFICATION_DATA_TYPE,
       reminderId: urgent.reminderId,
+      ownerUserId: urgent.ownerUserId,
       stageKey: urgent.stageKey,
       stageKind: urgent.stageKind,
       due: urgent.due,
       meetingUrl: urgent.meetingUrl,
       urlPath: urgent.urlPath,
       badgeCount: urgent.badgeCount,
+      updatedAt: urgent.updatedAt,
     },
   };
   if (Number.isFinite(urgent.timestamp)) {
@@ -505,12 +544,40 @@ async function showUrgentReminder(rawPayload, stageClaimDependencies) {
   if (!urgent) {
     return false;
   }
+  if (!(await incomingReminderOwnerIsAllowed(urgent.ownerUserId))) {
+    return true;
+  }
+  const pendingActions = await readPendingUrgentActions();
+  if (shouldSuppressUrgentForPendingActions(urgent, pendingActions)) {
+    const pendingIntent = applyPendingUrgentActionIntents({
+      id: urgent.reminderId,
+      ownerUserId: urgent.ownerUserId,
+      updatedAt: urgent.updatedAt,
+    }, pendingActions);
+    if (pendingIntent?.deleted !== true && urgent.badgeCount !== null) {
+      await applyUrgentBadge(urgent.badgeCount);
+    } else {
+      await recomputeScheduledUrgentBadge();
+    }
+    return true;
+  }
   if (urgent.badgeCount !== null) {
     await applyUrgentBadge(urgent.badgeCount);
   }
   return runUrgentStageOnce(
     buildUrgentStageClaimId(urgent),
-    () => displayUrgentReminder(urgent),
+    async () => {
+      // Ownership can change while pending actions and the durable stage claim
+      // are being read. Recheck immediately before invoking showNotification
+      // so an old account cannot surface after the switch cleanup has run.
+      if (!(await incomingReminderOwnerIsAllowed(
+        urgent.ownerUserId,
+        { adoptIfUnknown: false }
+      ))) {
+        return false;
+      }
+      return displayUrgentReminder(urgent);
+    },
     stageClaimDependencies
   );
 }
@@ -771,13 +838,22 @@ function getReminderDb() {
             if (!db.objectStoreNames.contains(URGENT_STAGE_CLAIM_STORE_NAME)) {
               db.createObjectStore(URGENT_STAGE_CLAIM_STORE_NAME, { keyPath: 'id' });
             }
+            if (!db.objectStoreNames.contains(PENDING_URGENT_ACTION_STORE_NAME)) {
+              db.createObjectStore(PENDING_URGENT_ACTION_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(REMINDER_META_STORE_NAME)) {
+              db.createObjectStore(REMINDER_META_STORE_NAME, { keyPath: 'key' });
+            }
           } catch (error) {
             reject(error);
           }
         };
         request.onsuccess = () => {
           const db = request.result;
-          db.onversionchange = () => db.close();
+          db.onversionchange = () => {
+            db.close();
+            reminderDbPromise = null;
+          };
           resolve(db);
         };
         request.onerror = () => {
@@ -808,6 +884,365 @@ function waitForTransaction(tx) {
     tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
     tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
   });
+}
+
+async function readReminderWorkerState() {
+  if (activeReminderOwnerState.known) {
+    return { ...activeReminderOwnerState };
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return { ...activeReminderOwnerState };
+    }
+    const tx = db.transaction(REMINDER_META_STORE_NAME, 'readonly');
+    const record = await idbRequestToPromise(
+      tx.objectStore(REMINDER_META_STORE_NAME).get(ACTIVE_REMINDER_OWNER_META_KEY)
+    );
+    await waitForTransaction(tx);
+    if (record && record.key === ACTIVE_REMINDER_OWNER_META_KEY) {
+      activeReminderOwnerState = {
+        known: true,
+        ownerUserId: normalizeText(record.ownerUserId),
+        notificationTriggersSupported: record.notificationTriggersSupported === true,
+      };
+    }
+  } catch (error) {
+    console.warn('Failed to read reminder worker state', error);
+  }
+  return { ...activeReminderOwnerState };
+}
+
+async function writeReminderWorkerState({
+  ownerUserId = '',
+  notificationTriggersSupported = false,
+} = {}) {
+  const nextState = {
+    known: true,
+    ownerUserId: normalizeText(ownerUserId),
+    notificationTriggersSupported: notificationTriggersSupported === true,
+  };
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(REMINDER_META_STORE_NAME, 'readwrite');
+    const done = waitForTransaction(tx);
+    await idbRequestToPromise(tx.objectStore(REMINDER_META_STORE_NAME).put({
+      key: ACTIVE_REMINDER_OWNER_META_KEY,
+      ownerUserId: nextState.ownerUserId,
+      notificationTriggersSupported: nextState.notificationTriggersSupported,
+      updatedAt: Date.now(),
+    }));
+    await done;
+    activeReminderOwnerState = nextState;
+    return true;
+  } catch (error) {
+    console.warn('Failed to persist reminder worker state', error);
+    return false;
+  }
+}
+
+async function incomingReminderOwnerIsAllowed(ownerUserId, { adoptIfUnknown = true } = {}) {
+  const incomingOwnerUserId = normalizeText(ownerUserId);
+  const state = await readReminderWorkerState();
+  if (!state.known) {
+    if (!incomingOwnerUserId || !adoptIfUnknown) {
+      return false;
+    }
+    return writeReminderWorkerState({
+        ownerUserId: incomingOwnerUserId,
+        notificationTriggersSupported: false,
+      });
+  }
+  return state.ownerUserId === incomingOwnerUserId;
+}
+
+function normalizePendingUrgentAction(record) {
+  if (!record || typeof record !== 'object') {
+    return null;
+  }
+  const id = normalizeText(record.id);
+  const action = normalizeText(record.action);
+  const reminderId = normalizeText(record.reminderId);
+  const createdAt = Number(record.createdAt);
+  if (!id || !URGENT_ACTION_NAMES.has(action) || !reminderId || !Number.isFinite(createdAt)) {
+    return null;
+  }
+  return {
+    id,
+    action,
+    reminderId,
+    ownerUserId: normalizeText(record.ownerUserId),
+    stageKey: normalizeText(record.stageKey),
+    meetingAlreadyOpened: record.meetingAlreadyOpened === true,
+    createdAt,
+    reminderUpdatedAt: parseTimestamp(record.reminderUpdatedAt),
+  };
+}
+
+function createPendingUrgentAction({
+  action,
+  reminderId,
+  ownerUserId,
+  stageKey,
+  meetingAlreadyOpened = false,
+  reminderUpdatedAt = null,
+}, now = Date.now()) {
+  urgentActionSequence += 1;
+  const randomId = self.crypto && typeof self.crypto.randomUUID === 'function'
+    ? self.crypto.randomUUID()
+    : `${now.toString(36)}-${urgentActionSequence.toString(36)}`;
+  return normalizePendingUrgentAction({
+    id: `urgent-action-${randomId}`,
+    action,
+    reminderId,
+    ownerUserId,
+    stageKey,
+    meetingAlreadyOpened,
+    reminderUpdatedAt,
+    createdAt: now,
+  });
+}
+
+async function savePendingUrgentAction(record) {
+  const normalized = normalizePendingUrgentAction(record);
+  if (!normalized) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(PENDING_URGENT_ACTION_STORE_NAME, 'readwrite');
+    const done = waitForTransaction(tx);
+    await idbRequestToPromise(tx.objectStore(PENDING_URGENT_ACTION_STORE_NAME).put(normalized));
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to persist an urgent reminder action', error);
+    return false;
+  }
+}
+
+function selectRetainedPendingUrgentActions(records = [], now = Date.now()) {
+  return (Array.isArray(records) ? records : [])
+    .map(normalizePendingUrgentAction)
+    .filter((record) => record && record.createdAt > now - PENDING_URGENT_ACTION_RETENTION_MS)
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+async function readPendingUrgentActions(now = Date.now()) {
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return [];
+    }
+    const tx = db.transaction(PENDING_URGENT_ACTION_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(PENDING_URGENT_ACTION_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const records = await idbRequestToPromise(store.getAll());
+    const normalizedRecords = selectRetainedPendingUrgentActions(records, now);
+    const retainedIds = new Set(normalizedRecords.map((record) => record.id));
+    for (const record of Array.isArray(records) ? records : []) {
+      const recordId = normalizeText(record?.id);
+      if (recordId && !retainedIds.has(recordId)) {
+        await idbRequestToPromise(store.delete(recordId));
+      }
+    }
+    await done;
+    return normalizedRecords;
+  } catch (error) {
+    console.warn('Failed to read pending urgent reminder actions', error);
+    return [];
+  }
+}
+
+async function updatePendingUrgentActionMeetingOpened(actionId) {
+  const normalizedActionId = normalizeText(actionId);
+  if (!normalizedActionId) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(PENDING_URGENT_ACTION_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(PENDING_URGENT_ACTION_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const existing = normalizePendingUrgentAction(
+      await idbRequestToPromise(store.get(normalizedActionId)).catch(() => null)
+    );
+    if (!existing) {
+      await done;
+      return false;
+    }
+    await idbRequestToPromise(store.put({
+      ...existing,
+      meetingAlreadyOpened: true,
+    }));
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to update a pending urgent reminder action', error);
+    return false;
+  }
+}
+
+async function deletePendingUrgentAction(actionId, ownerUserId = '') {
+  const normalizedActionId = normalizeText(actionId);
+  const normalizedOwnerUserId = normalizeText(ownerUserId);
+  if (!normalizedActionId) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(PENDING_URGENT_ACTION_STORE_NAME, 'readwrite');
+    const done = waitForTransaction(tx);
+    const store = tx.objectStore(PENDING_URGENT_ACTION_STORE_NAME);
+    const existing = normalizePendingUrgentAction(
+      await idbRequestToPromise(store.get(normalizedActionId)).catch(() => null)
+    );
+    if (!existing || existing.ownerUserId !== normalizedOwnerUserId) {
+      await done;
+      return false;
+    }
+    await idbRequestToPromise(store.delete(normalizedActionId));
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to complete a pending urgent reminder action', error);
+    return false;
+  }
+}
+
+function applyPendingUrgentActionIntent(entry, rawAction) {
+  const action = normalizePendingUrgentAction(rawAction);
+  const reminder = sanitizeReminderEntry(entry);
+  if (!action || !reminder || reminder.id !== action.reminderId) {
+    return reminder;
+  }
+  if (action.reminderUpdatedAt === null) {
+    return reminder;
+  }
+  const reminderOwnerUserId = normalizeText(reminder.ownerUserId);
+  if (
+    action.ownerUserId !== reminderOwnerUserId
+    && (action.ownerUserId || reminderOwnerUserId)
+  ) {
+    return reminder;
+  }
+  const reminderUpdatedAt = parseTimestamp(entry?.updatedAt) ?? 0;
+  const actionReminderUpdatedAt = action.reminderUpdatedAt;
+  if (reminderUpdatedAt > actionReminderUpdatedAt) {
+    return reminder;
+  }
+  const actionAt = action.createdAt;
+  const next = {
+    ...reminder,
+    // Keep updatedAt as the reminder revision the action was based on. The
+    // click time is useful for the action fields below, but promoting it to a
+    // reminder revision would let an old notification outrank a newer edit
+    // received from another device.
+    updatedAt: Math.max(Number(reminder.updatedAt || 0), actionReminderUpdatedAt),
+  };
+  if (action.action === 'done') {
+    next.done = true;
+    next.deleted = true;
+    next.due = null;
+    next.dueTime = null;
+  } else if (action.action === 'snooze5') {
+    next.snoozedUntil = new Date(actionAt + (5 * MINUTE_MS)).toISOString();
+  } else if (action.action === 'start') {
+    next.urgentStartedAt = Math.max(Number(next.urgentStartedAt || 0), actionAt);
+    next.urgentAcknowledgedAt = Math.max(Number(next.urgentAcknowledgedAt || 0), actionAt);
+  } else if (action.action === 'acknowledge') {
+    next.urgentAcknowledgedAt = Math.max(Number(next.urgentAcknowledgedAt || 0), actionAt);
+  }
+  return sanitizeReminderEntry(next);
+}
+
+function applyPendingUrgentActionIntents(entry, actions = []) {
+  return (Array.isArray(actions) ? actions : [])
+    .filter((action) => action?.reminderId === entry?.id)
+    .sort((left, right) => Number(left?.createdAt || 0) - Number(right?.createdAt || 0))
+    .reduce((current, action) => applyPendingUrgentActionIntent(current, action), entry);
+}
+
+function shouldSuppressUrgentForPendingActions(urgent, actions = [], now = Date.now()) {
+  const urgentOwnerUserId = normalizeText(urgent?.ownerUserId);
+  const urgentUpdatedAt = parseTimestamp(urgent?.updatedAt) ?? 0;
+  const matchingActions = (Array.isArray(actions) ? actions : [])
+    .map(normalizePendingUrgentAction)
+    .filter((action) => (
+      action?.reminderId === urgent?.reminderId
+      && action.ownerUserId === urgentOwnerUserId
+      && action.reminderUpdatedAt !== null
+      && action.reminderUpdatedAt >= urgentUpdatedAt
+    ));
+  return matchingActions.some((action) => {
+    if (action.action === 'done' || action.action === 'start') {
+      return true;
+    }
+    if (action.action === 'snooze5') {
+      return action.createdAt + (5 * MINUTE_MS) > now;
+    }
+    return action.action === 'acknowledge'
+      && action.stageKey
+      && action.stageKey === urgent?.stageKey;
+  });
+}
+
+async function applyPendingUrgentActionToSchedule(rawAction) {
+  const action = normalizePendingUrgentAction(rawAction);
+  if (!action) {
+    return false;
+  }
+  if (action.reminderUpdatedAt === null) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(REMINDER_STORE_NAME, 'readonly');
+    const existing = await idbRequestToPromise(
+      tx.objectStore(REMINDER_STORE_NAME).get(action.reminderId)
+    ).catch(() => null);
+    await waitForTransaction(tx);
+    if (!existing) {
+      // The durable pending action already suppresses matching or older
+      // reminder revisions. Do not invent a click-time tombstone here: it
+      // could later hide a newer cross-device edit that predates the click.
+      return true;
+    }
+    const existingOwnerUserId = normalizeText(existing.ownerUserId || existing.userId);
+    if (
+      action.ownerUserId !== existingOwnerUserId
+      && (action.ownerUserId || existingOwnerUserId)
+    ) {
+      return false;
+    }
+    if (
+      (parseTimestamp(existing.updatedAt) ?? 0) > action.reminderUpdatedAt
+    ) {
+      return false;
+    }
+    return upsertScheduledReminder(applyPendingUrgentActionIntent(existing, action), {
+      enforceOwner: true,
+      expectedOwnerUserId: action.ownerUserId,
+    });
+  } catch (error) {
+    console.warn('Failed to apply an urgent reminder action locally', error);
+    return false;
+  }
 }
 
 async function wasUrgentDeliveryProcessed(deliveryId, now = Date.now()) {
@@ -952,6 +1387,8 @@ function sanitizeReminderEntry(entry) {
     updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
     notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
     lastUrgentStageKey: normalizeText(entry.lastUrgentStageKey) || null,
+    ownerUserId: normalizeText(entry.ownerUserId) || normalizeText(entry.userId),
+    viaTrigger: entry.viaTrigger === true,
   };
   if (sanitized.due) {
     const dueTime = Date.parse(sanitized.due);
@@ -972,6 +1409,8 @@ function mergeScheduledReminderLocalState(existingEntry, incomingEntry) {
   const existingNotifiedAt = Number.isFinite(existing.notifiedAt) ? existing.notifiedAt : 0;
   const incomingNotifiedAt = Number.isFinite(incoming.notifiedAt) ? incoming.notifiedAt : 0;
   if (
+    incoming.updatedAt <= existing.updatedAt
+    &&
     existing.lastUrgentStageKey
     && (!incoming.lastUrgentStageKey || existingNotifiedAt > incomingNotifiedAt)
   ) {
@@ -981,55 +1420,145 @@ function mergeScheduledReminderLocalState(existingEntry, incomingEntry) {
   return incoming;
 }
 
-async function writeScheduledReminders(reminders = []) {
+function buildScheduledReminderSnapshot(
+  existingEntries = [],
+  reminders = [],
+  tombstones = [],
+  now = Date.now(),
+  pendingActions = []
+) {
+  const nextById = new Map();
+  [
+    ...(Array.isArray(reminders) ? reminders : []).map((entry) => (
+      applyPendingUrgentActionIntents(entry, pendingActions)
+    )),
+    ...(Array.isArray(tombstones) ? tombstones : []).map((entry) => ({
+      ...entry,
+      done: true,
+      deleted: true,
+    })),
+  ]
+    .map(sanitizeReminderEntry)
+    .filter(Boolean)
+    .forEach((entry) => {
+      const current = nextById.get(entry.id);
+      if (
+        !current
+        || entry.updatedAt > current.updatedAt
+        || (
+          entry.updatedAt === current.updatedAt
+          && entry.deleted === true
+          && current.deleted !== true
+        )
+      ) {
+        nextById.set(entry.id, entry);
+      }
+    });
+  const tombstoneCutoff = now - REMINDER_TOMBSTONE_RETENTION_MS;
+  (Array.isArray(existingEntries) ? existingEntries : [])
+    .map(sanitizeReminderEntry)
+    .filter(Boolean)
+    .forEach((existing) => {
+      const incoming = nextById.get(existing.id);
+      if (!incoming) {
+        if (existing.deleted === true && existing.updatedAt >= tombstoneCutoff) {
+          nextById.set(existing.id, existing);
+        }
+        return;
+      }
+      if (
+        existing.updatedAt > incoming.updatedAt
+        || (
+          existing.updatedAt === incoming.updatedAt
+          && existing.deleted === true
+          && incoming.deleted !== true
+        )
+      ) {
+        nextById.set(existing.id, existing);
+        return;
+      }
+      nextById.set(
+        existing.id,
+        mergeScheduledReminderLocalState(existing, incoming)
+      );
+    });
+  return Array.from(nextById.values());
+}
+
+async function writeScheduledReminders(reminders = [], tombstones = [], options = {}) {
   try {
+    const activeOwnerWasProvided = options.activeOwnerWasProvided === true;
+    const activeOwnerUserId = normalizeText(options.activeOwnerUserId);
+    const expectedOwnerWasProvided = Object.prototype.hasOwnProperty.call(
+      options,
+      'expectedOwnerUserId'
+    );
+    const expectedOwnerUserId = normalizeText(options.expectedOwnerUserId);
+    const nextOwnerState = activeOwnerWasProvided
+      ? {
+          known: true,
+          ownerUserId: activeOwnerUserId,
+          notificationTriggersSupported: options.notificationTriggersSupported === true,
+        }
+      : null;
     const db = await getReminderDb();
     if (!db) {
       return false;
     }
-    const tx = db.transaction(REMINDER_STORE_NAME, 'readwrite');
+    // Read the separate pending-action store before opening the write transaction.
+    // IndexedDB may auto-commit a transaction whenever it has no queued requests.
+    const pendingActions = await readPendingUrgentActions();
+    const tx = db.transaction(
+      activeOwnerWasProvided || expectedOwnerWasProvided
+        ? [REMINDER_STORE_NAME, REMINDER_META_STORE_NAME]
+        : REMINDER_STORE_NAME,
+      'readwrite'
+    );
     const store = tx.objectStore(REMINDER_STORE_NAME);
     const done = waitForTransaction(tx);
+    if (expectedOwnerWasProvided) {
+      const currentOwnerRecord = await idbRequestToPromise(
+        tx.objectStore(REMINDER_META_STORE_NAME).get(ACTIVE_REMINDER_OWNER_META_KEY)
+      );
+      if (
+        !currentOwnerRecord
+        || currentOwnerRecord.key !== ACTIVE_REMINDER_OWNER_META_KEY
+        || normalizeText(currentOwnerRecord.ownerUserId) !== expectedOwnerUserId
+      ) {
+        // A schedule check that began under a previous account must not clear
+        // or replace the schedule installed by the newly active account.
+        await done;
+        return false;
+      }
+    }
     const existingEntries = await idbRequestToPromise(store.getAll()).catch(() => []);
-    const nextById = new Map(
-      reminders
-        .map(sanitizeReminderEntry)
-        .filter(Boolean)
-        .map((entry) => [entry.id, entry])
+    const belongsToActiveOwner = (entry) => (
+      !activeOwnerWasProvided
+      || normalizeText(entry?.ownerUserId || entry?.userId) === activeOwnerUserId
     );
-    const tombstoneCutoff = Date.now() - REMINDER_TOMBSTONE_RETENTION_MS;
-    existingEntries
-      .map(sanitizeReminderEntry)
-      .filter(Boolean)
-      .forEach((existing) => {
-        const incoming = nextById.get(existing.id);
-        if (!incoming) {
-          if (existing.deleted === true && existing.updatedAt >= tombstoneCutoff) {
-            nextById.set(existing.id, existing);
-          }
-          return;
-        }
-        if (
-          existing.updatedAt > incoming.updatedAt
-          || (
-            existing.updatedAt === incoming.updatedAt
-            && existing.deleted === true
-            && incoming.deleted !== true
-          )
-        ) {
-          nextById.set(existing.id, existing);
-          return;
-        }
-        nextById.set(
-          existing.id,
-          mergeScheduledReminderLocalState(existing, incoming)
-        );
-      });
+    const nextEntries = buildScheduledReminderSnapshot(
+      existingEntries.filter(belongsToActiveOwner),
+      (Array.isArray(reminders) ? reminders : []).filter(belongsToActiveOwner),
+      (Array.isArray(tombstones) ? tombstones : []).filter(belongsToActiveOwner),
+      Date.now(),
+      pendingActions
+    );
     await idbRequestToPromise(store.clear());
-    for (const entry of nextById.values()) {
+    for (const entry of nextEntries) {
       await idbRequestToPromise(store.put(entry));
     }
+    if (nextOwnerState) {
+      await idbRequestToPromise(tx.objectStore(REMINDER_META_STORE_NAME).put({
+        key: ACTIVE_REMINDER_OWNER_META_KEY,
+        ownerUserId: nextOwnerState.ownerUserId,
+        notificationTriggersSupported: nextOwnerState.notificationTriggersSupported,
+        updatedAt: Date.now(),
+      }));
+    }
     await done;
+    if (nextOwnerState) {
+      activeReminderOwnerState = nextOwnerState;
+    }
     return true;
   } catch (error) {
     console.warn('Failed to persist reminder schedule', error);
@@ -1037,7 +1566,7 @@ async function writeScheduledReminders(reminders = []) {
   }
 }
 
-async function upsertScheduledReminder(entry) {
+async function upsertScheduledReminder(entry, options = {}) {
   try {
     const db = await getReminderDb();
     if (!db) {
@@ -1047,10 +1576,27 @@ async function upsertScheduledReminder(entry) {
     if (!sanitized) {
       return null;
     }
+    const enforceOwner = options.enforceOwner === true;
+    const expectedOwnerUserId = normalizeText(options.expectedOwnerUserId);
+    if (
+      enforceOwner
+      && normalizeText(sanitized.ownerUserId) !== expectedOwnerUserId
+    ) {
+      return false;
+    }
     const tx = db.transaction(REMINDER_STORE_NAME, 'readwrite');
     const store = tx.objectStore(REMINDER_STORE_NAME);
     const done = waitForTransaction(tx);
     const existing = await idbRequestToPromise(store.get(sanitized.id)).catch(() => null);
+    const existingOwnerUserId = normalizeText(existing?.ownerUserId || existing?.userId);
+    if (
+      enforceOwner
+      && existing
+      && existingOwnerUserId !== expectedOwnerUserId
+    ) {
+      await done.catch(() => undefined);
+      return false;
+    }
     const existingUpdatedAt = Number.isFinite(existing?.updatedAt) ? existing.updatedAt : 0;
     if (
       existingUpdatedAt > sanitized.updatedAt
@@ -1074,7 +1620,7 @@ async function upsertScheduledReminder(entry) {
   }
 }
 
-async function deleteScheduledReminder(id, updatedAt = Date.now()) {
+async function deleteScheduledReminder(id, updatedAt = Date.now(), ownerUserId = '') {
   if (!id) {
     return null;
   }
@@ -1083,7 +1629,68 @@ async function deleteScheduledReminder(id, updatedAt = Date.now()) {
     done: true,
     deleted: true,
     updatedAt,
+    ownerUserId: normalizeText(ownerUserId),
+  }, {
+    enforceOwner: true,
+    expectedOwnerUserId: normalizeText(ownerUserId),
   });
+}
+
+async function closeUrgentReminderNotifications(reminderId, ownerUserId = '') {
+  const normalizedReminderId = normalizeText(reminderId);
+  if (
+    !normalizedReminderId
+    || !self.registration
+    || typeof self.registration.getNotifications !== 'function'
+  ) {
+    return false;
+  }
+  const normalizedOwnerUserId = normalizeText(ownerUserId);
+  const urgentTags = [
+    buildUrgentNotificationTag(normalizedReminderId, normalizedOwnerUserId),
+    buildUrgentNotificationTag(normalizedReminderId, ''),
+  ].filter((tag, index, tags) => tags.indexOf(tag) === index);
+  try {
+    for (const urgentTag of urgentTags) {
+      const notifications = await self.registration.getNotifications({ tag: urgentTag });
+      (Array.isArray(notifications) ? notifications : [])
+        .filter((notification) => {
+          if (notification?.tag && notification.tag !== urgentTag) return false;
+          const notificationOwnerUserId = normalizeText(notification?.data?.ownerUserId);
+          return !normalizedOwnerUserId || !notificationOwnerUserId
+            || notificationOwnerUserId === normalizedOwnerUserId;
+        })
+        .forEach((notification) => {
+          try { notification.close(); } catch (_) { /* ignore close failures */ }
+        });
+    }
+    return true;
+  } catch (error) {
+    console.warn('Failed to close an urgent reminder notification', error);
+    return false;
+  }
+}
+
+async function closeForeignUrgentNotifications(activeOwnerUserId = '') {
+  if (!self.registration || typeof self.registration.getNotifications !== 'function') {
+    return false;
+  }
+  const normalizedActiveOwnerUserId = normalizeText(activeOwnerUserId);
+  try {
+    const notifications = await self.registration.getNotifications();
+    (Array.isArray(notifications) ? notifications : [])
+      .filter((notification) => {
+        if (notification?.data?.type !== URGENT_NOTIFICATION_DATA_TYPE) return false;
+        return normalizeText(notification?.data?.ownerUserId) !== normalizedActiveOwnerUserId;
+      })
+      .forEach((notification) => {
+        try { notification.close(); } catch (_) { /* ignore close failures */ }
+      });
+    return true;
+  } catch (error) {
+    console.warn('Failed to close reminders from an inactive account', error);
+    return false;
+  }
 }
 
 function buildScheduledReminderFromPush(reminder = {}) {
@@ -1113,6 +1720,7 @@ function buildScheduledReminderFromPush(reminder = {}) {
     notes,
     meetingUrl: normalizeHttpUrl(reminder.meetingUrl),
     urlPath: normalizeText(reminder.urlPath) || `${DEFAULT_REMINDER_URL_PATH}#reminders`,
+    ownerUserId: normalizeText(reminder.ownerUserId) || normalizeText(reminder.userId),
     updatedAt: parseTimestamp(reminder.updatedAt) ?? Date.now(),
     notifiedAt: null,
   });
@@ -1125,22 +1733,73 @@ async function handleReminderSyncPush(rawPayload = {}) {
   if (!reminderId) {
     return false;
   }
+  const incomingOwnerUserId =
+    normalizeText(payload.ownerUserId)
+    || normalizeText(payload.userId)
+    || normalizeText(reminder.ownerUserId)
+    || normalizeText(reminder.userId);
+  if (!(await incomingReminderOwnerIsAllowed(incomingOwnerUserId))) {
+    return true;
+  }
 
   let mutationResult = null;
+  let shouldCloseUrgentNotification = false;
+  let unpersistedUrgentPayload = null;
   if (normalizeText(payload.action).toLowerCase() === 'delete') {
     const updatedAt = parseTimestamp(reminder.updatedAt) ?? Date.now();
-    mutationResult = await deleteScheduledReminder(reminderId, updatedAt);
+    mutationResult = await deleteScheduledReminder(reminderId, updatedAt, incomingOwnerUserId);
+    shouldCloseUrgentNotification = true;
   } else {
     const scheduledReminder = buildScheduledReminderFromPush({
       ...reminder,
       id: reminderId,
+      ownerUserId: incomingOwnerUserId,
     });
     if (scheduledReminder) {
-      mutationResult = await upsertScheduledReminder(scheduledReminder);
+      const pendingActions = await readPendingUrgentActions();
+      const reminderWithPendingIntent = applyPendingUrgentActionIntents(
+        scheduledReminder,
+        pendingActions
+      );
+      const urgentState = getScheduledUrgentState(reminderWithPendingIntent, Date.now());
+      shouldCloseUrgentNotification = (
+        reminderWithPendingIntent?.deleted === true
+        || urgentState.shouldAlert === false
+      );
+      mutationResult = reminderWithPendingIntent?.deleted === true
+        ? await deleteScheduledReminder(
+            reminderId,
+            Math.max(
+              Number(reminderWithPendingIntent.updatedAt || 0),
+              parseTimestamp(reminder.updatedAt) || 0
+            ),
+            incomingOwnerUserId
+          )
+          : await upsertScheduledReminder(reminderWithPendingIntent, {
+              enforceOwner: true,
+              expectedOwnerUserId: incomingOwnerUserId,
+            });
+      if (mutationResult === null && urgentState.shouldAlert) {
+        unpersistedUrgentPayload = {
+          ownerUserId: incomingOwnerUserId,
+          reminder: reminderWithPendingIntent,
+          stage: urgentState.stage,
+          badgeCount: payload.badgeCount,
+        };
+      }
     }
   }
 
   if (mutationResult === null) {
+    if (shouldCloseUrgentNotification) {
+      // The server has authoritatively removed or deactivated this reminder.
+      // Even if IndexedDB is temporarily unavailable, do not leave the stale
+      // lock-screen notification inviting another action.
+      await closeUrgentReminderNotifications(reminderId, incomingOwnerUserId);
+    }
+    if (unpersistedUrgentPayload) {
+      return showUrgentReminder(unpersistedUrgentPayload);
+    }
     if (normalizeBadgeCount(payload.badgeCount) !== null) {
       await applyUrgentBadge(payload.badgeCount);
     }
@@ -1151,6 +1810,9 @@ async function handleReminderSyncPush(rawPayload = {}) {
     // Rebuild the badge from the reminder schedule that actually won.
     await recomputeScheduledUrgentBadge();
     return true;
+  }
+  if (shouldCloseUrgentNotification) {
+    await closeUrgentReminderNotifications(reminderId, incomingOwnerUserId);
   }
   const processed = await checkAndNotifyDueReminders({ source: 'push-sync' });
   if (processed === false && normalizeBadgeCount(payload.badgeCount) !== null) {
@@ -1170,10 +1832,16 @@ async function readScheduledReminders() {
     const request = store.getAll();
     const results = await idbRequestToPromise(request);
     await waitForTransaction(tx);
+    const workerState = await readReminderWorkerState();
+    if (!workerState.known) {
+      return [];
+    }
     return Array.isArray(results)
       ? results
           .map(sanitizeReminderEntry)
-          .filter(Boolean)
+          .filter((entry) => (
+            entry && entry.ownerUserId === workerState.ownerUserId
+          ))
       : null;
   } catch (error) {
     console.warn('Failed to read scheduled reminders', error);
@@ -1255,10 +1923,14 @@ function getScheduledUrgentState(reminder, now) {
 }
 
 async function recomputeScheduledUrgentBadge(now = Date.now()) {
-  const reminders = await readScheduledReminders();
-  if (!Array.isArray(reminders)) {
+  const storedReminders = await readScheduledReminders();
+  if (!Array.isArray(storedReminders)) {
     return false;
   }
+  const pendingActions = await readPendingUrgentActions();
+  const reminders = storedReminders.map((reminder) => (
+    applyPendingUrgentActionIntents(reminder, pendingActions)
+  ));
   const urgentBadgeCount = reminders.filter(
     (reminder) => getScheduledUrgentState(reminder, now).shouldBadge
   ).length;
@@ -1272,16 +1944,37 @@ async function checkAndNotifyDueReminders({
   if (!self.registration || typeof self.registration.showNotification !== 'function') {
     return false;
   }
-  const reminders = await readScheduledReminders();
-  if (!Array.isArray(reminders)) {
+  const storedReminders = await readScheduledReminders();
+  if (!Array.isArray(storedReminders)) {
     return false;
   }
+  const pendingActions = await readPendingUrgentActions();
+  const workerState = await readReminderWorkerState();
+  if (!workerState.known) {
+    return false;
+  }
+  const expectedOwnerUserId = normalizeText(workerState.ownerUserId);
+  if (storedReminders.some((reminder) => (
+    normalizeText(reminder?.ownerUserId || reminder?.userId) !== expectedOwnerUserId
+  ))) {
+    // The account changed between reading the schedule and reading metadata.
+    return false;
+  }
+  const reminders = storedReminders.map((reminder) => (
+    applyPendingUrgentActionIntents(reminder, pendingActions)
+  ));
   if (!reminders.length) {
     return true;
   }
   const now = Date.now();
   const urgentStates = reminders.map((reminder) => getScheduledUrgentState(reminder, now));
   const urgentBadgeCount = urgentStates.filter((state) => state.shouldBadge).length;
+  if (!(await incomingReminderOwnerIsAllowed(
+    expectedOwnerUserId,
+    { adoptIfUnknown: false }
+  ))) {
+    return false;
+  }
   await applyUrgentBadge(urgentBadgeCount);
   let changed = false;
   let displayFailed = false;
@@ -1306,6 +1999,8 @@ async function checkAndNotifyDueReminders({
                 due: reminder.due,
                 meetingUrl: reminder.meetingUrl,
                 urlPath: reminder.urlPath,
+                ownerUserId: reminder.ownerUserId,
+                updatedAt: reminder.updatedAt,
               },
               stage: urgentState.stage,
               badgeCount: urgentBadgeCount,
@@ -1324,6 +2019,9 @@ async function checkAndNotifyDueReminders({
           displayFailed = true;
         }
       }
+      continue;
+    }
+    if (reminder.viaTrigger === true) {
       continue;
     }
     const dueTime = Number.isFinite(reminder.dueTime)
@@ -1362,7 +2060,9 @@ async function checkAndNotifyDueReminders({
     }
   }
   if (changed) {
-    const persisted = await writeScheduledReminders(reminders);
+    const persisted = await writeScheduledReminders(reminders, [], {
+      expectedOwnerUserId,
+    });
     if (!persisted) {
       return false;
     }
@@ -1380,7 +2080,11 @@ self.addEventListener('message', (event) => {
     return;
   }
   if (data.type === UPDATE_URGENT_BADGE_MESSAGE_TYPE) {
-    event.waitUntil(applyUrgentBadge(data.count));
+    event.waitUntil((async () => {
+      if (await incomingReminderOwnerIsAllowed(data.ownerUserId)) {
+        await applyUrgentBadge(data.count);
+      }
+    })());
     return;
   }
   if (data.type === REMINDER_SYNC_PUSH_TYPE) {
@@ -1390,9 +2094,65 @@ self.addEventListener('message', (event) => {
     ));
     return;
   }
+  if (data.type === REQUEST_PENDING_URGENT_ACTIONS_MESSAGE_TYPE) {
+    event.waitUntil((async () => {
+      const ownerUserId = normalizeText(data.ownerUserId);
+      if (!(await incomingReminderOwnerIsAllowed(ownerUserId, { adoptIfUnknown: false }))) {
+        return 0;
+      }
+      return sendPendingUrgentActions(event.source, ownerUserId);
+    })());
+    return;
+  }
+  if (data.type === URGENT_ACTION_COMPLETED_MESSAGE_TYPE) {
+    event.waitUntil((async () => {
+      const ownerUserId = normalizeText(data.ownerUserId);
+      if (!(await incomingReminderOwnerIsAllowed(ownerUserId, { adoptIfUnknown: false }))) {
+        return false;
+      }
+      return deletePendingUrgentAction(data.actionId, ownerUserId);
+    })());
+    return;
+  }
+  if (data.type === CANCEL_SCHEDULED_REMINDER_MESSAGE_TYPE) {
+    event.waitUntil((async () => {
+      const reminderId = normalizeText(data.reminderId);
+      if (!reminderId) {
+        return false;
+      }
+      const ownerUserId = normalizeText(data.ownerUserId);
+      if (!(await incomingReminderOwnerIsAllowed(ownerUserId))) {
+        return false;
+      }
+      const deleted = await deleteScheduledReminder(
+        reminderId,
+        parseTimestamp(data.updatedAt) ?? Date.now(),
+        ownerUserId
+      );
+      if (deleted === true) {
+        await closeUrgentReminderNotifications(reminderId, ownerUserId);
+      }
+      await recomputeScheduledUrgentBadge();
+      return deleted;
+    })());
+    return;
+  }
   if (data.type === 'memoryCue:updateScheduledReminders') {
     const reminders = Array.isArray(data.reminders) ? data.reminders : [];
-    event.waitUntil(writeScheduledReminders(reminders));
+    const tombstones = Array.isArray(data.tombstones) ? data.tombstones : [];
+    const activeOwnerWasProvided = Object.prototype.hasOwnProperty.call(data, 'activeOwnerUserId');
+    const activeOwnerUserId = normalizeText(data.activeOwnerUserId);
+    event.waitUntil((async () => {
+      const written = await writeScheduledReminders(reminders, tombstones, {
+        activeOwnerWasProvided,
+        activeOwnerUserId,
+        notificationTriggersSupported: data.notificationTriggersSupported === true,
+      });
+      if (activeOwnerWasProvided) {
+        await closeForeignUrgentNotifications(activeOwnerUserId);
+      }
+      return written;
+    })());
     return;
   }
   if (data.type === 'memoryCue:checkScheduledReminders') {
@@ -1426,7 +2186,11 @@ self.addEventListener('push', (event) => {
     return;
   }
   if (data.type === UPDATE_URGENT_BADGE_MESSAGE_TYPE) {
-    event.waitUntil(applyUrgentBadge(data.count ?? data.badgeCount));
+    event.waitUntil((async () => {
+      if (await incomingReminderOwnerIsAllowed(data.ownerUserId)) {
+        await applyUrgentBadge(data.count ?? data.badgeCount);
+      }
+    })());
     return;
   }
   if (data.type === REMINDER_SYNC_PUSH_TYPE) {
@@ -1438,10 +2202,16 @@ self.addEventListener('push', (event) => {
   }
   const title = data.title || 'Memory Cue Reminder';
   const options = { body: data.body || '', data };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    if (!(await incomingReminderOwnerIsAllowed(data.ownerUserId))) {
+      return false;
+    }
+    await self.registration.showNotification(title, options);
+    return true;
+  })());
 });
 
-function buildNotificationDestination(data = {}, action = '') {
+function buildNotificationDestination(data = {}, action = '', pendingAction = null) {
   try {
     const destination = data.urlPath
       ? new URL(data.urlPath, self.registration.scope)
@@ -1455,6 +2225,27 @@ function buildNotificationDestination(data = {}, action = '') {
       }
       if (data.stageKey) {
         destination.searchParams.set('urgentStage', data.stageKey);
+      }
+      const actionId = normalizeText(pendingAction?.id || pendingAction?.actionId);
+      const actionCreatedAt = Number(
+        pendingAction?.createdAt ?? pendingAction?.actionCreatedAt
+      );
+      if (actionId) {
+        destination.searchParams.set('urgentActionId', actionId);
+      }
+      if (Number.isFinite(actionCreatedAt)) {
+        destination.searchParams.set('urgentActionCreatedAt', String(actionCreatedAt));
+      }
+      const reminderUpdatedAt = parseTimestamp(pendingAction?.reminderUpdatedAt);
+      if (reminderUpdatedAt !== null) {
+        destination.searchParams.set('urgentReminderUpdatedAt', String(reminderUpdatedAt));
+      }
+      if (pendingAction?.meetingAlreadyOpened === true) {
+        destination.searchParams.set('meetingOpened', '1');
+      }
+      const ownerUserId = normalizeText(pendingAction?.ownerUserId || data.ownerUserId);
+      if (ownerUserId) {
+        destination.searchParams.set('urgentOwnerUserId', ownerUserId);
       }
       if (!destination.hash) {
         destination.hash = 'reminders';
@@ -1514,20 +2305,32 @@ function findNotificationWindowClient(windowClients = [], destination = '') {
 }
 
 async function postUrgentActionToClients({
+  id,
+  actionId,
   action,
   reminderId,
+  ownerUserId,
   stageKey,
   meetingAlreadyOpened = false,
+  createdAt,
+  actionCreatedAt,
+  reminderUpdatedAt,
 }, clients = null) {
   if (!reminderId || !URGENT_ACTION_NAMES.has(action)) {
     return [];
   }
+  const normalizedActionId = normalizeText(id || actionId);
+  const normalizedCreatedAt = Number(createdAt ?? actionCreatedAt);
   const actionMessage = {
     type: URGENT_ACTION_MESSAGE_TYPE,
     action,
     reminderId,
+    ownerUserId: normalizeText(ownerUserId),
     stageKey: stageKey || '',
     meetingAlreadyOpened,
+    actionId: normalizedActionId,
+    actionCreatedAt: Number.isFinite(normalizedCreatedAt) ? normalizedCreatedAt : null,
+    reminderUpdatedAt: parseTimestamp(reminderUpdatedAt),
   };
   const targetClients = clients || await self.clients.matchAll({
     type: 'window',
@@ -1543,6 +2346,24 @@ async function postUrgentActionToClients({
   return targetClients;
 }
 
+async function sendPendingUrgentActions(source = null, ownerUserId = '') {
+  const normalizedOwnerUserId = normalizeText(ownerUserId);
+  const pendingActions = await readPendingUrgentActions();
+  const ownedPendingActions = pendingActions.filter(
+    (action) => action.ownerUserId === normalizedOwnerUserId
+  );
+  if (!ownedPendingActions.length) {
+    return 0;
+  }
+  const targetClients = source && typeof source.postMessage === 'function'
+    ? [source]
+    : await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  for (const pendingAction of ownedPendingActions) {
+    await postUrgentActionToClients(pendingAction, targetClients);
+  }
+  return ownedPendingActions.length;
+}
+
 self.addEventListener('notificationclick', (event) => {
   const data = event.notification?.data || {};
   const isUrgent = data.type === URGENT_NOTIFICATION_DATA_TYPE;
@@ -1550,64 +2371,131 @@ self.addEventListener('notificationclick', (event) => {
     ? event.action
     : (isUrgent ? 'acknowledge' : '');
   const meetingUrl = action === 'start' ? normalizeHttpUrl(data.meetingUrl) : '';
-  const destination = buildNotificationDestination(data, action);
+  let destination = buildNotificationDestination(data, action);
   event.notification?.close();
   event.waitUntil((async () => {
+    let pendingAction = null;
+    let pendingActionPersisted = false;
+    let appWindowOpenAttempted = false;
+    let meetingWindowOpened = false;
+    if (isUrgent) {
+      if (!(await incomingReminderOwnerIsAllowed(data.ownerUserId))) {
+        return;
+      }
+      pendingAction = createPendingUrgentAction({
+        action,
+        reminderId: data.reminderId,
+        stageKey: data.stageKey,
+        ownerUserId: data.ownerUserId,
+        reminderUpdatedAt: data.updatedAt,
+      });
+      if (pendingAction) {
+        pendingActionPersisted = await savePendingUrgentAction(pendingAction);
+        if (pendingActionPersisted) {
+          await applyPendingUrgentActionToSchedule(pendingAction);
+          await closeUrgentReminderNotifications(
+            pendingAction.reminderId,
+            pendingAction.ownerUserId
+          );
+          const clickedBadgeCount = normalizeBadgeCount(data.badgeCount);
+          if (pendingAction.action !== 'done' && clickedBadgeCount !== null) {
+            await applyUrgentBadge(clickedBadgeCount);
+          } else {
+            await recomputeScheduledUrgentBadge();
+          }
+        }
+        destination = buildNotificationDestination(data, action, pendingAction);
+      }
+    }
     try {
       const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       const targetUrl = new URL(destination);
       const matching = findNotificationWindowClient(allClients, destination);
       if (matching) {
-        try {
-          await matching.focus();
-        } catch (_) {
-          // The action can still reach an open app even when Windows rejects focus.
-          // Do not fall through to openWindow(), which would create a duplicate.
-        }
         let meetingAlreadyOpened = false;
         if (meetingUrl && self.clients.openWindow) {
           try {
             await self.clients.openWindow(meetingUrl);
             meetingAlreadyOpened = true;
+            meetingWindowOpened = true;
+            if (pendingAction && pendingActionPersisted) {
+              pendingAction.meetingAlreadyOpened = true;
+              await updatePendingUrgentActionMeetingOpened(pendingAction.id);
+            }
           } catch (_) {
             // The page will make a best-effort fallback if the browser rejects this open.
           }
         }
-        if (isUrgent) {
-          await postUrgentActionToClients({
-            action,
-            reminderId: data.reminderId,
-            stageKey: data.stageKey,
-            meetingAlreadyOpened,
-          }, [matching]);
+        if (!meetingAlreadyOpened) {
+          try {
+            await matching.focus();
+          } catch (_) {
+            // The action can still reach an open app even when Windows rejects focus.
+            // Do not fall through to openWindow(), which would create a duplicate.
+          }
         }
-        if (!isUrgent && targetUrl.hash && matching.navigate) {
+        if (pendingAction) {
+          pendingAction.meetingAlreadyOpened = meetingAlreadyOpened;
+          await postUrgentActionToClients(pendingAction, [matching]);
+        }
+        if (pendingAction && !pendingActionPersisted && matching.navigate) {
+          // Keep an action URL in the existing app when IndexedDB is unavailable.
+          // If the page crashes before handling the message, its next load can
+          // still finish the action instead of losing the user's tap.
+          try { await matching.navigate(destination); } catch (_) { /* retry on next alert */ }
+        } else if (!isUrgent && targetUrl.hash && matching.navigate) {
           try { await matching.navigate(destination); } catch (_) { /* ignore navigate failure */ }
         }
         return;
       }
       if (self.clients.openWindow) {
-        let appDestination = destination;
+        if (pendingAction && !pendingActionPersisted) {
+          appWindowOpenAttempted = true;
+          try { await self.clients.openWindow(destination); } catch (_) { /* retry below when useful */ }
+        }
         if (meetingUrl) {
           try {
-            const appUrl = new URL(destination);
-            appUrl.searchParams.set('meetingOpened', '1');
-            appDestination = appUrl.href;
+            const meetingClient = await self.clients.openWindow(meetingUrl);
+            meetingWindowOpened = true;
+            if (pendingAction) {
+              pendingAction.meetingAlreadyOpened = true;
+              if (pendingActionPersisted) {
+                await updatePendingUrgentActionMeetingOpened(pendingAction.id);
+              }
+              destination = buildNotificationDestination(data, action, pendingAction);
+            }
+            // A same-origin meeting can be focused again after Memory Cue starts
+            // processing the durable action. Cross-origin meeting clients resolve
+            // as null, so leave those in front and replay the queued action later.
+            if (meetingClient && typeof meetingClient.focus === 'function') {
+              appWindowOpenAttempted = true;
+              try {
+                await self.clients.openWindow(destination);
+              } finally {
+                try { await meetingClient.focus(); } catch (_) { /* ignore focus failure */ }
+              }
+            }
+            return;
           } catch (_) {
-            // Keep the normal action URL if it cannot be amended safely.
+            // Open Memory Cue with a truthful false flag so its Start action can
+            // make a best-effort meeting launch when the service worker is blocked.
+            if (pendingAction) {
+              destination = buildNotificationDestination(data, action, pendingAction);
+            }
           }
         }
-        await self.clients.openWindow(appDestination);
-        if (meetingUrl) {
-          try {
-            await self.clients.openWindow(meetingUrl);
-          } catch (_) {
-            // The app remains open so the user can use its Start / Join control.
-          }
+        if (pendingAction) {
+          destination = buildNotificationDestination(data, action, pendingAction);
         }
+        if (appWindowOpenAttempted) {
+          return;
+        }
+        appWindowOpenAttempted = true;
+        await self.clients.openWindow(destination);
       }
     } catch (_) {
-      if (self.clients && self.clients.openWindow) {
+      if (!meetingWindowOpened && !appWindowOpenAttempted && self.clients && self.clients.openWindow) {
+        appWindowOpenAttempted = true;
         try { await self.clients.openWindow(destination); } catch (_) { /* ignore */ }
       }
     }

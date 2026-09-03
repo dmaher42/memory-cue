@@ -6,7 +6,7 @@ import {
   subscribeReminderGroupColors,
   saveReminderBoardLabelRemote,
   subscribeReminderBoardLabels,
-} from '../repositories/reminderRepository.js';
+} from '../repositories/reminderRepository.js?v=20260904a';
 import { syncNotes } from '../services/firestoreSyncService.js';
 import { captureInput, getInboxEntries, saveInboxEntry } from '../../js/services/capture-service.js';
 import { createReminder as createReminderViaService, setReminderCreationHandler, buildReminderPayload } from '../services/reminderService.js';
@@ -21,13 +21,13 @@ import { buildRagAssistantRequest, requestAssistantChat } from '../services/assi
 import { replaceInboxEntries } from '../services/inboxService.js';
 import { resolveShorthandText } from '../services/patternLearningService.js';
 import { getMessages, replaceMessages } from '../chat/messageStore.js';
-import { createReminderFirestoreSync } from './reminderFirestoreSync.js';
+import { createReminderFirestoreSync } from './reminderFirestoreSync.js?v=20260904a';
 import { createReminderFormHandlers } from './reminderFormHandlers.js';
 import {
   registerReminderPushDevice,
   syncReminderToOtherDevices,
   unregisterReminderPushDevice,
-} from './reminderPushSync.js';
+} from './reminderPushSync.js?v=20260904a';
 import {
   normalizeReminderKeywords,
   extractReminderKeywords,
@@ -97,6 +97,9 @@ const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
   checkScheduledReminders: 'memoryCue:checkScheduledReminders',
   showUrgentReminder: 'memoryCue:showUrgentReminder',
   updateUrgentBadge: 'memoryCue:updateUrgentBadge',
+  cancelScheduledReminder: 'memoryCue:cancelScheduledReminder',
+  requestPendingUrgentActions: 'memoryCue:requestPendingUrgentActions',
+  urgentActionCompleted: 'memoryCue:urgentActionCompleted',
 });
 let serviceWorkerReadyPromise = null;
 let backgroundSyncRegistrationPromise = null;
@@ -151,6 +154,10 @@ const REMINDER_BOARD_COLUMNS = Object.freeze([
   Object.freeze({ key: 'footy', label: 'Footy', category: 'Footy' }),
 ]);
 const OFFLINE_REMINDERS_KEY = 'memoryCue:offlineReminders';
+const QUARANTINED_PENDING_REMINDERS_KEY = 'memoryCue:quarantinedPendingReminders';
+const SCHEDULED_REMINDER_TOMBSTONES_KEY = 'memoryCue:scheduledReminderTombstones';
+const PENDING_REMINDER_DELETIONS_KEY = 'memoryCue:pendingReminderDeletions';
+const PENDING_REMOTE_GUARD_METADATA_KEY = '__memoryCuePendingRemoteGuard';
 const LEGACY_DAILY_TASKS_STORAGE_KEY = 'dailyTasksByDate';
 const ORDER_INDEX_GAP = 1024;
 const BACKUP_VERSION = 2;
@@ -349,9 +356,6 @@ async function postMessageToServiceWorker(message) {
 }
 
 async function setupBackgroundReminderSync() {
-  if (supportsNotificationTriggers()) {
-    return false;
-  }
   if (backgroundSyncRegistrationSucceeded) {
     return true;
   }
@@ -412,13 +416,14 @@ async function setupBackgroundReminderSync() {
   }
 }
 
-async function syncScheduledRemindersWithServiceWorker(remindersPayload = [], { requestCheck = false } = {}) {
-  if (supportsNotificationTriggers()) {
-    return;
-  }
+async function syncScheduledRemindersWithServiceWorker(
+  remindersPayload = [],
+  { requestCheck = false, tombstones = [], activeOwnerUserId = '' } = {}
+) {
   if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
     return;
   }
+  const notificationTriggersSupported = supportsNotificationTriggers();
   try {
     const registration = await ensureServiceWorkerRegistration();
     if (!registration) {
@@ -427,6 +432,10 @@ async function syncScheduledRemindersWithServiceWorker(remindersPayload = [], { 
     const delivered = await postMessageToServiceWorker({
       type: SERVICE_WORKER_MESSAGE_TYPES.updateScheduledReminders,
       reminders: Array.isArray(remindersPayload) ? remindersPayload : [],
+      tombstones: Array.isArray(tombstones) ? tombstones : [],
+      activeOwnerUserId:
+        typeof activeOwnerUserId === 'string' ? activeOwnerUserId.trim() : '',
+      notificationTriggersSupported,
     });
     if (requestCheck) {
       await postMessageToServiceWorker({
@@ -452,11 +461,18 @@ async function cancelTriggerNotification(id, registrationOverride) {
     if (!registration) return;
     let notifications = [];
     try {
-      notifications = await registration.getNotifications({ tag: id, includeTriggered: true });
+      notifications = await registration.getNotifications({ includeTriggered: true });
     } catch {
-      notifications = await registration.getNotifications({ tag: id });
+      notifications = await registration.getNotifications();
     }
     for (const notification of notifications) {
+      const notificationReminderId = typeof notification?.data?.id === 'string'
+        ? notification.data.id
+        : '';
+      const legacyTagMatches = notification?.tag === id;
+      if (notificationReminderId !== id && !legacyTagMatches) {
+        continue;
+      }
       try { notification.close(); } catch { /* ignore close issues */ }
     }
   } catch {
@@ -827,7 +843,9 @@ export async function initReminders(sel = {}) {
       return;
     }
     const message = document.createElement('span');
-    message.textContent = 'Reminder deleted.';
+    message.textContent = state?.pendingRemote
+      ? 'Reminder deleted here. Cloud deletion queued.'
+      : 'Reminder deleted.';
     const spacer = document.createTextNode(' ');
     const undoButton = document.createElement('button');
     undoButton.type = 'button';
@@ -3317,6 +3335,16 @@ export async function initReminders(sel = {}) {
   let items = [];
   let suppressRenderMemoryEvent = false;
   let userId = null;
+  let authSessionResolved = false;
+  let remindersHydratedUserId = null;
+  let reminderReconciliationPending = false;
+  let reminderSyncGeneration = 0;
+  let reminderHydrationRetry = null;
+  let reminderReconciliationRetryTimer = null;
+  let cachedOutOfScopeReminderItems = [];
+  let legacyDailyTasksMigrationRan = false;
+  const reminderSaveQueues = new Map();
+  const latestReminderSavePromises = new Map();
   let pushUnregisteredBeforeSignOutUserId = null;
   const emitNotificationPermissionState = (phonePushStatus = 'unavailable') => {
     const normalizedPhonePushStatus = phonePushStatus === 'connected'
@@ -3356,8 +3384,16 @@ export async function initReminders(sel = {}) {
     normalizeReminderRecord,
     normalizeReminderList,
     ensureOrderIndicesInitialized,
+    isCurrentUser: (expectedUserId) => userId === expectedUserId,
     loadReminders,
+    loadQuarantinedPendingReminders,
+    quarantinePendingReminders,
+    clearQuarantinedPendingReminders,
+    loadPendingReminderDeletions,
+    clearPendingReminderDeletions,
+    retryPendingReminderDeletion,
     saveToFirebase: (...args) => saveToFirebase(...args),
+    onPendingWork: () => markReminderReconciliationPending(),
     getItems: () => items,
     setItems: (nextItems) => {
       items = nextItems;
@@ -3389,16 +3425,38 @@ export async function initReminders(sel = {}) {
     }, MAX_TIMEOUT_DELAY);
   }
   let scheduledReminders = {};
+  const scheduledReminderTombstones = new Map();
   const URGENT_ATTENTION_TICK_MS = 5000;
   const URGENT_TITLE_PREFIX = /^\ud83d\udd34\s+\d+\s+urgent(?:\s+appointments?)?(?:\s+\u2022\s+ALERT)?\s+\u2014\s+/u;
   const urgentPresentedStages = new Set();
   const urgentPresentationsPending = new Set();
   const urgentBackgroundStages = new Set();
+  const urgentActionInFlight = new Map();
+  const urgentActionUrlInFlight = new Map();
+  const processedUrgentActionKeys = new Set();
+  const PROCESSED_URGENT_ACTIONS_STORAGE_KEY = 'memoryCue:processedUrgentActions';
+  const PROCESSED_URGENT_ACTIONS_LIMIT = 64;
   let urgentAttentionTimer = null;
   let urgentAttentionSurface = null;
   let urgentBaseDocumentTitle = '';
   let lastUrgentBadgeCount = null;
   let lastUrgentBridgeSignature = '';
+
+  try {
+    const storedActionKeys = JSON.parse(
+      typeof localStorage !== 'undefined'
+        ? localStorage.getItem(PROCESSED_URGENT_ACTIONS_STORAGE_KEY) || '[]'
+        : '[]'
+    );
+    if (Array.isArray(storedActionKeys)) {
+      storedActionKeys
+        .filter((value) => typeof value === 'string' && value)
+        .slice(-PROCESSED_URGENT_ACTIONS_LIMIT)
+        .forEach((value) => processedUrgentActionKeys.add(value));
+    }
+  } catch {
+    // The in-memory cache still prevents duplicate handling for this page session.
+  }
 
   function normalizeUrgentActionTimestamp(value) {
     if (value === null || typeof value === 'undefined' || value === '') {
@@ -3408,11 +3466,67 @@ export async function initReminders(sel = {}) {
     return Number.isFinite(timestamp) ? timestamp : null;
   }
 
+  function getUrgentActionKey(action, reminderId, stageKey = '', options = {}) {
+    const actionId = typeof options.actionId === 'string' ? options.actionId.trim() : '';
+    if (actionId) {
+      return `id:${actionId}`;
+    }
+    const actionCreatedAt = normalizeUrgentActionTimestamp(options.actionCreatedAt);
+    if (actionCreatedAt === null) {
+      return '';
+    }
+    return `legacy:${reminderId}:${action}:${stageKey}:${actionCreatedAt}`;
+  }
+
+  function rememberProcessedUrgentAction(actionKey) {
+    if (!actionKey) {
+      return;
+    }
+    processedUrgentActionKeys.delete(actionKey);
+    processedUrgentActionKeys.add(actionKey);
+    while (processedUrgentActionKeys.size > PROCESSED_URGENT_ACTIONS_LIMIT) {
+      const oldestKey = processedUrgentActionKeys.values().next().value;
+      processedUrgentActionKeys.delete(oldestKey);
+    }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(
+          PROCESSED_URGENT_ACTIONS_STORAGE_KEY,
+          JSON.stringify(Array.from(processedUrgentActionKeys))
+        );
+      }
+    } catch {
+      // The service worker will replay again if persistence is unavailable.
+    }
+  }
+
+  function requestPendingUrgentActions() {
+    if (!authSessionResolved) {
+      return Promise.resolve(false);
+    }
+    return postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.requestPendingUrgentActions,
+      ownerUserId: userId || '',
+    });
+  }
+
+  function acknowledgeCompletedUrgentAction(actionId, actionOwnerUserId = userId || '') {
+    if (!actionId) {
+      return Promise.resolve(false);
+    }
+    return postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.urgentActionCompleted,
+      actionId,
+      ownerUserId: typeof actionOwnerUserId === 'string' ? actionOwnerUserId.trim() : '',
+    });
+  }
+
   function getUrgentEntrySignature(entry) {
     const reminderId = entry?.reminderId || entry?.reminder?.id || '';
     const stageKey = entry?.stage?.key || '';
     const dueAt = Number.isFinite(entry?.stage?.dueAt) ? entry.stage.dueAt : '';
-    return `${reminderId}:${stageKey}:${dueAt}`;
+    const reminderUpdatedAt = normalizeUrgentActionTimestamp(entry?.reminder?.updatedAt) ?? '';
+    return `${reminderId}:${stageKey}:${dueAt}:${reminderUpdatedAt}`;
   }
 
   function formatUrgentDueTime(reminder) {
@@ -3576,6 +3690,7 @@ export async function initReminders(sel = {}) {
     void postMessageToServiceWorker({
       type: SERVICE_WORKER_MESSAGE_TYPES.updateUrgentBadge,
       count: nextCount,
+      ownerUserId: userId || '',
     });
   }
 
@@ -3617,6 +3732,8 @@ export async function initReminders(sel = {}) {
         due: reminder.due || null,
         meetingUrl: getUrgentMeetingLink(reminder),
         urlPath: reminderLandingPath,
+        ownerUserId: reminder.userId || userId || '',
+        updatedAt: reminder.updatedAt,
       },
       stage: entry.stage,
       badgeCount,
@@ -3647,55 +3764,267 @@ export async function initReminders(sel = {}) {
     return state;
   }
 
-  function commitUrgentReminderUpdate(reminder) {
-    if (!reminder) return;
+  function commitUrgentReminderUpdate(reminder, saveOptions = {}) {
+    if (!reminder) return Promise.resolve(false);
     reminder.updatedAt = Date.now();
-    saveToFirebase(reminder);
+    const savePromise = saveToFirebase(reminder, saveOptions);
     persistItems();
     scheduleReminder(reminder);
     suppressRenderMemoryEvent = true;
     render();
     dispatchCueEvent('memoryCue:remindersUpdated', { items: getReminders() });
     refreshUrgentAttention();
+    return savePromise;
   }
 
-  async function handleUrgentAction(action, reminderId, _stageKey = '', options = {}) {
-    const reminder = items.find((entry) => entry?.id === reminderId);
-    if (!reminder) {
-      return false;
+  function handleUrgentAction(action, reminderId, stageKey = '', options = {}) {
+    const normalizedAction = typeof action === 'string' ? action.trim() : '';
+    const normalizedReminderId = typeof reminderId === 'string' ? reminderId.trim() : '';
+    const actionId = typeof options.actionId === 'string' ? options.actionId.trim() : '';
+    const ownerUserId = typeof options.ownerUserId === 'string' ? options.ownerUserId.trim() : '';
+    const actionReminderUpdatedAt = normalizeUrgentActionTimestamp(options.reminderUpdatedAt);
+    const isDurableNotificationAction = options.requireRemotePersistence === true || !!actionId;
+    const supportedActions = new Set(['done', 'snooze5', 'start', 'acknowledge']);
+    if (!normalizedReminderId || !supportedActions.has(normalizedAction)) {
+      return Promise.resolve(false);
     }
-    const now = Date.now();
-    if (action === 'done') {
-      setReminderCompleted(reminder.id, true);
-      refreshUrgentAttention(now);
-      return true;
+
+    const actionKey = getUrgentActionKey(
+      normalizedAction,
+      normalizedReminderId,
+      stageKey,
+      options
+    );
+    if (actionKey && urgentActionInFlight.has(actionKey)) {
+      return urgentActionInFlight.get(actionKey);
     }
-    if (action === 'snooze5') {
-      snoozeReminder(reminder, 5);
-      refreshUrgentAttention(now);
-      return true;
-    }
-    if (action === 'start') {
-      const meetingLink = getUrgentMeetingLink(reminder);
-      if (
-        meetingLink
-        && options.meetingAlreadyOpened !== true
-        && typeof window !== 'undefined'
-        && typeof window.open === 'function'
-      ) {
-        window.open(meetingLink, '_blank', 'noopener,noreferrer');
+
+    const executeAction = async () => {
+      if (actionKey && processedUrgentActionKeys.has(actionKey)) {
+        if (actionId) {
+          await acknowledgeCompletedUrgentAction(actionId, ownerUserId);
+        }
+        return true;
       }
-      reminder.urgentStartedAt = now;
-      reminder.urgentAcknowledgedAt = now;
-      commitUrgentReminderUpdate(reminder);
+
+      const reminder = items.find((entry) => entry?.id === normalizedReminderId);
+      if (!reminder) {
+        const missingReminderIsTerminal = Boolean(
+          actionId
+          && ownerUserId
+          && userId === ownerUserId
+          && remindersHydratedUserId === userId
+        );
+        if (missingReminderIsTerminal) {
+          if (actionKey) {
+            rememberProcessedUrgentAction(actionKey);
+          }
+          await acknowledgeCompletedUrgentAction(actionId, ownerUserId);
+          return true;
+        }
+        return false;
+      }
+
+      const effectiveOwnerUserId = ownerUserId
+        || (typeof reminder.userId === 'string' ? reminder.userId.trim() : '');
+      // Cloud-backed phone actions must wait for the matching account to finish
+      // hydration. Unowned local reminders remain actionable while signed out.
+      if (
+        isDurableNotificationAction
+        && effectiveOwnerUserId
+        && (
+          !userId
+          || remindersHydratedUserId !== userId
+          || effectiveOwnerUserId !== userId
+        )
+      ) {
+        return false;
+      }
+
+      const unversionedCloudActionIsTerminal = Boolean(
+        isDurableNotificationAction
+        && effectiveOwnerUserId
+        && actionReminderUpdatedAt === null
+        && effectiveOwnerUserId === userId
+        && remindersHydratedUserId === userId
+      );
+      if (unversionedCloudActionIsTerminal) {
+        // Notifications created by older releases did not carry the reminder
+        // version. Applying one after a later edit could overwrite or suppress
+        // that edit, so retire the legacy action and leave the current reminder
+        // prominent for the user to confirm in the app.
+        if (actionKey) {
+          rememberProcessedUrgentAction(actionKey);
+        }
+        if (actionId) {
+          await acknowledgeCompletedUrgentAction(actionId, effectiveOwnerUserId);
+        }
+        return true;
+      }
+
+      const actionCreatedAt = normalizeUrgentActionTimestamp(options.actionCreatedAt);
+      const now = actionCreatedAt ?? Date.now();
+      const reminderUpdatedAt = normalizeUrgentActionTimestamp(reminder.updatedAt);
+      const reminderAlreadyReflectsAction = (
+        (normalizedAction === 'done' && (reminder.done === true || reminder.completed === true))
+        || (
+          normalizedAction === 'snooze5'
+          && Date.parse(reminder.snoozedUntil || '') === now + (5 * 60 * 1000)
+        )
+        || (
+          normalizedAction === 'start'
+          && normalizeUrgentActionTimestamp(reminder.urgentStartedAt) === now
+        )
+        || (
+          normalizedAction === 'acknowledge'
+          && normalizeUrgentActionTimestamp(reminder.urgentAcknowledgedAt) === now
+        )
+      );
+      const staleActionIsTerminal = Boolean(
+        isDurableNotificationAction
+        && actionCreatedAt !== null
+        && reminderUpdatedAt !== null
+        && (actionReminderUpdatedAt ?? actionCreatedAt) < reminderUpdatedAt
+        && !reminderAlreadyReflectsAction
+        && effectiveOwnerUserId
+        && effectiveOwnerUserId === userId
+        && remindersHydratedUserId === userId
+      );
+      if (staleActionIsTerminal) {
+        if (actionKey) {
+          rememberProcessedUrgentAction(actionKey);
+        }
+        if (actionId) {
+          await acknowledgeCompletedUrgentAction(actionId, effectiveOwnerUserId);
+        }
+        return true;
+      }
+      let savePromise = null;
+      const actionSaveOptions = isDurableNotificationAction && actionReminderUpdatedAt !== null
+        ? {
+            expectedRemoteUpdatedAt: actionReminderUpdatedAt,
+            requireExistingRemote: true,
+          }
+        : {};
+
+      if (normalizedAction === 'done') {
+        const updated = setReminderCompleted(reminder.id, true, actionSaveOptions);
+        if (!updated) {
+          return false;
+        }
+        savePromise = getLatestReminderSavePromise(reminder.id);
+      } else if (normalizedAction === 'snooze5') {
+        snoozeReminder(reminder, 5, now, actionSaveOptions);
+        refreshUrgentAttention(now);
+        savePromise = getLatestReminderSavePromise(reminder.id);
+      } else if (normalizedAction === 'start') {
+        const meetingLink = getUrgentMeetingLink(reminder);
+        const meetingSideEffectKey = actionKey
+          ? `meeting:${actionKey}`
+          : isDurableNotificationAction
+            ? `meeting:legacy:${normalizedReminderId}:${stageKey}`
+            : '';
+        if (options.meetingAlreadyOpened === true && meetingSideEffectKey) {
+          rememberProcessedUrgentAction(meetingSideEffectKey);
+        }
+        if (
+          meetingLink
+          && options.meetingAlreadyOpened !== true
+          && (!meetingSideEffectKey || !processedUrgentActionKeys.has(meetingSideEffectKey))
+          && typeof window !== 'undefined'
+          && typeof window.open === 'function'
+        ) {
+          try {
+            window.open(meetingLink, '_blank', 'noopener,noreferrer');
+            if (meetingSideEffectKey) {
+              rememberProcessedUrgentAction(meetingSideEffectKey);
+            }
+          } catch {
+            // Keep the side effect retryable when the browser rejects the open.
+          }
+        }
+        reminder.urgentStartedAt = now;
+        reminder.urgentAcknowledgedAt = now;
+        savePromise = commitUrgentReminderUpdate(reminder, actionSaveOptions);
+      } else if (normalizedAction === 'acknowledge') {
+        reminder.urgentAcknowledgedAt = now;
+        savePromise = commitUrgentReminderUpdate(reminder, actionSaveOptions);
+      }
+
+      const saved = await (savePromise || Promise.resolve(false));
+      if (saved?.terminalConflict === true) {
+        if (actionKey) {
+          rememberProcessedUrgentAction(actionKey);
+        }
+        if (actionId) {
+          await acknowledgeCompletedUrgentAction(actionId, effectiveOwnerUserId);
+        }
+        return true;
+      }
+      if (saved !== true) {
+        const currentReminder = items.find((entry) => entry?.id === normalizedReminderId);
+        const conflictIsNowTerminal = Boolean(
+          isDurableNotificationAction
+          && actionReminderUpdatedAt !== null
+          && effectiveOwnerUserId
+          && effectiveOwnerUserId === userId
+          && remindersHydratedUserId === userId
+          && (
+            !currentReminder
+            || (
+              currentReminder.pendingSync !== true
+              && normalizeUrgentActionTimestamp(currentReminder.updatedAt) > actionReminderUpdatedAt
+            )
+          )
+        );
+        if (conflictIsNowTerminal) {
+          if (actionKey) {
+            rememberProcessedUrgentAction(actionKey);
+          }
+          if (actionId) {
+            await acknowledgeCompletedUrgentAction(actionId, effectiveOwnerUserId);
+          }
+          return true;
+        }
+        return false;
+      }
+      if (actionKey) {
+        rememberProcessedUrgentAction(actionKey);
+      }
+      if (actionId) {
+        await acknowledgeCompletedUrgentAction(actionId, effectiveOwnerUserId);
+      }
       return true;
+    };
+
+    if (!actionKey) {
+      return executeAction();
     }
-    if (action === 'acknowledge') {
-      reminder.urgentAcknowledgedAt = now;
-      commitUrgentReminderUpdate(reminder);
-      return true;
-    }
-    return false;
+
+    let resolveAction;
+    let rejectAction;
+    const actionPromise = new Promise((resolve, reject) => {
+      resolveAction = resolve;
+      rejectAction = reject;
+    });
+
+    // Install the lock before executeAction() runs: each urgent action mutates
+    // synchronously and dispatches remindersUpdated before its first await.
+    urgentActionInFlight.set(actionKey, actionPromise);
+    executeAction().then(resolveAction, rejectAction);
+    actionPromise.then(
+      () => {
+        if (urgentActionInFlight.get(actionKey) === actionPromise) {
+          urgentActionInFlight.delete(actionKey);
+        }
+      },
+      () => {
+        if (urgentActionInFlight.get(actionKey) === actionPromise) {
+          urgentActionInFlight.delete(actionKey);
+        }
+      }
+    );
+    return actionPromise;
   }
 
   function acknowledgeBackgroundUrgentStages() {
@@ -3725,30 +4054,94 @@ export async function initReminders(sel = {}) {
 
   function consumeUrgentActionFromUrl() {
     if (typeof window === 'undefined' || !window.location) {
-      return false;
+      return Promise.resolve(false);
     }
     let url;
     try {
       url = new URL(window.location.href);
     } catch {
-      return false;
+      return Promise.resolve(false);
     }
     const action = url.searchParams.get('urgentAction');
     const reminderId = url.searchParams.get('reminderId');
     const stageKey = url.searchParams.get('urgentStage') || '';
     const meetingAlreadyOpened = url.searchParams.get('meetingOpened') === '1';
-    if (!action || !reminderId || !items.some((entry) => entry?.id === reminderId)) {
-      return false;
+    const actionId = url.searchParams.get('urgentActionId') || '';
+    const actionCreatedAt = url.searchParams.get('urgentActionCreatedAt')
+      || url.searchParams.get('actionCreatedAt')
+      || '';
+    const ownerUserId = url.searchParams.get('urgentOwnerUserId') || '';
+    const reminderUpdatedAt = url.searchParams.get('urgentReminderUpdatedAt') || '';
+    if (!action || !reminderId) {
+      return Promise.resolve(false);
     }
-    url.searchParams.delete('urgentAction');
-    url.searchParams.delete('reminderId');
-    url.searchParams.delete('urgentStage');
-    url.searchParams.delete('meetingOpened');
-    if (window.history && typeof window.history.replaceState === 'function') {
-      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    const urlActionKey = [actionId || 'legacy', reminderId, action, stageKey, actionCreatedAt]
+      .map((part) => String(part || ''))
+      .join(':');
+    if (urgentActionUrlInFlight.has(urlActionKey)) {
+      return urgentActionUrlInFlight.get(urlActionKey);
     }
-    void handleUrgentAction(action, reminderId, stageKey, { meetingAlreadyOpened });
-    return true;
+
+    // Defer execution by one microtask so this URL-level lock exists before an
+    // action dispatches remindersUpdated synchronously.
+    const actionPromise = Promise.resolve().then(async () => {
+      const succeeded = await handleUrgentAction(action, reminderId, stageKey, {
+        actionId,
+        actionCreatedAt,
+        meetingAlreadyOpened,
+        ownerUserId,
+        reminderUpdatedAt,
+        requireRemotePersistence: true,
+      });
+      if (!succeeded) {
+        return false;
+      }
+      let currentUrl = null;
+      try {
+        currentUrl = new URL(window.location.href);
+      } catch {
+        currentUrl = null;
+      }
+      const sameCurrentAction = currentUrl
+        && currentUrl.searchParams.get('urgentAction') === action
+        && currentUrl.searchParams.get('reminderId') === reminderId
+        && (!actionId || currentUrl.searchParams.get('urgentActionId') === actionId);
+      if (
+        sameCurrentAction
+        && window.history
+        && typeof window.history.replaceState === 'function'
+      ) {
+        currentUrl.searchParams.delete('urgentAction');
+        currentUrl.searchParams.delete('reminderId');
+        currentUrl.searchParams.delete('urgentStage');
+        currentUrl.searchParams.delete('meetingOpened');
+        currentUrl.searchParams.delete('urgentActionId');
+        currentUrl.searchParams.delete('urgentActionCreatedAt');
+        currentUrl.searchParams.delete('actionCreatedAt');
+        currentUrl.searchParams.delete('urgentOwnerUserId');
+        currentUrl.searchParams.delete('urgentReminderUpdatedAt');
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+        );
+      }
+      return true;
+    });
+    urgentActionUrlInFlight.set(urlActionKey, actionPromise);
+    actionPromise.then(
+      () => {
+        if (urgentActionUrlInFlight.get(urlActionKey) === actionPromise) {
+          urgentActionUrlInFlight.delete(urlActionKey);
+        }
+      },
+      () => {
+        if (urgentActionUrlInFlight.get(urlActionKey) === actionPromise) {
+          urgentActionUrlInFlight.delete(urlActionKey);
+        }
+      }
+    );
+    return actionPromise;
   }
 
   function setupUrgentAttention() {
@@ -3756,8 +4149,15 @@ export async function initReminders(sel = {}) {
       return;
     }
     const refresh = () => {
-      consumeUrgentActionFromUrl();
+      void consumeUrgentActionFromUrl();
       refreshUrgentAttention();
+    };
+    const replayPendingUrgentActions = async ({ retryHydration = false } = {}) => {
+      if (retryHydration) {
+        await retryReminderFirestoreHydrationIfNeeded();
+      }
+      await requestPendingUrgentActions();
+      return consumeUrgentActionFromUrl();
     };
     const stopTimer = () => {
       if (urgentAttentionTimer) {
@@ -3771,13 +4171,28 @@ export async function initReminders(sel = {}) {
       }
     };
     stopTimer();
-    document.addEventListener('memoryCue:remindersUpdated', refresh);
-    document.addEventListener('visibilitychange', refresh);
+    document.addEventListener('memoryCue:remindersUpdated', () => {
+      refresh();
+      replayPendingUrgentActions();
+    });
+    document.addEventListener('visibilitychange', () => {
+      refresh();
+      if (!document.hidden) {
+        replayPendingUrgentActions({ retryHydration: true });
+      }
+    });
     window.addEventListener('pageshow', () => {
       startTimer();
       refresh();
+      replayPendingUrgentActions({ retryHydration: true });
     });
-    window.addEventListener('focus', acknowledgeBackgroundUrgentStages);
+    window.addEventListener('focus', () => {
+      acknowledgeBackgroundUrgentStages();
+      replayPendingUrgentActions({ retryHydration: true });
+    });
+    window.addEventListener('online', () => {
+      void replayPendingUrgentActions({ retryHydration: true });
+    });
     if (navigator.serviceWorker && typeof navigator.serviceWorker.addEventListener === 'function') {
       navigator.serviceWorker.addEventListener('message', (event) => {
         const data = event?.data;
@@ -3788,13 +4203,21 @@ export async function initReminders(sel = {}) {
           data.action || '',
           data.reminderId || '',
           data.stageKey || '',
-          { meetingAlreadyOpened: data.meetingAlreadyOpened === true }
+          {
+            actionId: data.actionId || '',
+            actionCreatedAt: data.actionCreatedAt,
+            meetingAlreadyOpened: data.meetingAlreadyOpened === true,
+            ownerUserId: data.ownerUserId || '',
+            reminderUpdatedAt: data.reminderUpdatedAt,
+            requireRemotePersistence: true,
+          }
         );
       });
     }
     startTimer();
     window.addEventListener('pagehide', stopTimer);
     refresh();
+    replayPendingUrgentActions();
   }
   const reminderSheetTitle =
     typeof document !== 'undefined'
@@ -4684,9 +5107,13 @@ export async function initReminders(sel = {}) {
     setupTouchDrag._bound = true;
   }
 
-  function applySignedOutState() {
+  function applySignedOutState({ rescheduleSchedules = true } = {}) {
+    reminderSyncGeneration += 1;
+    clearReminderReconciliationRetry();
     const previousUserId = userId;
     userId = null;
+    remindersHydratedUserId = null;
+    reminderReconciliationPending = false;
     if (
       previousUserId
       && pushUnregisteredBeforeSignOutUserId !== previousUserId
@@ -4710,7 +5137,16 @@ export async function initReminders(sel = {}) {
     hydrateOfflineReminders();
     render();
     persistItems();
-    rescheduleAllReminders();
+    if (rescheduleSchedules) {
+      rescheduleAllReminders();
+      const notificationsGranted = typeof Notification !== 'undefined'
+        && Notification.permission === 'granted';
+      void syncScheduledRemindersWithServiceWorker(buildScheduledReminderPayload(), {
+        requestCheck: notificationsGranted,
+        tombstones: Array.from(scheduledReminderTombstones.values()),
+        activeOwnerUserId: '',
+      });
+    }
   }
 
   // Offline reminders in localStorage are the canonical local cache for reminder read/write/render.
@@ -4726,6 +5162,208 @@ export async function initReminders(sel = {}) {
       console.warn('Failed to load offline reminders', error);
       return [];
     }
+  }
+
+  function readQuarantinedPendingReminders() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(QUARANTINED_PENDING_REMINDERS_KEY) || '[]');
+      return Array.isArray(parsed) ? normalizeReminderList(parsed) : [];
+    } catch (error) {
+      console.warn('Failed to load quarantined reminders', error);
+      return [];
+    }
+  }
+
+  function writeQuarantinedPendingReminders(reminders = []) {
+    if (typeof localStorage === 'undefined') return false;
+    try {
+      const normalized = normalizeReminderList(reminders)
+        .filter((entry) => entry?.id && entry?.pendingSync && entry?.userId)
+        .sort((a, b) => Number(a.updatedAt || 0) - Number(b.updatedAt || 0));
+      if (!normalized.length) {
+        localStorage.removeItem(QUARANTINED_PENDING_REMINDERS_KEY);
+        return true;
+      }
+      localStorage.setItem(QUARANTINED_PENDING_REMINDERS_KEY, JSON.stringify(normalized));
+      return true;
+    } catch (error) {
+      console.warn('Failed to preserve quarantined reminders', error);
+      return false;
+    }
+  }
+
+  function quarantinePendingReminders(reminders = []) {
+    const byOwnerAndId = new Map();
+    [...readQuarantinedPendingReminders(), ...normalizeReminderList(reminders)]
+      .forEach((entry) => {
+        if (!entry?.id || !entry?.pendingSync || !entry?.userId) return;
+        const key = `${entry.userId}:${entry.id}`;
+        const existing = byOwnerAndId.get(key);
+        if (!existing || Number(entry.updatedAt || 0) >= Number(existing.updatedAt || 0)) {
+          byOwnerAndId.set(key, entry);
+        }
+      });
+    return writeQuarantinedPendingReminders(Array.from(byOwnerAndId.values()));
+  }
+
+  function loadQuarantinedPendingReminders(ownerUserId) {
+    const normalizedOwnerUserId = typeof ownerUserId === 'string' ? ownerUserId.trim() : '';
+    if (!normalizedOwnerUserId) return [];
+    return readQuarantinedPendingReminders()
+      .filter((entry) => entry.userId === normalizedOwnerUserId);
+  }
+
+  function clearQuarantinedPendingReminders(ownerUserId, reminderIds = []) {
+    const normalizedOwnerUserId = typeof ownerUserId === 'string' ? ownerUserId.trim() : '';
+    const ids = new Set(Array.isArray(reminderIds) ? reminderIds.filter(Boolean) : []);
+    if (!normalizedOwnerUserId || !ids.size) return true;
+    return writeQuarantinedPendingReminders(
+      readQuarantinedPendingReminders().filter((entry) => (
+        entry.userId !== normalizedOwnerUserId || !ids.has(entry.id)
+      ))
+    );
+  }
+
+  function normalizePendingReminderDeletion(record) {
+    const id = typeof record?.id === 'string' ? record.id.trim() : '';
+    const ownerUserId = typeof record?.userId === 'string' ? record.userId.trim() : '';
+    const updatedAt = Number(record?.updatedAt);
+    if (record?.type !== 'delete' || !id || !ownerUserId) {
+      return null;
+    }
+    return {
+      type: 'delete',
+      id,
+      userId: ownerUserId,
+      updatedAt: Number.isFinite(updatedAt) && updatedAt > 0 ? updatedAt : Date.now(),
+    };
+  }
+
+  function pendingReminderDeletionKey(record) {
+    return JSON.stringify([record.userId, record.id]);
+  }
+
+  function readPendingReminderDeletions() {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(PENDING_REMINDER_DELETIONS_KEY) || '[]');
+      if (!Array.isArray(parsed)) return [];
+      const byOwnerAndId = new Map();
+      parsed.forEach((record) => {
+        const normalized = normalizePendingReminderDeletion(record);
+        if (!normalized) return;
+        const key = pendingReminderDeletionKey(normalized);
+        const existing = byOwnerAndId.get(key);
+        if (!existing || normalized.updatedAt >= existing.updatedAt) {
+          byOwnerAndId.set(key, normalized);
+        }
+      });
+      return Array.from(byOwnerAndId.values());
+    } catch (error) {
+      console.warn('Failed to load pending reminder deletions', error);
+      return [];
+    }
+  }
+
+  function writePendingReminderDeletions(records = []) {
+    if (typeof localStorage === 'undefined') return false;
+    const byOwnerAndId = new Map();
+    records.forEach((record) => {
+      const normalized = normalizePendingReminderDeletion(record);
+      if (!normalized) return;
+      const key = pendingReminderDeletionKey(normalized);
+      const existing = byOwnerAndId.get(key);
+      if (!existing || normalized.updatedAt >= existing.updatedAt) {
+        byOwnerAndId.set(key, normalized);
+      }
+    });
+    const normalizedRecords = Array.from(byOwnerAndId.values())
+      .sort((a, b) => a.updatedAt - b.updatedAt);
+    try {
+      if (!normalizedRecords.length) {
+        localStorage.removeItem(PENDING_REMINDER_DELETIONS_KEY);
+      } else {
+        localStorage.setItem(PENDING_REMINDER_DELETIONS_KEY, JSON.stringify(normalizedRecords));
+      }
+      return true;
+    } catch (error) {
+      console.warn('Failed to preserve pending reminder deletions', error);
+      return false;
+    }
+  }
+
+  function queuePendingReminderDeletion(record) {
+    const normalized = normalizePendingReminderDeletion(record);
+    if (!normalized) return false;
+    const key = pendingReminderDeletionKey(normalized);
+    const byOwnerAndId = new Map(
+      readPendingReminderDeletions().map((entry) => [pendingReminderDeletionKey(entry), entry])
+    );
+    const existing = byOwnerAndId.get(key);
+    if (!existing || normalized.updatedAt >= existing.updatedAt) {
+      byOwnerAndId.set(key, normalized);
+    }
+    const persisted = writePendingReminderDeletions(Array.from(byOwnerAndId.values()));
+    if (persisted) {
+      // A delete intent must never coexist with a retryable live upsert for the
+      // same account and reminder.
+      if (!clearQuarantinedPendingReminders(normalized.userId, [normalized.id])) {
+        markReminderReconciliationPending();
+      }
+    }
+    return persisted;
+  }
+
+  function loadPendingReminderDeletions(ownerUserId) {
+    const normalizedOwnerUserId = typeof ownerUserId === 'string' ? ownerUserId.trim() : '';
+    if (!normalizedOwnerUserId) return [];
+    return readPendingReminderDeletions()
+      .filter((record) => record.userId === normalizedOwnerUserId);
+  }
+
+  function clearPendingReminderDeletions(ownerUserId, reminderIds = []) {
+    const normalizedOwnerUserId = typeof ownerUserId === 'string' ? ownerUserId.trim() : '';
+    const ids = new Set(Array.isArray(reminderIds) ? reminderIds.filter(Boolean) : []);
+    if (!normalizedOwnerUserId || !ids.size) return false;
+    const currentRecords = readPendingReminderDeletions();
+    const nextRecords = currentRecords.filter((record) => (
+      record.userId !== normalizedOwnerUserId || !ids.has(record.id)
+    ));
+    if (nextRecords.length === currentRecords.length) return true;
+    return writePendingReminderDeletions(nextRecords);
+  }
+
+  function retirePendingReminderDeletion(ownerUserId, reminderId) {
+    // Remove every retryable upsert before retiring the delete tombstone. If
+    // storage fails, retaining the tombstone is safer than reviving a reminder.
+    if (!clearQuarantinedPendingReminders(ownerUserId, [reminderId])) {
+      markReminderReconciliationPending();
+      return false;
+    }
+    const retired = clearPendingReminderDeletions(ownerUserId, [reminderId]);
+    if (!retired) {
+      markReminderReconciliationPending();
+    }
+    return retired;
+  }
+
+  function filterPendingDeletedReminders(reminders = [], fallbackOwnerUserId = '') {
+    const tombstoneKeys = new Set(
+      readPendingReminderDeletions().map((record) => pendingReminderDeletionKey(record))
+    );
+    if (!tombstoneKeys.size) return reminders;
+    const fallbackOwner = typeof fallbackOwnerUserId === 'string' ? fallbackOwnerUserId.trim() : '';
+    return reminders.filter((reminder) => {
+      const reminderOwner = typeof reminder?.userId === 'string' && reminder.userId.trim()
+        ? reminder.userId.trim()
+        : fallbackOwner;
+      if (!reminder?.id || !reminderOwner) return true;
+      return !tombstoneKeys.has(pendingReminderDeletionKey({
+        id: reminder.id,
+        userId: reminderOwner,
+      }));
+    });
   }
 
   // Persist using the same normalized reminder shape used by render and remote sync.
@@ -4745,15 +5383,44 @@ export async function initReminders(sel = {}) {
 
   function persistItems() {
     sortItemsByOrder(items);
-    setStoredReminders(items);
-    items = ensureOrderIndicesInitialized(
+    const normalizedVisibleItems = ensureOrderIndicesInitialized(
       normalizeReminderList(items)
     );
+    const byOwnerAndId = new Map();
+    [...cachedOutOfScopeReminderItems, ...normalizedVisibleItems].forEach((entry) => {
+      if (!entry?.id) return;
+      const ownerUserId = typeof entry.userId === 'string' ? entry.userId.trim() : '';
+      byOwnerAndId.set(`${ownerUserId}:${entry.id}`, entry);
+    });
+    const storedItems = Array.from(byOwnerAndId.values());
+    setStoredReminders(storedItems);
+    cachedOutOfScopeReminderItems = storedItems.filter(
+      (entry) => !reminderIsVisibleForCurrentScope(entry)
+    );
+    items = normalizedVisibleItems;
+  }
+
+  function reminderIsVisibleForCurrentScope(reminder) {
+    const ownerUserId = typeof reminder?.userId === 'string' ? reminder.userId.trim() : '';
+    if (!authSessionResolved) {
+      return false;
+    }
+    if (!ownerUserId) {
+      return !userId;
+    }
+    return !!userId && ownerUserId === userId;
   }
 
   function hydrateOfflineReminders() {
+    const loadedItems = filterPendingDeletedReminders(
+      normalizeReminderList(loadReminders()),
+      userId || ''
+    );
+    cachedOutOfScopeReminderItems = loadedItems.filter(
+      (entry) => !reminderIsVisibleForCurrentScope(entry)
+    );
     items = ensureOrderIndicesInitialized(
-      normalizeReminderList(loadReminders())
+      loadedItems.filter((entry) => reminderIsVisibleForCurrentScope(entry))
     );
   }
 
@@ -4938,6 +5605,21 @@ export async function initReminders(sel = {}) {
     return report;
   }
 
+  function runLegacyDailyTasksMigrationOnce() {
+    if (legacyDailyTasksMigrationRan) {
+      return null;
+    }
+    legacyDailyTasksMigrationRan = true;
+    const report = migrateLegacyDailyTasks();
+    if (report.invalid > 0) {
+      console.warn(
+        'Some legacy Today items could not be migrated; the original local list was kept',
+        report
+      );
+    }
+    return report;
+  }
+
   function buildBackupPayload() {
     return {
       version: BACKUP_VERSION,
@@ -5081,6 +5763,29 @@ export async function initReminders(sel = {}) {
   } catch {
     scheduledReminders = {};
   }
+  try {
+    const storedTombstones = JSON.parse(
+      localStorage.getItem(SCHEDULED_REMINDER_TOMBSTONES_KEY) || '[]'
+    );
+    if (Array.isArray(storedTombstones)) {
+      storedTombstones
+        .filter((entry) => entry?.id && Number.isFinite(Number(entry.updatedAt)))
+        .sort((left, right) => Number(left.updatedAt) - Number(right.updatedAt))
+        .slice(-256)
+        .forEach((entry) => {
+          scheduledReminderTombstones.set(entry.id, {
+            id: entry.id,
+            ownerUserId: getScheduledReminderOwnerId(entry),
+            done: true,
+            deleted: true,
+            updatedAt: Number(entry.updatedAt),
+            transientAccountCleanup: entry.transientAccountCleanup === true,
+          });
+        });
+    }
+  } catch {
+    scheduledReminderTombstones.clear();
+  }
   if (scheduledReminders && typeof scheduledReminders === 'object') {
     Object.values(scheduledReminders).forEach((entry) => {
       if (entry && typeof entry === 'object') {
@@ -5098,6 +5803,9 @@ export async function initReminders(sel = {}) {
         if (!Number.isFinite(entry.updatedAt)) {
           entry.updatedAt = Date.now();
         }
+        if (!Number.isFinite(entry.sourceUpdatedAt)) {
+          entry.sourceUpdatedAt = entry.updatedAt;
+        }
         if (!Number.isFinite(entry.notifiedAt)) {
           entry.notifiedAt = null;
         }
@@ -5106,19 +5814,17 @@ export async function initReminders(sel = {}) {
     });
   }
 
-  if (!supportsNotificationTriggers()) {
+  {
     const initialPayload = buildScheduledReminderPayload();
-    if (
-      typeof Notification !== 'undefined' &&
-      Notification.permission === 'granted'
-    ) {
+    const notificationsGranted =
+      typeof Notification !== 'undefined'
+      && Notification.permission === 'granted';
+    if (notificationsGranted) {
       setupBackgroundReminderSync();
-      if (initialPayload.length) {
-        syncScheduledRemindersWithServiceWorker(initialPayload, { requestCheck: true });
-      }
-    } else if (initialPayload.length) {
-      syncScheduledRemindersWithServiceWorker(initialPayload);
     }
+    // Keep the worker's last authenticated schedule intact while Firebase is
+    // still resolving the persisted account. The auth callback below sends the
+    // complete owner-scoped snapshot once that identity is known.
   }
 
   const recordFirebaseAvailability = (available) => {
@@ -5286,8 +5992,43 @@ export async function initReminders(sel = {}) {
       },
       disableButtonBinding: true,
       onSessionChange: async (user) => {
+        const authWasResolved = authSessionResolved;
+        authSessionResolved = true;
         const nextUserId = typeof user?.uid === 'string' ? user.uid : (typeof user?.id === 'string' ? user.id : null);
+        const previousUserId = userId;
+        const sessionSyncGeneration = ++reminderSyncGeneration;
+        clearUndoDeleteState();
+        if (nextUserId !== previousUserId) {
+          remindersHydratedUserId = null;
+          reminderReconciliationPending = false;
+          clearReminderReconciliationRetry();
+        }
         userId = nextUserId;
+        if (!authWasResolved || nextUserId !== previousUserId) {
+          hydrateOfflineReminders();
+          runLegacyDailyTasksMigrationOnce();
+          render();
+          rescheduleAllReminders();
+        }
+
+        const previousPushWasAlreadyRemoved = Boolean(
+          previousUserId
+          && pushUnregisteredBeforeSignOutUserId === previousUserId
+        );
+        if (previousPushWasAlreadyRemoved) {
+          pushUnregisteredBeforeSignOutUserId = null;
+        }
+        if (previousUserId && previousUserId !== nextUserId && !previousPushWasAlreadyRemoved) {
+          await unregisterReminderPushDevice({
+            userId: previousUserId,
+            ...(nextUserId ? { preserveMessagingToken: true } : {}),
+          }).catch((error) => {
+            console.warn('[reminder-push] Failed to unregister the previous account device', error);
+          });
+          if (userId !== nextUserId || reminderSyncGeneration !== sessionSyncGeneration) {
+            return;
+          }
+        }
 
         if (nextUserId) {
           if (notesMigrationUserId !== nextUserId) {
@@ -5302,9 +6043,15 @@ export async function initReminders(sel = {}) {
           // Phone registration is safety-critical and must not wait behind notes,
           // migration, or reminder sync work that could fail independently.
           if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            await syncCurrentDevicePushRegistration();
+            await syncCurrentDevicePushRegistration(nextUserId, sessionSyncGeneration);
           }
-          await setupReminderFirestoreSync();
+          if (userId !== nextUserId || reminderSyncGeneration !== sessionSyncGeneration) {
+            return;
+          }
+          await setupReminderFirestoreSync(nextUserId, sessionSyncGeneration);
+          if (userId !== nextUserId || reminderSyncGeneration !== sessionSyncGeneration) {
+            return;
+          }
           await syncNotesFromFirestoreOnLogin();
           await migrateOfflineRemindersIfNeeded();
           startGroupColorSync();
@@ -5325,6 +6072,7 @@ export async function initReminders(sel = {}) {
     })
     .catch((error) => {
       console.warn('Reminder auth startup failed; continuing with the local copy.', error);
+      authSessionResolved = true;
       applySignedOutState();
     });
 
@@ -5392,7 +6140,7 @@ export async function initReminders(sel = {}) {
     : '';
 
   if (!initialScopedUserId) {
-    applySignedOutState();
+    applySignedOutState({ rescheduleSchedules: false });
   }
 
   async function syncNotesFromFirestoreOnLogin() {
@@ -5431,41 +6179,216 @@ export async function initReminders(sel = {}) {
     await syncNotes(serializable);
     lastSyncedNoteIds = new Set(serializable.map((note) => note.id));
   });
-  async function setupReminderFirestoreSync(){
-    unsubscribe = await reminderFirestoreSync.setupReminderFirestoreSync({
-      userId,
+  async function setupReminderFirestoreSync(
+    syncingUserId = userId,
+    syncingGeneration = reminderSyncGeneration,
+    { replayPendingActions = true } = {}
+  ){
+    const syncResult = await reminderFirestoreSync.setupReminderFirestoreSync({
+      userId: syncingUserId,
       currentUnsubscribe: unsubscribe,
       hydrateOfflineReminders,
+      isCurrent: () => (
+        userId === syncingUserId
+        && reminderSyncGeneration === syncingGeneration
+      ),
     });
+    const hasStructuredSyncResult = Boolean(
+      syncResult
+      && typeof syncResult === 'object'
+      && Object.prototype.hasOwnProperty.call(syncResult, 'authoritative')
+    );
+    const nextUnsubscribe = hasStructuredSyncResult
+      ? syncResult.unsubscribe
+      : syncResult;
+    // Legacy injected implementations returned only the unsubscribe callback.
+    // Production returns the structured result above so an offline fallback can
+    // never be mistaken for an authoritative cloud hydration.
+    const hydrationIsAuthoritative = hasStructuredSyncResult
+      ? syncResult.authoritative === true
+      : true;
+    const reconciliationIsPending = hasStructuredSyncResult
+      ? syncResult.pendingWork === true
+      : false;
+    if (userId !== syncingUserId || reminderSyncGeneration !== syncingGeneration) {
+      nextUnsubscribe?.();
+      return false;
+    }
+    unsubscribe = typeof nextUnsubscribe === 'function' ? nextUnsubscribe : null;
+    remindersHydratedUserId = hydrationIsAuthoritative ? syncingUserId : null;
+    reminderReconciliationPending = reconciliationIsPending;
+    if (reconciliationIsPending) {
+      scheduleReminderReconciliationRetry();
+    } else {
+      clearReminderReconciliationRetry();
+    }
+    const notificationsGranted = typeof Notification !== 'undefined'
+      && Notification.permission === 'granted';
+    await syncScheduledRemindersWithServiceWorker(buildScheduledReminderPayload(), {
+      requestCheck: notificationsGranted,
+      tombstones: Array.from(scheduledReminderTombstones.values()),
+      activeOwnerUserId: syncingUserId || '',
+    });
+    if (userId !== syncingUserId || reminderSyncGeneration !== syncingGeneration) {
+      return false;
+    }
+    if (replayPendingActions) {
+      await requestPendingUrgentActions();
+      void consumeUrgentActionFromUrl();
+    }
+    return hydrationIsAuthoritative;
   }
 
-  async function syncCurrentDevicePushRegistration() {
-    if (!userId) {
-      emitNotificationPermissionState('unavailable');
+  async function retryReminderFirestoreHydrationIfNeeded() {
+    const retryUserId = userId;
+    const retryGeneration = reminderSyncGeneration;
+    if (
+      !retryUserId
+      || (
+        remindersHydratedUserId === retryUserId
+        && reminderReconciliationPending !== true
+      )
+    ) {
+      return remindersHydratedUserId === retryUserId;
+    }
+    if (
+      reminderHydrationRetry
+      && reminderHydrationRetry.userId === retryUserId
+      && reminderHydrationRetry.generation === retryGeneration
+    ) {
+      return reminderHydrationRetry.promise;
+    }
+
+    const retryEntry = {
+      userId: retryUserId,
+      generation: retryGeneration,
+      promise: null,
+    };
+    retryEntry.promise = setupReminderFirestoreSync(
+      retryUserId,
+      retryGeneration,
+      { replayPendingActions: false }
+    ).catch((error) => {
+      console.warn('[reminder] Firestore hydration retry failed', error);
+      return false;
+    }).finally(() => {
+      if (reminderHydrationRetry === retryEntry) {
+        reminderHydrationRetry = null;
+      }
+    });
+    reminderHydrationRetry = retryEntry;
+    return retryEntry.promise;
+  }
+
+  function clearReminderReconciliationRetry() {
+    if (reminderReconciliationRetryTimer !== null) {
+      clearTimeout(reminderReconciliationRetryTimer);
+      reminderReconciliationRetryTimer = null;
+    }
+  }
+
+  function scheduleReminderReconciliationRetry(delayMs = 15000) {
+    if (!userId || reminderReconciliationRetryTimer !== null) {
+      return;
+    }
+    const scheduledUserId = userId;
+    const scheduledGeneration = reminderSyncGeneration;
+    reminderReconciliationRetryTimer = setTimeout(async () => {
+      reminderReconciliationRetryTimer = null;
+      if (
+        userId !== scheduledUserId
+        || reminderSyncGeneration !== scheduledGeneration
+        || reminderReconciliationPending !== true
+      ) {
+        return;
+      }
+      await retryReminderFirestoreHydrationIfNeeded();
+      if (
+        userId === scheduledUserId
+        && reminderSyncGeneration === scheduledGeneration
+        && reminderReconciliationPending === true
+      ) {
+        scheduleReminderReconciliationRetry(30000);
+      }
+    }, Math.max(0, Number(delayMs) || 0));
+  }
+
+  function markReminderReconciliationPending() {
+    reminderReconciliationPending = true;
+    scheduleReminderReconciliationRetry();
+  }
+
+  async function syncCurrentDevicePushRegistration(
+    expectedUserId = userId,
+    expectedGeneration = reminderSyncGeneration
+  ) {
+    const registrationUserId = typeof expectedUserId === 'string' ? expectedUserId.trim() : '';
+    const registrationGeneration = expectedGeneration;
+    const registrationSessionIsCurrent = () => (
+      registrationUserId
+      && registrationUserId === userId
+      && registrationGeneration === reminderSyncGeneration
+    );
+    if (!registrationSessionIsCurrent()) {
+      if (!userId) {
+        emitNotificationPermissionState('unavailable');
+      }
       return null;
     }
     const registration = await ensureServiceWorkerRegistration().catch(() => null);
+    if (!registrationSessionIsCurrent()) {
+      return null;
+    }
     if (!registration) {
       emitNotificationPermissionState('unavailable');
       return null;
     }
     const registeredDevice = await registerReminderPushDevice({
-      userId,
+      userId: registrationUserId,
       serviceWorkerRegistration: registration,
     }).catch((error) => {
       console.warn('[reminder-push] Failed to register this device', error);
       return null;
     });
+    if (!registrationSessionIsCurrent()) {
+      if (registeredDevice) {
+        await unregisterReminderPushDevice({
+          userId: registrationUserId,
+          preserveMessagingToken: true,
+        }).catch((error) => {
+          console.warn('[reminder-push] Failed to remove a stale device registration', error);
+        });
+
+        // A same-account sign-out/sign-in can make an old registration finish
+        // after the fresh session has already registered this device. Removing
+        // that stale write also removes the shared device record, so immediately
+        // restore it for the still-current generation.
+        const replacementUserId = userId;
+        const replacementGeneration = reminderSyncGeneration;
+        if (
+          replacementUserId === registrationUserId
+          && replacementGeneration !== registrationGeneration
+          && userId === replacementUserId
+          && reminderSyncGeneration === replacementGeneration
+        ) {
+          await syncCurrentDevicePushRegistration(
+            replacementUserId,
+            replacementGeneration
+          );
+        }
+      }
+      return null;
+    }
     emitNotificationPermissionState(registeredDevice ? 'connected' : 'unavailable');
     return registeredDevice;
   }
 
-  async function syncReminderAcrossDevices(item, action = 'upsert') {
-    if (!userId || !item?.id) {
+  async function syncReminderAcrossDevices(item, action = 'upsert', syncUserId = userId) {
+    if (!syncUserId || syncUserId !== userId || !item?.id) {
       return null;
     }
     return syncReminderToOtherDevices({
-      userId,
+      userId: syncUserId,
       reminder: item,
       action,
       badgeCount: getUrgentReminderState(items, Date.now()).badgeCount,
@@ -5475,70 +6398,275 @@ export async function initReminders(sel = {}) {
     });
   }
 
-  async function saveToFirebase(item){
+  function queueReminderSave(reminderId, operation) {
+    const previousSave = reminderSaveQueues.get(reminderId) || Promise.resolve(true);
+    const currentSave = previousSave
+      .catch(() => false)
+      .then(operation);
+    reminderSaveQueues.set(reminderId, currentSave);
+    latestReminderSavePromises.set(reminderId, currentSave);
+    currentSave.then(
+      () => {
+        if (reminderSaveQueues.get(reminderId) === currentSave) {
+          reminderSaveQueues.delete(reminderId);
+        }
+        if (latestReminderSavePromises.get(reminderId) === currentSave) {
+          latestReminderSavePromises.delete(reminderId);
+        }
+      },
+      () => {
+        if (reminderSaveQueues.get(reminderId) === currentSave) {
+          reminderSaveQueues.delete(reminderId);
+        }
+        if (latestReminderSavePromises.get(reminderId) === currentSave) {
+          latestReminderSavePromises.delete(reminderId);
+        }
+      }
+    );
+    return currentSave;
+  }
+
+  function getLatestReminderSavePromise(reminderId) {
+    return latestReminderSavePromises.get(reminderId) || Promise.resolve(true);
+  }
+
+  function saveToFirebase(item, options = {}){
+    const explicitExpectedUserId = typeof options.expectedUserId === 'string'
+      ? options.expectedUserId.trim()
+      : '';
+    const itemOwnerUserId = typeof item?.userId === 'string' ? item.userId.trim() : '';
+    if (
+      explicitExpectedUserId
+      && itemOwnerUserId
+      && explicitExpectedUserId !== itemOwnerUserId
+    ) {
+      return Promise.resolve(false);
+    }
+    const expectedUserId = explicitExpectedUserId || itemOwnerUserId;
+    const saveUserId = userId;
+    if (expectedUserId && saveUserId && expectedUserId !== saveUserId) {
+      return Promise.resolve(false);
+    }
+
+    const storedRemoteGuard = item?.metadata?.[PENDING_REMOTE_GUARD_METADATA_KEY];
+    const hasExplicitExpectedRemoteVersion = Object.prototype.hasOwnProperty.call(
+      options,
+      'expectedRemoteUpdatedAt'
+    );
+    const expectedRemoteUpdatedAt = normalizeUrgentActionTimestamp(
+      hasExplicitExpectedRemoteVersion
+        ? options.expectedRemoteUpdatedAt
+        : storedRemoteGuard?.expectedUpdatedAt
+    );
+    const requireExistingRemote = options.requireExistingRemote === true
+      || storedRemoteGuard?.requireExisting === true;
+    const hasRemoteGuard = expectedRemoteUpdatedAt !== null;
     const normalizedItem = normalizeReminderRecord(item, { fallbackId: uid() });
+    if (hasRemoteGuard) {
+      normalizedItem.metadata = {
+        ...(normalizedItem.metadata && typeof normalizedItem.metadata === 'object'
+          ? normalizedItem.metadata
+          : {}),
+        [PENDING_REMOTE_GUARD_METADATA_KEY]: {
+          expectedUpdatedAt: expectedRemoteUpdatedAt,
+          requireExisting: requireExistingRemote,
+        },
+      };
+    }
     const reminderId = normalizedItem.id;
     const createdAt = normalizedItem.createdAt;
-    const updatedAt = Date.now();
-
-    Object.assign(item, {
+    const updatedAt = Math.max(Date.now(), Number(normalizedItem.updatedAt) || 0);
+    const savePayload = {
       ...normalizedItem,
       id: reminderId,
       createdAt,
       updatedAt,
-      userId,
+      userId: saveUserId || expectedUserId || null,
       pendingSync: true,
+    };
+    const remoteMetadata = savePayload.metadata && typeof savePayload.metadata === 'object'
+      ? { ...savePayload.metadata }
+      : null;
+    if (remoteMetadata) {
+      delete remoteMetadata[PENDING_REMOTE_GUARD_METADATA_KEY];
+    }
+    const remoteSavePayload = {
+      ...savePayload,
+      metadata: remoteMetadata && Object.keys(remoteMetadata).length ? remoteMetadata : null,
+    };
+
+    Object.assign(item, {
+      ...savePayload,
     });
     persistItems();
 
-    if (!userId) {
-      return true;
-    }
+    const pushAction = savePayload.done
+      || savePayload.completed
+      || savePayload?.metadata?.suppressNotification === true
+      || !getReminderScheduleIso(savePayload)
+      ? 'delete'
+      : 'upsert';
+    let savePromise = null;
+    savePromise = queueReminderSave(reminderId, async () => {
+      if (!saveUserId) {
+        return true;
+      }
+      if (
+        userId !== saveUserId
+        || (expectedUserId && userId !== expectedUserId)
+      ) {
+        return false;
+      }
 
-    try {
-      await saveReminder(userId, {
-        ...normalizedItem,
-        id: reminderId,
-        createdAt,
-        updatedAt,
-        userId,
-        pendingSync: true,
-      });
-      item.pendingSync = false;
-      persistItems();
-      const pushAction = item.done
-        || item.completed
-        || normalizedItem?.metadata?.suppressNotification === true
-        || !getReminderScheduleIso(normalizedItem)
-        ? 'delete'
-        : 'upsert';
-      await syncReminderAcrossDevices({
-        ...normalizedItem,
-        id: reminderId,
-        createdAt,
-        updatedAt,
-        userId,
+      try {
+        const remoteSaveResult = await saveReminder(saveUserId, remoteSavePayload, {
+          ...(hasRemoteGuard ? { expectedUpdatedAt: expectedRemoteUpdatedAt } : {}),
+          ...(requireExistingRemote ? { requireExisting: true } : {}),
+        });
+        if (remoteSaveResult?.saved === false) {
+          if (remoteSaveResult.remoteStateKnown !== true) {
+            markReminderReconciliationPending();
+          }
+          const saveIsStillLatest = latestReminderSavePromises.get(reminderId) === savePromise;
+          const currentIndex = userId === saveUserId
+            ? items.findIndex((entry) => entry?.id === reminderId)
+            : -1;
+          if (
+            saveIsStillLatest
+            && currentIndex >= 0
+            && remoteSaveResult.remoteStateKnown === true
+          ) {
+            if (remoteSaveResult.remoteReminder) {
+              items[currentIndex] = normalizeReminderRecord({
+                ...remoteSaveResult.remoteReminder,
+                id: reminderId,
+                userId: saveUserId,
+                pendingSync: false,
+              }, { fallbackId: reminderId });
+            } else {
+              items.splice(currentIndex, 1);
+            }
+            persistItems();
+            render();
+            rescheduleAllReminders();
+            refreshUrgentAttention();
+          } else {
+            item.pendingSync = true;
+            if (currentIndex >= 0) {
+              items[currentIndex].pendingSync = true;
+            }
+            persistItems();
+          }
+          return {
+            ...remoteSaveResult,
+            terminalConflict: remoteSaveResult.remoteStateKnown === true,
+          };
+        }
+        if (latestReminderSavePromises.get(reminderId) === savePromise) {
+          item.pendingSync = false;
+          if (item.metadata && typeof item.metadata === 'object') {
+            delete item.metadata[PENDING_REMOTE_GUARD_METADATA_KEY];
+          }
+          if (userId === saveUserId) {
+            const currentItem = items.find((entry) => entry?.id === reminderId);
+            const currentItemOwner = typeof currentItem?.userId === 'string'
+              ? currentItem.userId.trim()
+              : '';
+            if (currentItem && (!currentItemOwner || currentItemOwner === saveUserId)) {
+              currentItem.pendingSync = false;
+              if (currentItem.metadata && typeof currentItem.metadata === 'object') {
+                delete currentItem.metadata[PENDING_REMOTE_GUARD_METADATA_KEY];
+              }
+            }
+            persistItems();
+          }
+        }
+        return true;
+      } catch (error) {
+        markReminderReconciliationPending();
+        item.pendingSync = true;
+        if (userId === saveUserId) {
+          const currentItem = items.find((entry) => entry?.id === reminderId);
+          const currentItemOwner = typeof currentItem?.userId === 'string'
+            ? currentItem.userId.trim()
+            : '';
+          if (currentItem && (!currentItemOwner || currentItemOwner === saveUserId)) {
+            currentItem.pendingSync = true;
+          }
+          persistItems();
+        }
+        console.error('Save failed:', error); toast('Save queued (offline)');
+        return false;
+      }
+    });
+    void savePromise.then((saved) => {
+      if (saved !== true || !saveUserId) {
+        return null;
+      }
+      // Cross-device push is a best-effort fan-out after the durable Firestore
+      // write. It must never hold the per-reminder persistence queue or delay a
+      // phone action acknowledgement.
+      return syncReminderAcrossDevices({
+        ...remoteSavePayload,
         pendingSync: false,
-      }, pushAction);
-      return true;
-    } catch (error) {
-      item.pendingSync = true;
-      persistItems();
-      console.error('Save failed:', error); toast('Save queued (offline)');
-      return false;
-    }
+      }, pushAction, saveUserId);
+    }).catch((error) => {
+      console.warn('[reminder-push] Failed after reminder save', error);
+    });
+    return savePromise;
   }
-  async function deleteFromFirebase(id){
-    if (!userId) {
-      return true;
+  function deleteFromFirebase(id, options = {}){
+    const expectedUserId = typeof options.expectedUserId === 'string'
+      ? options.expectedUserId.trim()
+      : '';
+    const deleteUserId = userId;
+    if (expectedUserId && deleteUserId !== expectedUserId) {
+      return Promise.resolve(false);
     }
-    try {
-      await removeReminder(userId, id);
-      return true;
-    } catch (error) {
-      console.error('Delete failed:', error);
+    return queueReminderSave(id, async () => {
+      if (!deleteUserId) {
+        return true;
+      }
+      if (
+        userId !== deleteUserId
+        || (expectedUserId && userId !== expectedUserId)
+      ) {
+        return false;
+      }
+      try {
+        const removeResult = await removeReminder(deleteUserId, id, {
+          ...(Object.prototype.hasOwnProperty.call(options, 'maxUpdatedAt')
+            ? { maxUpdatedAt: options.maxUpdatedAt }
+            : {}),
+        });
+        return removeResult?.removed !== false;
+      } catch (error) {
+        markReminderReconciliationPending();
+        console.error('Delete failed:', error);
+        return false;
+      }
+    });
+  }
+
+  async function retryPendingReminderDeletion(record) {
+    const pendingDelete = normalizePendingReminderDeletion(record);
+    if (!pendingDelete || userId !== pendingDelete.userId) {
       return false;
     }
+    const deleted = await deleteFromFirebase(pendingDelete.id, {
+      expectedUserId: pendingDelete.userId,
+      maxUpdatedAt: pendingDelete.updatedAt,
+    });
+    if (deleted) {
+      void syncReminderAcrossDevices({
+        id: pendingDelete.id,
+        userId: pendingDelete.userId,
+        updatedAt: pendingDelete.updatedAt,
+        done: true,
+        completed: true,
+      }, 'delete', pendingDelete.userId);
+    }
+    return deleted;
   }
 
   let resetForm = () => {};
@@ -5725,7 +6853,7 @@ export async function initReminders(sel = {}) {
     }));
   }
 
-  function setReminderCompleted(id, completed = true){
+  function setReminderCompleted(id, completed = true, saveOptions = {}){
     const it = items.find(x=>x.id===id);
     if(!it) return null;
     const nextCompleted = Boolean(completed);
@@ -5740,7 +6868,7 @@ export async function initReminders(sel = {}) {
     if (!updated) {
       return null;
     }
-    saveToFirebase(it);
+    saveToFirebase(it, saveOptions);
     suppressRenderMemoryEvent = true;
     render();
     persistItems();
@@ -5789,12 +6917,45 @@ export async function initReminders(sel = {}) {
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
   }
 
+  function isReminderDeleteSessionCurrent(sessionUserId, syncGeneration) {
+    return userId === sessionUserId && reminderSyncGeneration === syncGeneration;
+  }
+
+  function clearPendingDeletionForItem(item) {
+    if (item?.id && pendingDeletionItems.get(item.id) === item) {
+      pendingDeletionItems.delete(item.id);
+    }
+  }
+
   function undoDelete(tokenId){
     if(!deleteUndoState || deleteUndoState.tokenId !== tokenId) return;
-    const { item, index } = deleteUndoState;
+    const {
+      item,
+      index,
+      sessionUserId,
+      syncGeneration,
+    } = deleteUndoState;
     if(!item) {
       clearUndoDeleteState(tokenId);
       return;
+    }
+    if (!isReminderDeleteSessionCurrent(sessionUserId, syncGeneration)) {
+      clearUndoDeleteState(tokenId);
+      return;
+    }
+    const ownerUserId = typeof item.userId === 'string' && item.userId.trim()
+      ? item.userId.trim()
+      : sessionUserId;
+    if (
+      ownerUserId
+      && !clearPendingReminderDeletions(ownerUserId, [item.id])
+    ) {
+      toast('Could not restore reminder yet. Please try again.');
+      return;
+    }
+    if (ownerUserId) {
+      clearQuarantinedPendingReminders(ownerUserId, [item.id]);
+      item.userId = ownerUserId;
     }
     if (item.id) {
       pendingDeletionItems.delete(item.id);
@@ -5802,7 +6963,7 @@ export async function initReminders(sel = {}) {
     clearUndoDeleteState(tokenId);
     const insertAt = Number.isInteger(index) ? Math.min(Math.max(index, 0), items.length) : items.length;
     item.pendingSync = !userId;
-    item.updatedAt = Date.now();
+    item.updatedAt = Math.max(Date.now(), (Number(item.updatedAt) || 0) + 1);
     items.splice(insertAt, 0, item);
     sortItemsByOrder(items);
     const rebalanced = maybeRebalanceOrderSpacing(items);
@@ -5827,32 +6988,68 @@ export async function initReminders(sel = {}) {
     toast('Reminder restored');
   }
   async function removeItem(id, { offerUndo = true } = {}){
+    const deletionSessionUserId = userId;
+    const deletionSyncGeneration = reminderSyncGeneration;
     const scrollPosition = captureReminderScrollPosition();
     const index = items.findIndex(x=>x.id===id);
-    const removed = index >= 0 ? items.splice(index,1)[0] : null;
-    if (removed && editingId === id) {
-      resetForm();
+    const removalCandidate = index >= 0 ? items[index] : null;
+    if (!removalCandidate) return false;
+    const deletionUserId = typeof removalCandidate.userId === 'string' && removalCandidate.userId.trim()
+      ? removalCandidate.userId.trim()
+      : deletionSessionUserId;
+    const deletionUpdatedAt = Math.max(
+      Date.now(),
+      (Number(removalCandidate.updatedAt) || 0) + 1
+    );
+    const deletionSnapshot = {
+      ...removalCandidate,
+      ...(deletionUserId ? { userId: deletionUserId } : {}),
+      updatedAt: deletionUpdatedAt,
+    };
+
+    // Store a durable, owner-scoped delete intent before changing the visible
+    // cache. If this write fails, keeping the reminder is safer than silently
+    // losing a cloud deletion on reload.
+    if (deletionUserId && !queuePendingReminderDeletion({
+      type: 'delete',
+      id,
+      userId: deletionUserId,
+      updatedAt: deletionUpdatedAt,
+    })) {
+      toast('Could not queue reminder deletion. The reminder was kept.');
+      return false;
     }
-    if (!removed) {
-      return;
+
+    const removed = items.splice(index, 1)[0];
+    removed.updatedAt = deletionUpdatedAt;
+    if (deletionUserId) {
+      removed.userId = deletionUserId;
+    }
+    if (editingId === id) {
+      resetForm();
     }
     pendingDeletionItems.set(id, removed);
     render();
     persistItems();
-    restoreReminderScrollPosition(scrollPosition);
-    const deletedRemotely = await deleteFromFirebase(id);
-    if (!deletedRemotely) {
-      pendingDeletionItems.delete(id);
-      items.splice(index, 0, removed);
-      sortItemsByOrder(items);
-      render();
-      persistItems();
-      restoreReminderScrollPosition(scrollPosition);
-      toast('Could not delete reminder. It was restored.');
-      return;
-    }
-    syncReminderAcrossDevices(removed, 'delete');
     cancelReminder(id);
+    restoreReminderScrollPosition(scrollPosition);
+    const deletedRemotely = deletionUserId
+      ? await deleteFromFirebase(id, {
+          expectedUserId: deletionUserId,
+          maxUpdatedAt: deletionSnapshot.updatedAt,
+        })
+      : false;
+    if (deletedRemotely) {
+      retirePendingReminderDeletion(deletionUserId, id);
+      void syncReminderAcrossDevices(deletionSnapshot, 'delete', deletionUserId);
+    }
+    if (!isReminderDeleteSessionCurrent(deletionSessionUserId, deletionSyncGeneration)) {
+      clearPendingDeletionForItem(removed);
+      return true;
+    }
+    if (!deletionUserId || !userId) {
+      clearPendingDeletionForItem(removed);
+    }
     const activityLabel = removed ? `Reminder removed · ${removed.title}` : 'Reminder removed';
     emitActivity({ action: 'deleted', label: activityLabel });
     if(removed && statusEl && offerUndo){
@@ -5862,6 +7059,9 @@ export async function initReminders(sel = {}) {
         tokenId,
         item: removed,
         index,
+        sessionUserId: deletionSessionUserId,
+        syncGeneration: deletionSyncGeneration,
+        pendingRemote: Boolean(deletionUserId && !deletedRemotely),
         timeoutId: null,
       };
       showDeleteUndoMessage(deleteUndoState);
@@ -5872,7 +7072,7 @@ export async function initReminders(sel = {}) {
     } else if(removed) {
       clearUndoDeleteState();
     }
-    return Boolean(removed);
+    return true;
   }
 
   function openReminderById(id) {
@@ -5909,40 +7109,100 @@ export async function initReminders(sel = {}) {
       return;
     }
 
-    const completedIds = new Set(completedItems.map((item) => item.id));
-    completedItems.forEach((item) => {
-      if (item?.id) {
-        pendingDeletionItems.set(item.id, item);
-      }
+    const deletionSessionUserId = userId;
+    const deletionSyncGeneration = reminderSyncGeneration;
+    const completedDeletionRecords = completedItems.map((item) => {
+      const deletionUpdatedAt = Math.max(
+        Date.now(),
+        (Number(item.updatedAt) || 0) + 1
+      );
+      const ownerUserId = typeof item?.userId === 'string' && item.userId.trim()
+        ? item.userId.trim()
+        : deletionSessionUserId;
+      return {
+        item,
+        ownerUserId,
+        deletionSnapshot: {
+          ...item,
+          ...(ownerUserId ? { userId: ownerUserId } : {}),
+          updatedAt: deletionUpdatedAt,
+        },
+      };
     });
 
-    items = items.filter((item) => !completedIds.has(item?.id));
+    const readyDeletionRecords = [];
+    const blockedDeletionRecords = [];
+    completedDeletionRecords.forEach((record) => {
+      if (record.ownerUserId && !queuePendingReminderDeletion({
+        type: 'delete',
+        id: record.item.id,
+        userId: record.ownerUserId,
+        updatedAt: record.deletionSnapshot.updatedAt,
+      })) {
+        blockedDeletionRecords.push(record);
+        return;
+      }
+      record.item.updatedAt = record.deletionSnapshot.updatedAt;
+      if (record.ownerUserId) {
+        record.item.userId = record.ownerUserId;
+      }
+      readyDeletionRecords.push(record);
+    });
+
+    if (!readyDeletionRecords.length) {
+      toast('Could not queue completed reminder deletions. They were kept.');
+      return;
+    }
+
+    const readyDeletionIds = new Set(readyDeletionRecords.map(({ item }) => item.id));
+    readyDeletionRecords.forEach(({ item }) => {
+      pendingDeletionItems.set(item.id, item);
+    });
+
+    items = items.filter((item) => !readyDeletionIds.has(item?.id));
     completedReminderSectionExpanded = false;
     render();
     persistItems();
+    readyDeletionRecords.forEach(({ item }) => cancelReminder(item.id));
 
     const results = [];
     const chunkSize = 8;
-    for (let index = 0; index < completedItems.length; index += chunkSize) {
-      const chunk = completedItems.slice(index, index + chunkSize);
-      const chunkResults = await Promise.all(chunk.map(async (item) => ({
+    for (let index = 0; index < readyDeletionRecords.length; index += chunkSize) {
+      const chunk = readyDeletionRecords.slice(index, index + chunkSize);
+      const chunkResults = await Promise.all(chunk.map(async ({
         item,
-        deleted: await deleteFromFirebase(item.id),
+        ownerUserId,
+        deletionSnapshot,
+      }) => ({
+        item,
+        ownerUserId,
+        deletionSnapshot,
+        deleted: ownerUserId
+          ? await deleteFromFirebase(item.id, {
+              expectedUserId: ownerUserId,
+              maxUpdatedAt: deletionSnapshot.updatedAt,
+            })
+          : false,
       })));
       results.push(...chunkResults);
     }
 
-    const failedItems = results.filter((result) => !result.deleted).map((result) => result.item);
-    const deletedItems = results.filter((result) => result.deleted).map((result) => result.item);
+    results
+      .filter(({ deleted }) => deleted)
+      .forEach(({ item, ownerUserId, deletionSnapshot }) => {
+        retirePendingReminderDeletion(ownerUserId, item.id);
+        void syncReminderAcrossDevices(deletionSnapshot, 'delete', ownerUserId);
+      });
 
-    failedItems.forEach((item) => {
-      pendingDeletionItems.delete(item.id);
-      items.push(item);
-    });
-    if (!userId) {
-      deletedItems.forEach((item) => pendingDeletionItems.delete(item.id));
+    if (!isReminderDeleteSessionCurrent(deletionSessionUserId, deletionSyncGeneration)) {
+      results.forEach(({ item }) => clearPendingDeletionForItem(item));
+      return;
     }
-    deletedItems.forEach((item) => cancelReminder(item.id));
+
+    const queuedResults = results.filter((result) => result.ownerUserId && !result.deleted);
+    if (!userId) {
+      results.forEach(({ item }) => clearPendingDeletionForItem(item));
+    }
 
     items = ensureOrderIndicesInitialized(normalizeReminderList(items));
     sortItemsByOrder(items);
@@ -5951,20 +7211,18 @@ export async function initReminders(sel = {}) {
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
 
-    const deletedCount = deletedItems.length;
-    if (!deletedCount) {
-      toast('Could not clear completed reminders. They were restored.');
-      return;
-    }
+    const clearedCount = results.length;
 
     emitActivity({
       action: 'deleted',
-      label: `${deletedCount} completed ${deletedCount === 1 ? 'reminder' : 'reminders'} cleared`,
+      label: `${clearedCount} completed ${clearedCount === 1 ? 'reminder' : 'reminders'} cleared`,
     });
-    if (failedItems.length) {
-      toast(`${deletedCount} cleared. ${failedItems.length} could not be deleted and were restored.`);
+    if (blockedDeletionRecords.length) {
+      toast(`${clearedCount} cleared. ${blockedDeletionRecords.length} could not be queued and were kept.`);
+    } else if (queuedResults.length) {
+      toast(`${clearedCount} cleared. ${queuedResults.length} cloud ${queuedResults.length === 1 ? 'deletion is' : 'deletions are'} queued.`);
     } else {
-      toast(`${deletedCount} completed ${deletedCount === 1 ? 'reminder' : 'reminders'} cleared`);
+      toast(`${clearedCount} completed ${clearedCount === 1 ? 'reminder' : 'reminders'} cleared`);
     }
   }
 
@@ -6075,7 +7333,7 @@ export async function initReminders(sel = {}) {
   }
 
 
-  function scheduleRecurringReminder(item) {
+  function scheduleRecurringReminder(item, { preserveTriggeredNotification = false } = {}) {
     const nextDue = computeNextOccurrence(item);
     if (!nextDue) {
       return false;
@@ -6086,30 +7344,38 @@ export async function initReminders(sel = {}) {
     item.updatedAt = Date.now();
     console.log('[reminder] recurring scheduled', { id: item.id, dueAt: nextDue, recurrence: item.recurrence });
     saveToFirebase(item);
-    scheduleReminder(item);
+    scheduleReminder(item, { preserveTriggeredNotification });
     persistItems();
     render();
     return true;
   }
 
-  function handleReminderTriggered(item) {
+  function handleReminderTriggered(item, { notificationAlreadyDisplayed = false } = {}) {
     if (isUrgentTimedReminder(item)) {
       refreshUrgentAttention();
       return;
     }
-    showReminder(item);
+    if (!notificationAlreadyDisplayed) {
+      showReminder(item);
+    }
     const current = items.find((entry) => entry?.id === item?.id);
-    if (current && scheduleRecurringReminder(current)) {
+    if (current && scheduleRecurringReminder(current, {
+      preserveTriggeredNotification: notificationAlreadyDisplayed,
+    })) {
       return;
     }
-    clearReminderState(item.id, { closeNotification: false });
+    clearReminderState(item.id, {
+      closeNotification: false,
+      cancelTrigger: !notificationAlreadyDisplayed,
+    });
   }
 
-  function snoozeReminder(reminder, minutes) {
+  function snoozeReminder(reminder, minutes, actionCreatedAt = null, saveOptions = {}) {
     if (!reminder || typeof reminder !== 'object') {
       return;
     }
-    const now = Date.now();
+    const normalizedActionCreatedAt = normalizeUrgentActionTimestamp(actionCreatedAt);
+    const now = normalizedActionCreatedAt ?? Date.now();
     let snoozeTime = now;
     if (minutes === 'tomorrow') {
       const tomorrow = new Date(now);
@@ -6126,7 +7392,7 @@ export async function initReminders(sel = {}) {
 
     reminder.snoozedUntil = new Date(snoozeTime).toISOString();
     reminder.updatedAt = now;
-    saveToFirebase(reminder);
+    saveToFirebase(reminder, saveOptions);
     scheduleReminder(reminder);
     persistItems();
     render();
@@ -6189,11 +7455,125 @@ export async function initReminders(sel = {}) {
     toast('Tip: Add Memory Cue to your home screen so reminders can run in the background.');
   }
 
+  function normalizeScheduleUpdatedAt(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) {
+        return numeric;
+      }
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    if (value instanceof Date) {
+      const timestamp = value.getTime();
+      return Number.isFinite(timestamp) ? timestamp : null;
+    }
+    return null;
+  }
+
+  function getScheduledReminderOwnerId(item) {
+    return typeof (item?.ownerUserId || item?.userId) === 'string'
+      ? (item.ownerUserId || item.userId).trim()
+      : '';
+  }
+
+  function isReminderEligibleForSchedule(item) {
+    if (
+      !item?.id
+      || item.done === true
+      || item.completed === true
+      || item?.metadata?.suppressNotification === true
+      || !getReminderScheduleIso(item)
+    ) {
+      return false;
+    }
+    const ownerUserId = getScheduledReminderOwnerId(item);
+    if (userId) {
+      return !ownerUserId || ownerUserId === userId;
+    }
+    return !ownerUserId || !authSessionResolved;
+  }
+
+  function buildScheduledReminderRecord(item, previous = {}) {
+    const scheduleIso = getReminderScheduleIso(item);
+    const sourceUpdatedAt = normalizeScheduleUpdatedAt(item?.updatedAt)
+      ?? normalizeScheduleUpdatedAt(previous?.sourceUpdatedAt)
+      ?? normalizeScheduleUpdatedAt(previous?.updatedAt)
+      ?? Date.now();
+    const previousSourceUpdatedAt = normalizeScheduleUpdatedAt(previous?.sourceUpdatedAt);
+    const previousTransportUpdatedAt = normalizeScheduleUpdatedAt(previous?.updatedAt);
+    const transportUpdatedAt = previousSourceUpdatedAt === sourceUpdatedAt
+      && previousTransportUpdatedAt !== null
+      && previousTransportUpdatedAt >= sourceUpdatedAt
+      ? previousTransportUpdatedAt
+      : sourceUpdatedAt;
+    const previousDue = typeof previous?.due === 'string' ? previous.due : null;
+    return {
+      id: item.id,
+      ownerUserId: getScheduledReminderOwnerId(item) || userId || '',
+      title: item.title,
+      due: scheduleIso,
+      notifyAt: typeof item.notifyAt === 'string' ? item.notifyAt : null,
+      recurrence: normalizeRecurrence(item.recurrence),
+      snoozedUntil: normalizeIsoString(item.snoozedUntil),
+      notifyMinutesBefore: Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0,
+      category: normalizeCategory(item.category) || DEFAULT_CATEGORY,
+      priority: item.priority || 'Medium',
+      notes: typeof item.notes === 'string' ? item.notes : '',
+      body: buildReminderNotificationBody(item),
+      meetingUrl: getUrgentMeetingLink(item),
+      urlPath: reminderLandingPath,
+      updatedAt: transportUpdatedAt,
+      sourceUpdatedAt,
+      viaTrigger: false,
+      semanticEmbedding: normalizeSemanticEmbedding(item.semanticEmbedding),
+      notifiedAt: previousDue === scheduleIso && Number.isFinite(previous?.notifiedAt)
+        ? previous.notifiedAt
+        : null,
+      urgentAlert: item.urgentAlert === true,
+      hasExplicitTime: item.hasExplicitTime === true,
+      urgentAcknowledgedAt: normalizeUrgentActionTimestamp(item.urgentAcknowledgedAt),
+      urgentStartedAt: normalizeUrgentActionTimestamp(item.urgentStartedAt),
+    };
+  }
+
+  function scheduledReminderDefinitionMatches(left, right) {
+    if (!left || !right) return false;
+    const fields = [
+      'id',
+      'ownerUserId',
+      'title',
+      'due',
+      'notifyAt',
+      'recurrence',
+      'snoozedUntil',
+      'notifyMinutesBefore',
+      'category',
+      'priority',
+      'notes',
+      'body',
+      'meetingUrl',
+      'urlPath',
+      'updatedAt',
+      'sourceUpdatedAt',
+      'urgentAlert',
+      'hasExplicitTime',
+      'urgentAcknowledgedAt',
+      'urgentStartedAt',
+    ];
+    return fields.every((field) => left[field] === right[field])
+      && JSON.stringify(left.semanticEmbedding || null) === JSON.stringify(right.semanticEmbedding || null);
+  }
+
   function buildScheduledReminderPayload() {
     return Object.values(scheduledReminders || {})
       .filter((entry) => entry && typeof entry === 'object' && entry.id)
       .map((entry) => ({
         id: entry.id,
+        ownerUserId: entry.ownerUserId || entry.userId || userId || '',
         title: typeof entry.title === 'string' ? entry.title : '',
         due: typeof entry.due === 'string' ? entry.due : null,
         notifyAt: typeof entry.notifyAt === 'string' ? entry.notifyAt : null,
@@ -6212,6 +7592,7 @@ export async function initReminders(sel = {}) {
         hasExplicitTime: entry.hasExplicitTime === true,
         urgentAcknowledgedAt: normalizeUrgentActionTimestamp(entry.urgentAcknowledgedAt),
         urgentStartedAt: normalizeUrgentActionTimestamp(entry.urgentStartedAt),
+        viaTrigger: entry.viaTrigger === true,
         semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
       }));
   }
@@ -6219,6 +7600,12 @@ export async function initReminders(sel = {}) {
   function saveScheduled(){
     try {
       localStorage.setItem('scheduledReminders', JSON.stringify(scheduledReminders));
+      const tombstones = Array.from(scheduledReminderTombstones.values());
+      if (tombstones.length) {
+        localStorage.setItem(SCHEDULED_REMINDER_TOMBSTONES_KEY, JSON.stringify(tombstones));
+      } else {
+        localStorage.removeItem(SCHEDULED_REMINDER_TOMBSTONES_KEY);
+      }
     } catch (error) {
       console.warn('Failed to persist scheduled reminders', error);
     }
@@ -6228,12 +7615,23 @@ export async function initReminders(sel = {}) {
     if (notificationsGranted) {
       setupBackgroundReminderSync();
     }
-    syncScheduledRemindersWithServiceWorker(
-      payload,
-      { requestCheck: notificationsGranted }
-    );
+    if (authSessionResolved) {
+      syncScheduledRemindersWithServiceWorker(
+        payload,
+        {
+          requestCheck: notificationsGranted,
+          tombstones: Array.from(scheduledReminderTombstones.values()),
+          activeOwnerUserId: userId || '',
+        }
+      );
+    }
   }
-  function clearReminderState(id, { closeNotification = true } = {}){
+  function clearReminderState(id, {
+    closeNotification = true,
+    cancelTrigger = true,
+    updatedAt: mutationUpdatedAt = null,
+    transientAccountCleanup = false,
+  } = {}){
     if(closeNotification){
       const active = activeNotifications.get(id);
       if(active){
@@ -6243,10 +7641,56 @@ export async function initReminders(sel = {}) {
     }
     if(reminderTimers[id]){ clearTimeout(reminderTimers[id]); delete reminderTimers[id]; }
     if(reminderNotifyTimers[id]){ clearTimeout(reminderNotifyTimers[id]); delete reminderNotifyTimers[id]; }
-    cancelTriggerNotification(id);
-    if(scheduledReminders[id]){ delete scheduledReminders[id]; saveScheduled(); }
+    if (cancelTrigger) {
+      cancelTriggerNotification(id);
+    }
+    const scheduledEntry = scheduledReminders[id] || null;
+    const reminderEntry = items.find((entry) => entry?.id === id) || null;
+    const previousTombstone = scheduledReminderTombstones.get(id);
+    const normalizedMutationUpdatedAt = normalizeScheduleUpdatedAt(mutationUpdatedAt);
+    const updatedAt = normalizedMutationUpdatedAt === null
+      ? transientAccountCleanup
+        ? Math.max(
+          Number(scheduledEntry?.updatedAt || 0),
+          Number(reminderEntry?.updatedAt || 0),
+          Number(previousTombstone?.updatedAt || 0)
+        )
+        : Math.max(
+          Date.now(),
+          Number(scheduledEntry?.updatedAt || 0) + 1,
+          Number(reminderEntry?.updatedAt || 0),
+          Number(previousTombstone?.updatedAt || 0) + 1
+        )
+      : Math.max(normalizedMutationUpdatedAt, Number(previousTombstone?.updatedAt || 0));
+    scheduledReminderTombstones.set(id, {
+      id,
+      ownerUserId:
+        scheduledEntry?.ownerUserId
+        || reminderEntry?.ownerUserId
+        || reminderEntry?.userId
+        || userId
+        || '',
+      done: true,
+      deleted: true,
+      updatedAt,
+      transientAccountCleanup,
+    });
+    while (scheduledReminderTombstones.size > 256) {
+      const oldestId = Array.from(scheduledReminderTombstones.entries())
+        .sort((left, right) => Number(left[1]?.updatedAt || 0) - Number(right[1]?.updatedAt || 0))[0]?.[0];
+      if (!oldestId) break;
+      scheduledReminderTombstones.delete(oldestId);
+    }
+    void postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.cancelScheduledReminder,
+      reminderId: id,
+      ownerUserId: scheduledReminderTombstones.get(id)?.ownerUserId || '',
+      updatedAt,
+    });
+    if(scheduledEntry){ delete scheduledReminders[id]; }
+    saveScheduled();
   }
-  function cancelReminder(id){ clearReminderState(id); }
+  function cancelReminder(id, options = {}){ clearReminderState(id, options); }
   function showReminder(item){
     if(!item || !item.id || !('Notification' in window)) return;
     try{
@@ -6273,7 +7717,7 @@ export async function initReminders(sel = {}) {
       notification.onclick = remove;
     }catch{}
   }
-  async function scheduleTriggerNotification(item){
+  async function scheduleTriggerNotification(item, { cancelExisting = true } = {}){
     if(!supportsNotificationTriggers()) return false;
     const Trigger = getTimestampTriggerCtor();
     const scheduledIso = getReminderScheduleIso(item);
@@ -6282,7 +7726,9 @@ export async function initReminders(sel = {}) {
     if(!Number.isFinite(dueTime)) return false;
     const registration = await ensureServiceWorkerRegistration();
     if(!registration) return false;
-    await cancelTriggerNotification(item.id, registration);
+    if (cancelExisting) {
+      await cancelTriggerNotification(item.id, registration);
+    }
     const body = buildReminderNotificationBody(item);
     const data = {
       id: item.id,
@@ -6292,8 +7738,15 @@ export async function initReminders(sel = {}) {
       category: item.category || DEFAULT_CATEGORY,
       body,
       urlPath: reminderLandingPath,
+      ownerUserId: item.ownerUserId || item.userId || userId || '',
+      updatedAt: Number.isFinite(Number(item.updatedAt)) ? Number(item.updatedAt) : Date.now(),
     };
-    const options = { body, tag: item.id, data, renotify: true };
+    const options = {
+      body,
+      tag: `memory-cue-reminder-${encodeURIComponent(item.id)}-${dueTime}`,
+      data,
+      renotify: true,
+    };
     if(dueTime > Date.now()){
       options.showTrigger = new Trigger(dueTime);
     }
@@ -6305,46 +7758,63 @@ export async function initReminders(sel = {}) {
       return false;
     }
   }
-  function scheduleReminder(item){
+  function scheduleReminder(item, { preserveTriggeredNotification = false } = {}){
     if(!item||!item.id) return;
-    if(item?.metadata?.suppressNotification === true){ cancelReminder(item.id); return; }
+    const itemUpdatedAt = normalizeScheduleUpdatedAt(item.updatedAt);
+    if(item?.metadata?.suppressNotification === true){
+      cancelReminder(item.id, { updatedAt: itemUpdatedAt });
+      return;
+    }
     item.category = normalizeCategory(item.category);
-    if(item.done){ cancelReminder(item.id); return; }
+    if(item.done || item.completed){
+      cancelReminder(item.id, { updatedAt: itemUpdatedAt });
+      return;
+    }
     const previous = scheduledReminders[item.id] || {};
-    const stored = {
-      id:item.id,
-      title:item.title,
-      due: getReminderScheduleIso(item),
-      notifyAt: typeof item.notifyAt === 'string' ? item.notifyAt : null,
-      recurrence: normalizeRecurrence(item.recurrence),
-      snoozedUntil: normalizeIsoString(item.snoozedUntil),
-      notifyMinutesBefore: Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0,
-      category: item.category || DEFAULT_CATEGORY,
-      priority: item.priority || 'Medium',
-      notes: typeof item.notes === 'string' ? item.notes : '',
-      body: buildReminderNotificationBody(item),
-      meetingUrl: getUrgentMeetingLink(item),
-      urlPath: reminderLandingPath,
-      updatedAt: Date.now(),
-      viaTrigger: !!previous.viaTrigger,
-      semanticEmbedding: normalizeSemanticEmbedding(item.semanticEmbedding),
-      notifiedAt: (() => {
-        const prevDue = typeof previous.due === 'string' ? previous.due : null;
-        const prevNotified = Number.isFinite(previous.notifiedAt) ? previous.notifiedAt : null;
-        return prevDue === item.due ? prevNotified : null;
-      })(),
-      urgentAlert: item.urgentAlert === true,
-      hasExplicitTime: item.hasExplicitTime === true,
-      urgentAcknowledgedAt: normalizeUrgentActionTimestamp(item.urgentAcknowledgedAt),
-      urgentStartedAt: normalizeUrgentActionTimestamp(item.urgentStartedAt),
-    };
+    const previousTombstone = scheduledReminderTombstones.get(item.id);
+    const stored = buildScheduledReminderRecord(item, previous);
+    if(!stored.due){
+      cancelReminder(item.id, { updatedAt: itemUpdatedAt });
+      return;
+    }
+    const tombstoneOwnerUserId = getScheduledReminderOwnerId(previousTombstone);
+    const reactivatingTransientAccountSchedule = Boolean(
+      previousTombstone?.transientAccountCleanup === true
+      && stored.ownerUserId
+      && stored.ownerUserId === userId
+      && tombstoneOwnerUserId === stored.ownerUserId
+    );
+    const tombstoneAppliesToItem = previousTombstone
+      && !reactivatingTransientAccountSchedule
+      && (
+        !tombstoneOwnerUserId
+        || !stored.ownerUserId
+        || tombstoneOwnerUserId === stored.ownerUserId
+      );
+    if (
+      tombstoneAppliesToItem
+      && Number(previousTombstone.updatedAt || 0) >= Number(stored.updatedAt || 0)
+    ) {
+      return;
+    }
+    if (reactivatingTransientAccountSchedule) {
+      // The worker saw an equal-timestamp tombstone while another account was
+      // active. A one-millisecond transport bump revives that same domain
+      // version without turning ordinary rescheduling into a new mutation.
+      stored.updatedAt = Math.max(
+        stored.updatedAt,
+        Number(previousTombstone.updatedAt || 0) + 1
+      );
+    }
+    const definitionUnchanged = scheduledReminderDefinitionMatches(previous, stored);
+    stored.viaTrigger = definitionUnchanged && previous.viaTrigger === true;
+    scheduledReminderTombstones.delete(item.id);
     scheduledReminders[item.id]=stored;
     saveScheduled();
     if(reminderTimers[item.id]){ clearTimeout(reminderTimers[item.id]); delete reminderTimers[item.id]; }
     if(reminderNotifyTimers[item.id]){ clearTimeout(reminderNotifyTimers[item.id]); delete reminderNotifyTimers[item.id]; }
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
     const scheduleIso = stored.due;
-    if(!scheduleIso){ cancelReminder(item.id); return; }
     if(isUrgentTimedReminder(item)){
       refreshUrgentAttention();
       return;
@@ -6356,7 +7826,7 @@ export async function initReminders(sel = {}) {
     const delay = dueTime - Date.now();
     if(delay<=0){
       if(scheduledReminders[item.id]?.viaTrigger){
-        clearReminderState(item.id,{ closeNotification:false });
+        handleReminderTriggered(item, { notificationAlreadyDisplayed: true });
         return;
       }
       handleReminderTriggered({ ...item, due: scheduleIso });
@@ -6371,7 +7841,9 @@ export async function initReminders(sel = {}) {
     }
     if(useTriggers){
       stored.viaTrigger = false;
-      scheduleTriggerNotification(item).then((scheduled) => {
+      scheduleTriggerNotification(item, {
+        cancelExisting: !preserveTriggeredNotification,
+      }).then((scheduled) => {
         if(scheduled && scheduledReminders[item.id]){
           scheduledReminders[item.id] = { ...scheduledReminders[item.id], viaTrigger: true };
           saveScheduled();
@@ -6379,13 +7851,69 @@ export async function initReminders(sel = {}) {
       });
     }
     setLongTimeout(reminderTimers, item.id, delay, () => {
-      if(useTriggers){
-        cancelTriggerNotification(item.id);
+      if(useTriggers && scheduledReminders[item.id]?.viaTrigger === true){
+        handleReminderTriggered(item, { notificationAlreadyDisplayed: true });
+        return;
       }
       handleReminderTriggered({ ...item, due: scheduleIso });
     });
   }
-  function rescheduleAllReminders(){ Object.values(scheduledReminders).forEach(it=>scheduleReminder({ ...it, category: normalizeCategory(it?.category) })); }
+  function rescheduleAllReminders(){
+    // Until auth resolves, the shared local cache may belong to another
+    // account. Preserve the stored schedule unchanged rather than exposing or
+    // cancelling it under an unknown owner.
+    if (!authSessionResolved) {
+      return;
+    }
+    const currentItemsById = new Map(
+      items
+        .filter((item) => item?.id)
+        .map((item) => [item.id, item])
+    );
+
+    Object.keys(scheduledReminders).forEach((reminderId) => {
+      const currentItem = currentItemsById.get(reminderId);
+      if (isReminderEligibleForSchedule(currentItem)) {
+        return;
+      }
+      const useDomainTimestamp = currentItem
+        && (
+          currentItem.done === true
+          || currentItem.completed === true
+          || currentItem?.metadata?.suppressNotification === true
+        );
+      const scheduledOwnerUserId = getScheduledReminderOwnerId(scheduledReminders[reminderId]);
+      const currentOwnerUserId = getScheduledReminderOwnerId(currentItem);
+      const belongsToInactiveAccount = Boolean(
+        (scheduledOwnerUserId && scheduledOwnerUserId !== userId)
+        || (currentOwnerUserId && currentOwnerUserId !== userId)
+      );
+      clearReminderState(reminderId, {
+        updatedAt: useDomainTimestamp ? currentItem.updatedAt : null,
+        transientAccountCleanup: belongsToInactiveAccount,
+      });
+    });
+
+    currentItemsById.forEach((item) => {
+      if (!isReminderEligibleForSchedule(item)) {
+        return;
+      }
+      const existing = scheduledReminders[item.id] || null;
+      const desired = buildScheduledReminderRecord(item, existing || {});
+      const definitionUnchanged = scheduledReminderDefinitionMatches(existing, desired);
+      const hasPageTimer = Object.prototype.hasOwnProperty.call(reminderTimers, item.id)
+        || Object.prototype.hasOwnProperty.call(reminderNotifyTimers, item.id);
+      const notificationsGranted = typeof Notification !== 'undefined'
+        && Notification.permission === 'granted';
+      const alreadyArmed = isUrgentTimedReminder(item)
+        || hasPageTimer
+        || (supportsNotificationTriggers() && existing?.viaTrigger === true);
+      if (definitionUnchanged && (!notificationsGranted || alreadyArmed)) {
+        return;
+      }
+      scheduleReminder(item);
+    });
+  }
 
   function formatDesktopDue(item){
     if(!item?.due) {
@@ -8405,10 +9933,11 @@ export async function initReminders(sel = {}) {
     }
   }
   setupDragAndDrop();
-  const legacyDailyTasksMigration = migrateLegacyDailyTasks();
-  if (legacyDailyTasksMigration.invalid > 0) {
-    console.warn('Some legacy Today items could not be migrated; the original local list was kept', legacyDailyTasksMigration);
-  }
+  // Legacy Today records are ownerless local data, so migrating them cannot
+  // expose another signed-in account. Do this synchronously to keep the
+  // one-time migration crash-safe; ordinary cached account data remains hidden
+  // until auth resolves.
+  runLegacyDailyTasksMigrationOnce();
   rescheduleAllReminders();
   render();
   persistItems();
@@ -8462,10 +9991,22 @@ export async function initReminders(sel = {}) {
       },
       render,
       getItems: () => items.map(item => ({ ...item })),
+      getScheduledReminders: () => Object.fromEntries(
+        Object.entries(scheduledReminders).map(([id, entry]) => [id, { ...entry }])
+      ),
+      getScheduledReminderTombstones: () => Array.from(
+        scheduledReminderTombstones.values(),
+        (entry) => ({ ...entry })
+      ),
+      scheduleReminder,
+      rescheduleAllReminders,
       refreshUrgentAttention,
       getUrgentState: (nowMs = Date.now()) => getUrgentReminderState(items, nowMs),
       migrateLegacyDailyTasks,
       persistItems,
+      saveToFirebase,
+      removeItem,
+      clearCompletedReminders,
       parseInboxTimeQuery,
       buildRagContext,
       askAssistant,

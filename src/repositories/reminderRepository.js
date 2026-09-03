@@ -1,8 +1,20 @@
-import { getFirebaseContext, requireUid } from '../lib/firebase.js';
+import { getFirebaseContext, requireUid } from '../lib/firebase.js?v=20260904a';
 import { normalizeReminder, normalizeReminderList } from '../reminders/reminderNormalizer.js';
 
 
 const remindersCollection = (firebase, uid) => firebase.collection(firebase.db, 'users', requireUid(uid), 'reminders');
+
+const toUpdatedAtTimestamp = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'string' && value.trim()) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
 
 const requireReminderFirebase = async (uid, action) => {
   const firebase = await getFirebaseContext();
@@ -20,27 +32,96 @@ const requireReminderFirebase = async (uid, action) => {
 
 export const listReminders = async (uid) => {
   const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'list');
-  const snapshot = await firebase.getDocs(
+  const snapshot = await firebase.getDocsFromServer(
     firebase.query(remindersCollection(firebase, normalizedUid), firebase.orderBy('updatedAt', 'desc'))
   );
-  return normalizeReminderList(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))); 
+  return normalizeReminderList(snapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id })));
 };
 
-export const saveReminder = async (uid, reminder) => {
+export const saveReminder = async (uid, reminder, options = {}) => {
   const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'save');
   const normalizedReminder = normalizeReminder({ ...reminder, userId: normalizedUid });
   const reminderId = normalizedReminder.id;
-  await firebase.setDoc(
-    firebase.doc(firebase.db, 'users', normalizedUid, 'reminders', requireUid(reminderId)),
-    normalizedReminder,
-    { merge: true }
+  const reminderRef = firebase.doc(
+    firebase.db,
+    'users',
+    normalizedUid,
+    'reminders',
+    requireUid(reminderId)
   );
-  return normalizeReminder(normalizedReminder);
+  const hasExpectedRemoteVersion = Object.prototype.hasOwnProperty.call(options, 'expectedUpdatedAt');
+  const expectedRemoteUpdatedAt = hasExpectedRemoteVersion
+    ? toUpdatedAtTimestamp(options.expectedUpdatedAt)
+    : null;
+  const requireExisting = options.requireExisting === true;
+  const transactionResult = await firebase.runTransaction(firebase.db, async (transaction) => {
+    const existingSnapshot = await transaction.get(reminderRef);
+    const existing = existingSnapshot?.exists?.() ? existingSnapshot.data() : null;
+    if (requireExisting && !existing) {
+      return {
+        saved: false,
+        reason: 'remote-reminder-missing',
+        remoteReminder: null,
+        remoteStateKnown: true,
+      };
+    }
+    const conflictVersion = hasExpectedRemoteVersion
+      ? expectedRemoteUpdatedAt
+      : toUpdatedAtTimestamp(normalizedReminder.updatedAt);
+    if (
+      existing
+      && toUpdatedAtTimestamp(existing.updatedAt) > conflictVersion
+    ) {
+      return {
+        saved: false,
+        reason: 'newer-remote-version',
+        remoteReminder: normalizeReminder({
+          ...existing,
+          id: reminderId,
+          userId: normalizedUid,
+          pendingSync: false,
+        }),
+        remoteStateKnown: true,
+      };
+    }
+    transaction.set(reminderRef, normalizedReminder, { merge: true });
+    return { saved: true };
+  });
+  return transactionResult?.saved === false
+    ? transactionResult
+    : normalizeReminder(normalizedReminder);
 };
 
-export const removeReminder = async (uid, reminderId) => {
+export const removeReminder = async (uid, reminderId, options = {}) => {
   const { firebase, uid: normalizedUid } = await requireReminderFirebase(uid, 'delete');
-  await firebase.deleteDoc(firebase.doc(firebase.db, 'users', normalizedUid, 'reminders', requireUid(reminderId)));
+  const normalizedReminderId = requireUid(reminderId);
+  const reminderRef = firebase.doc(firebase.db, 'users', normalizedUid, 'reminders', normalizedReminderId);
+  if (!Object.prototype.hasOwnProperty.call(options, 'maxUpdatedAt')) {
+    await firebase.deleteDoc(reminderRef);
+    return { removed: true };
+  }
+  const maxUpdatedAt = toUpdatedAtTimestamp(options.maxUpdatedAt);
+  return firebase.runTransaction(firebase.db, async (transaction) => {
+    const existingSnapshot = await transaction.get(reminderRef);
+    if (!existingSnapshot?.exists?.()) {
+      return { removed: true, alreadyMissing: true };
+    }
+    const existing = existingSnapshot.data();
+    if (toUpdatedAtTimestamp(existing?.updatedAt) > maxUpdatedAt) {
+      return {
+        removed: false,
+        reason: 'newer-remote-version',
+        remoteReminder: normalizeReminder({
+          ...existing,
+          id: normalizedReminderId,
+          userId: normalizedUid,
+          pendingSync: false,
+        }),
+      };
+    }
+    transaction.delete(reminderRef);
+    return { removed: true };
+  });
 };
 
 const groupColorsDoc = (firebase, uid) => firebase.doc(firebase.db, 'users', requireUid(uid), 'preferences', 'reminderGroupColors');
@@ -127,11 +208,17 @@ export const subscribeReminders = async (uid, onItems, onError = null) => {
 
   return firebase.onSnapshot(queryRef, (snapshot) => {
     const items = normalizeReminderList(
-      snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))
+      snapshot.docs.map((entry) => ({ ...entry.data(), id: entry.id }))
     );
 
     if (typeof onItems === 'function') {
-      onItems(items);
+      onItems(items, {
+        fromCache: snapshot?.metadata?.fromCache === true,
+        hasPendingWrites: snapshot?.metadata?.hasPendingWrites === true,
+        serverAuthoritative:
+          snapshot?.metadata?.fromCache !== true
+          && snapshot?.metadata?.hasPendingWrites !== true,
+      });
     }
   }, (error) => {
     if (typeof onError === 'function') {

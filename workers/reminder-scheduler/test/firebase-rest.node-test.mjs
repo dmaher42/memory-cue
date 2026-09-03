@@ -3,6 +3,8 @@ import { test } from 'node:test';
 
 import {
   buildFcmMessage,
+  buildPushSyncOutboxQuery,
+  buildReminderSyncFcmMessage,
   buildUrgentReminderQuery,
   createDeliveryId,
   createFirebaseRestAdapter,
@@ -25,6 +27,12 @@ function value(item) {
   }
   if (typeof item === 'number') {
     return { integerValue: String(item) };
+  }
+  if (Array.isArray(item)) {
+    return { arrayValue: { values: item.map(value) } };
+  }
+  if (item && typeof item === 'object') {
+    return { mapValue: { fields: fields(item) } };
   }
   return { stringValue: String(item) };
 }
@@ -327,6 +335,18 @@ test('overdue query is newest-first so stale items cannot hide recent ones', () 
   assert.equal(structured.limit, 50);
 });
 
+test('builds an indexed due-time query for durable direct-sync retries', () => {
+  const query = buildPushSyncOutboxQuery(DUE_AT, 12).structuredQuery;
+
+  assert.deepEqual(query.from, [{ collectionId: '_memoryCuePushSyncOutbox' }]);
+  assert.equal(query.where.fieldFilter.field.fieldPath, 'nextAttemptAt');
+  assert.equal(query.where.fieldFilter.op, 'LESS_THAN_OR_EQUAL');
+  assert.equal(query.where.fieldFilter.value.integerValue, String(DUE_AT));
+  assert.equal(query.orderBy[0].field.fieldPath, 'nextAttemptAt');
+  assert.equal(query.orderBy[0].direction, 'ASCENDING');
+  assert.equal(query.limit, 12);
+});
+
 test('decodes Firestore fields without losing nested urgency metadata', () => {
   const decoded = fromFirestoreFields({
     urgentAlert: { booleanValue: true },
@@ -357,6 +377,7 @@ test('delivery identifiers are deterministic, stage-specific, and hide user data
     dueAt: DUE_AT,
     stageKey: 't-15',
     deviceId: DEVICE_ID,
+    reminderUpdatedAt: DUE_AT - (60 * 60 * 1000),
   };
   const first = await createDeliveryId(base, cryptoImpl);
   const second = await createDeliveryId(base, cryptoImpl);
@@ -364,9 +385,14 @@ test('delivery identifiers are deterministic, stage-specific, and hide user data
     ...base,
     stageKey: 't-5',
   }, cryptoImpl);
+  const newerRevision = await createDeliveryId({
+    ...base,
+    reminderUpdatedAt: base.reminderUpdatedAt + 1,
+  }, cryptoImpl);
 
   assert.equal(first, second);
   assert.notEqual(first, nextStage);
+  assert.notEqual(first, newerRevision);
   assert.equal(first.includes(USER_ID), false);
   assert.equal(first.includes(REMINDER_ID), false);
   assert.equal(first.includes(DEVICE_ID), false);
@@ -401,6 +427,7 @@ test('builds a high-urgency, short-lived, collapsible FCM data message', async (
   assert.equal(message.message.data.type, 'memoryCue:reminder-sync');
   assert.equal(message.message.data.deliveryStageKey, 't-15');
   assert.equal(message.message.data.badgeCount, '2');
+  assert.equal(message.message.data.ownerUserId, USER_ID);
   assert.equal(message.message.webpush.headers.Urgency, 'high');
   assert.equal(message.message.webpush.headers.TTL, '240');
   assert.equal(message.message.webpush.headers.Topic.length, 32);
@@ -408,7 +435,68 @@ test('builds a high-urgency, short-lived, collapsible FCM data message', async (
     JSON.parse(message.message.data.reminder).urgentAlert,
     true
   );
+  assert.equal(JSON.parse(message.message.data.reminder).ownerUserId, USER_ID);
   assert.ok(JSON.parse(message.message.data.reminder).updatedAt > 0);
+});
+
+test('uses distinct Web Push topics for distinct reminder revisions', async () => {
+  const cryptoImpl = createFakeCrypto();
+  const buildForRevision = (reminderUpdatedAt) => buildFcmMessage({
+    claim: {
+      userId: USER_ID,
+      deliveryId: 'delivery-' + reminderUpdatedAt,
+      reminderUpdatedAt,
+    },
+    device: { id: DEVICE_ID, token: 'private-phone-token' },
+    reminder: {
+      id: REMINDER_ID,
+      title: 'Dentist appointment',
+      due: new Date(DUE_AT).toISOString(),
+      urgentAlert: true,
+      hasExplicitTime: true,
+      updatedAt: reminderUpdatedAt,
+    },
+    urgency: { stage: { key: 't-15' } },
+    badgeCount: 1,
+  }, cryptoImpl);
+
+  const first = await buildForRevision(1000);
+  const revised = await buildForRevision(1001);
+  assert.notEqual(
+    first.message.webpush.headers.Topic,
+    revised.message.webpush.headers.Topic
+  );
+  assert.equal(JSON.parse(first.message.data.reminder).updatedAt, 1000);
+  assert.equal(JSON.parse(revised.message.data.reminder).updatedAt, 1001);
+});
+
+test('builds revision-aware direct-sync messages for outbox retries', async () => {
+  const cryptoImpl = createFakeCrypto();
+  const base = {
+    userId: USER_ID,
+    target: { deviceId: DEVICE_ID, token: 'private-phone-token' },
+    action: 'delete',
+    reminder: {
+      id: REMINDER_ID,
+      title: 'Dentist appointment',
+      due: new Date(DUE_AT).toISOString(),
+      updatedAt: 2000,
+    },
+    badgeCount: 0,
+  };
+  const first = await buildReminderSyncFcmMessage(base, cryptoImpl);
+  const revised = await buildReminderSyncFcmMessage({
+    ...base,
+    reminder: { ...base.reminder, updatedAt: 2001 },
+  }, cryptoImpl);
+
+  assert.equal(first.message.data.action, 'delete');
+  assert.equal(first.message.data.ownerUserId, USER_ID);
+  assert.equal(first.message.webpush.headers.TTL, '604800');
+  assert.notEqual(
+    first.message.webpush.headers.Topic,
+    revised.message.webpush.headers.Topic
+  );
 });
 
 test('bounds untrusted reminder text below the FCM data payload limit', async () => {
@@ -494,6 +582,7 @@ test('uses one idempotent claim per stage and finalises successful FCM delivery'
     dueAt: DUE_AT,
     stageKey: 't-15',
     deviceId: DEVICE_ID,
+    reminderUpdatedAt: reminders[0].updatedAt,
     nowMs: api.getNow(),
   };
 
@@ -525,6 +614,10 @@ test('uses one idempotent claim per stage and finalises successful FCM delivery'
   assert.equal(
     fromFirestoreFields(api.getDelivery().fields).status,
     'delivered'
+  );
+  assert.equal(
+    fromFirestoreFields(api.getDelivery().fields).reminderUpdatedAt,
+    reminders[0].updatedAt
   );
   assert.equal('userId' in api.getDelivery().fields, false);
   assert.equal('reminderId' in api.getDelivery().fields, false);
@@ -767,6 +860,92 @@ test('warm scheduler invocations reuse a short-lived service-account access toke
     api.requests.filter(({ url }) => url === 'https://oauth2.googleapis.com/token').length,
     2
   );
+});
+
+test('the scheduler drains a durable direct-sync delete after the original send failed', async () => {
+  const requests = [];
+  const outboxName = 'projects/' + PROJECT_ID
+    + '/databases/(default)/documents/_memoryCuePushSyncOutbox/outbox-1';
+  const fetchImpl = async (rawUrl, init = {}) => {
+    const url = String(rawUrl);
+    const method = init.method || 'GET';
+    let body = init.body ? String(init.body) : null;
+    if (body) {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // OAuth token exchange uses URL-encoded form data.
+      }
+    }
+    requests.push({ url, method, body });
+    if (url === 'https://oauth2.googleapis.com/token') {
+      return Response.json({ access_token: 'test-access-token' });
+    }
+    if (url.endsWith('/documents:runQuery')) {
+      return Response.json([{
+        document: {
+          name: outboxName,
+          updateTime: '2026-09-04T00:00:00.000000Z',
+          fields: fields({
+            schemaVersion: 1,
+            userId: USER_ID,
+            action: 'delete',
+            reminder: {
+              id: REMINDER_ID,
+              title: 'Dentist appointment',
+              due: new Date(DUE_AT).toISOString(),
+              hasExplicitTime: true,
+              urgentAlert: true,
+              updatedAt: DUE_AT - 1000,
+            },
+            badgeCount: 0,
+            targets: [{ deviceId: DEVICE_ID, token: 'private-phone-token' }],
+            attemptCount: 1,
+            createdAt: DUE_AT - 120000,
+            updatedAt: DUE_AT - 60000,
+            nextAttemptAt: DUE_AT,
+            expiresAt: DUE_AT + 86400000,
+          }),
+        },
+      }]);
+    }
+    if (url.endsWith('/messages:send')) {
+      return Response.json({ name: 'projects/test/messages/retry-1' });
+    }
+    if (url.startsWith('https://firestore.googleapis.com/v1/' + outboxName) && method === 'DELETE') {
+      return new Response(null, { status: 204 });
+    }
+    return Response.json({ error: { status: 'UNEXPECTED_TEST_REQUEST' } }, { status: 500 });
+  };
+  const adapter = await createFirebaseRestAdapter({
+    FIREBASE_PROJECT_ID: PROJECT_ID,
+    FIREBASE_CLIENT_EMAIL: 'scheduler@memory-cue-test.iam.gserviceaccount.com',
+    FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----',
+  }, {
+    fetchImpl,
+    cryptoImpl: createFakeCrypto(),
+    now: () => DUE_AT,
+    logger: { info() {}, warn() {}, error() {} },
+    accessTokenCache: new Map(),
+  });
+
+  const summary = await adapter.retryPendingPushSync(DUE_AT, 2);
+  const fcmRequest = requests.find(({ url }) => url.endsWith('/messages:send'));
+  const deleteRequest = requests.find(({ method, url }) => (
+    method === 'DELETE' && url.startsWith('https://firestore.googleapis.com/v1/' + outboxName)
+  ));
+
+  assert.equal(summary.recordCount, 1);
+  assert.equal(summary.deviceAttempts, 1);
+  assert.equal(summary.delivered, 1);
+  assert.equal(summary.failed, 0);
+  assert.equal(fcmRequest.body.message.data.action, 'delete');
+  assert.equal(
+    JSON.parse(fcmRequest.body.message.data.reminder).updatedAt,
+    DUE_AT - 1000
+  );
+  assert.ok(deleteRequest);
+  assert.match(deleteRequest.url, /currentDocument\.updateTime=/);
 });
 
 test('the adapter stops before its configured external-subrequest ceiling', async () => {

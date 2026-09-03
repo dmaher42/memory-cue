@@ -5,6 +5,21 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function normalizeReminderUpdatedAt(value) {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    return 0;
+  }
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return Math.trunc(numeric);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+  return 0;
+}
+
 function normalizeReminderRecord(record) {
   if (!record || typeof record !== 'object') {
     return null;
@@ -269,6 +284,7 @@ export async function dispatchUrgentReminders({
           dueAt: Number(urgency.dueAt),
           stageKey: urgency.stage.key,
           deviceId: device.id,
+          reminderUpdatedAt: normalizeReminderUpdatedAt(reminder.updatedAt),
           nowMs: resolvedNow,
       };
 

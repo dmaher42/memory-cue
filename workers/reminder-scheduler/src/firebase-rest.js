@@ -2,6 +2,7 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const FIRESTORE_API_ROOT = 'https://firestore.googleapis.com/v1';
 const FCM_API_ROOT = 'https://fcm.googleapis.com/v1';
 const DELIVERY_COLLECTION = '_memoryCueUrgentDeliveries';
+const PUSH_SYNC_OUTBOX_COLLECTION = '_memoryCuePushSyncOutbox';
 const DELIVERY_LEASE_MS = 2 * 60 * 1000;
 const DELIVERY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const BASE_RETRY_DELAY_MS = 60 * 1000;
@@ -10,8 +11,10 @@ const DEFAULT_QUERY_LIMIT = 250;
 const DEFAULT_SUBREQUEST_BUDGET = 45;
 const MAX_PUSH_DEVICE_DOCUMENTS = 100;
 const PUSH_TTL_SECONDS = 240;
+const PUSH_SYNC_TTL_SECONDS = 7 * 24 * 60 * 60;
 const FCM_MAX_DATA_BYTES = 4096;
 const ACCESS_TOKEN_CACHE_LIFETIME_MS = 45 * 60 * 1000;
+const DEFAULT_PUSH_SYNC_RETRY_LIMIT = 4;
 const serviceAccountAccessTokenCache = new Map();
 const GOOGLE_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/datastore',
@@ -460,6 +463,36 @@ export function buildUrgentReminderQuery({
   };
 }
 
+export function buildPushSyncOutboxQuery(
+  nowMs = Date.now(),
+  limit = DEFAULT_PUSH_SYNC_RETRY_LIMIT
+) {
+  const resolvedNow = Number(nowMs);
+  if (!Number.isFinite(resolvedNow)) {
+    throw new TypeError('nowMs must be a valid timestamp');
+  }
+  const resolvedLimit = Number.isFinite(Number(limit))
+    ? Math.max(1, Math.min(100, Math.floor(Number(limit))))
+    : DEFAULT_PUSH_SYNC_RETRY_LIMIT;
+  return {
+    structuredQuery: {
+      from: [{ collectionId: PUSH_SYNC_OUTBOX_COLLECTION }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'nextAttemptAt' },
+          op: 'LESS_THAN_OR_EQUAL',
+          value: toFirestoreValue(resolvedNow),
+        },
+      },
+      orderBy: [{
+        field: { fieldPath: 'nextAttemptAt' },
+        direction: 'ASCENDING',
+      }],
+      limit: resolvedLimit,
+    },
+  };
+}
+
 function parseReminderDocument(document) {
   const name = normalizeText(document?.name);
   const marker = '/documents/';
@@ -481,11 +514,57 @@ function parseReminderDocument(document) {
   if (!userId || !reminderId) {
     return null;
   }
+  const fields = fromFirestoreFields(document.fields || {});
   return {
-    ...fromFirestoreFields(document.fields || {}),
+    ...fields,
     id: reminderId,
     userId,
+    updatedAt:
+      normalizeTimestamp(fields.updatedAt)
+      ?? normalizeTimestamp(document.updateTime)
+      ?? 0,
     firestoreName: name,
+  };
+}
+
+function parsePushSyncOutboxDocument(document) {
+  const name = normalizeText(document?.name);
+  const id = decodeURIComponent(name.split('/').pop() || '');
+  const fields = fromFirestoreFields(document?.fields || {});
+  const userId = normalizeText(fields.userId);
+  const action = normalizeText(fields.action) === 'delete' ? 'delete' : 'upsert';
+  const reminder = fields.reminder && typeof fields.reminder === 'object'
+    ? buildReminderPushRecord(fields.reminder)
+    : null;
+  const targets = (Array.isArray(fields.targets) ? fields.targets : [])
+    .map((target) => ({
+      deviceId: normalizeText(target?.deviceId || target?.id).slice(0, 128),
+      token: normalizeText(target?.token).slice(0, 4096),
+    }))
+    .filter((target) => target.deviceId && target.token);
+  if (!name || !id || !userId || !reminder?.id || !targets.length) {
+    return null;
+  }
+  return {
+    id,
+    name,
+    documentUrl: FIRESTORE_API_ROOT + '/' + name,
+    updateTime: document.updateTime,
+    schemaVersion: Number(fields.schemaVersion) || 1,
+    userId,
+    action,
+    reminder,
+    badgeCount: fields.badgeCount !== null
+      && typeof fields.badgeCount !== 'undefined'
+      && Number.isFinite(Number(fields.badgeCount))
+      ? Math.max(0, Math.floor(Number(fields.badgeCount)))
+      : null,
+    targets,
+    attemptCount: Math.max(0, Number(fields.attemptCount) || 0),
+    createdAt: normalizeTimestamp(fields.createdAt) ?? 0,
+    updatedAt: normalizeTimestamp(fields.updatedAt) ?? 0,
+    nextAttemptAt: normalizeTimestamp(fields.nextAttemptAt) ?? 0,
+    expiresAt: normalizeTimestamp(fields.expiresAt) ?? 0,
   };
 }
 
@@ -530,20 +609,27 @@ async function sha256Base64Url(value, cryptoImpl) {
 }
 
 export async function createDeliveryId(delivery, cryptoImpl = crypto) {
+  const reminderUpdatedAt = normalizeTimestamp(delivery?.reminderUpdatedAt) ?? 0;
   const rawIdentity = [
-    'v1',
+    'v2',
     normalizeText(delivery?.userId),
     normalizeText(delivery?.reminderId),
     String(Number(delivery?.dueAt)),
     normalizeText(delivery?.stageKey),
     normalizeText(delivery?.deviceId),
+    String(reminderUpdatedAt),
   ].join('|');
-  return 'v1_' + await sha256Base64Url(rawIdentity, cryptoImpl);
+  return 'v2_' + await sha256Base64Url(rawIdentity, cryptoImpl);
 }
 
-async function createWebPushTopic(userId, reminderId, cryptoImpl) {
+async function createWebPushTopic(userId, reminderId, reminderUpdatedAt, cryptoImpl) {
   const digest = await sha256Base64Url(
-    'memory-cue|' + normalizeText(userId) + '|' + normalizeText(reminderId),
+    [
+      'memory-cue',
+      normalizeText(userId),
+      normalizeText(reminderId),
+      String(normalizeTimestamp(reminderUpdatedAt) ?? 0),
+    ].join('|'),
     cryptoImpl
   );
   return digest.slice(0, 32);
@@ -583,7 +669,13 @@ export async function buildFcmMessage(
   },
   cryptoImpl = crypto
 ) {
-  const reminderRecord = buildReminderPushRecord(reminder);
+  const claimedRevision = normalizeTimestamp(claim?.reminderUpdatedAt);
+  const reminderRecord = buildReminderPushRecord({
+    ...reminder,
+    ...(claimedRevision !== null ? { updatedAt: claimedRevision } : {}),
+  });
+  const ownerUserId = requireBoundedText(claim?.userId, 'Reminder owner user ID', 256);
+  reminderRecord.ownerUserId = ownerUserId;
   const deliveryStageKey = requireBoundedText(
     urgency?.stage?.key,
     'Delivery stage key',
@@ -597,6 +689,7 @@ export async function buildFcmMessage(
   const topic = await createWebPushTopic(
     claim.userId,
     reminderRecord.id,
+    reminderRecord.updatedAt,
     cryptoImpl
   );
   const result = {
@@ -606,6 +699,7 @@ export async function buildFcmMessage(
         type: 'memoryCue:reminder-sync',
         action: 'upsert',
         reminder: JSON.stringify(reminderRecord),
+        ownerUserId,
         badgeCount: String(Math.max(0, Math.floor(Number(badgeCount) || 0))),
         deliveryStageKey,
         deliveryId,
@@ -614,6 +708,56 @@ export async function buildFcmMessage(
         headers: {
           Urgency: 'high',
           TTL: String(PUSH_TTL_SECONDS),
+          Topic: topic,
+        },
+      },
+    },
+  };
+  const dataBytes = new TextEncoder().encode(
+    JSON.stringify(result.message.data)
+  ).byteLength;
+  if (dataBytes > FCM_MAX_DATA_BYTES) {
+    throw new TypeError('Reminder push data exceeds the FCM size limit');
+  }
+  return result;
+}
+
+export async function buildReminderSyncFcmMessage(
+  {
+    userId,
+    target,
+    action,
+    reminder,
+    badgeCount = null,
+  },
+  cryptoImpl = crypto
+) {
+  const ownerUserId = requireBoundedText(userId, 'Reminder owner user ID', 256);
+  const reminderRecord = buildReminderPushRecord(reminder);
+  reminderRecord.ownerUserId = ownerUserId;
+  const data = {
+    type: 'memoryCue:reminder-sync',
+    action: action === 'delete' ? 'delete' : 'upsert',
+    reminder: JSON.stringify(reminderRecord),
+    ownerUserId,
+  };
+  if (badgeCount !== null && Number.isFinite(Number(badgeCount))) {
+    data.badgeCount = String(Math.max(0, Math.floor(Number(badgeCount))));
+  }
+  const topic = await createWebPushTopic(
+    ownerUserId,
+    reminderRecord.id,
+    reminderRecord.updatedAt,
+    cryptoImpl
+  );
+  const result = {
+    message: {
+      token: requireBoundedText(target?.token, 'Push target token', 4096),
+      data,
+      webpush: {
+        headers: {
+          Urgency: 'high',
+          TTL: String(PUSH_SYNC_TTL_SECONDS),
           Topic: topic,
         },
       },
@@ -835,6 +979,70 @@ export async function createFirebaseRestAdapter(
     return response.json();
   }
 
+  async function deleteDocumentIfUnchanged(documentUrl, updateTime = '') {
+    const query = updateTime
+      ? '?currentDocument.updateTime=' + encodeURIComponent(updateTime)
+      : '';
+    const response = await request(documentUrl + query, {
+      method: 'DELETE',
+      headers: authorizationHeaders(accessToken),
+    });
+    if (response.ok || response.status === 404) {
+      return true;
+    }
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    const errorStatus = normalizeText(body?.error?.status);
+    if (
+      response.status === 409
+      || response.status === 412
+      || errorStatus === 'ABORTED'
+      || errorStatus === 'FAILED_PRECONDITION'
+    ) {
+      return false;
+    }
+    throw await responseError(response, 'Deleting push sync outbox record', body);
+  }
+
+  async function sendFcmMessage(fcmMessage) {
+    const response = await request(
+      FCM_API_ROOT
+        + '/projects/' + encodeURIComponent(projectId)
+        + '/messages:send',
+      {
+        method: 'POST',
+        headers: authorizationHeaders(accessToken, true),
+        body: JSON.stringify(fcmMessage),
+      }
+    );
+    const body = await response.json().catch(() => ({}));
+    if (response.ok) {
+      return {
+        ok: true,
+        messageName: normalizeText(body.name),
+        status: response.status,
+      };
+    }
+    const errorCode = findFcmErrorCode(body);
+    return {
+      ok: false,
+      status: response.status,
+      errorCode,
+      retryable: !isPermanentSendFailure(errorCode, {
+        payloadKnownValid: true,
+      }),
+      retryAfterMs: retryAfterDelay(
+        response.headers.get('Retry-After'),
+        now()
+      ),
+      error: normalizeText(body?.error?.message) || 'FCM send failed',
+    };
+  }
+
   return {
     getBudgetState() {
       return {
@@ -923,9 +1131,10 @@ export async function createFirebaseRestAdapter(
         ? Number(delivery.nowMs)
         : now();
       const initialFields = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         dueAt: Number(delivery.dueAt),
         stageKey: normalizeText(delivery.stageKey),
+        reminderUpdatedAt: normalizeTimestamp(delivery.reminderUpdatedAt) ?? 0,
         status: 'claimed',
         claimToken,
         claimedAt: claimNow,
@@ -1014,38 +1223,130 @@ export async function createFirebaseRestAdapter(
           error: error instanceof Error ? error.message : String(error),
         };
       }
-      const response = await request(
-        FCM_API_ROOT
-          + '/projects/' + encodeURIComponent(projectId)
-          + '/messages:send',
-        {
-          method: 'POST',
-          headers: authorizationHeaders(accessToken, true),
-          body: JSON.stringify(fcmMessage),
-        }
-      );
-      const body = await response.json().catch(() => ({}));
-      if (response.ok) {
-        return {
-          ok: true,
-          messageName: normalizeText(body.name),
-          status: response.status,
-        };
-      }
-      const errorCode = findFcmErrorCode(body);
-      return {
-        ok: false,
-        status: response.status,
-        errorCode,
-        retryable: !isPermanentSendFailure(errorCode, {
-          payloadKnownValid: true,
-        }),
-        retryAfterMs: retryAfterDelay(
-          response.headers.get('Retry-After'),
-          now()
-        ),
-        error: normalizeText(body?.error?.message) || 'FCM send failed',
+      return sendFcmMessage(fcmMessage);
+    },
+
+    async retryPendingPushSync(
+      nowMs = now(),
+      maxDeviceAttempts = DEFAULT_PUSH_SYNC_RETRY_LIMIT
+    ) {
+      const resolvedNow = Number.isFinite(Number(nowMs)) ? Number(nowMs) : now();
+      const attemptLimit = Number.isFinite(Number(maxDeviceAttempts))
+        ? Math.max(1, Math.min(50, Math.floor(Number(maxDeviceAttempts))))
+        : DEFAULT_PUSH_SYNC_RETRY_LIMIT;
+      const summary = {
+        recordCount: 0,
+        deviceAttempts: 0,
+        delivered: 0,
+        permanentlyRejected: 0,
+        failed: 0,
+        expired: 0,
+        budgetExhausted: false,
       };
+      const response = await request(documentsRoot + ':runQuery', {
+        method: 'POST',
+        headers: authorizationHeaders(accessToken, true),
+        body: JSON.stringify(buildPushSyncOutboxQuery(
+          resolvedNow,
+          Math.max(attemptLimit, 10)
+        )),
+      });
+      if (!response.ok) {
+        throw await responseError(response, 'Querying push sync outbox');
+      }
+      const rows = await response.json();
+      const records = (Array.isArray(rows) ? rows : [])
+        .map((row) => parsePushSyncOutboxDocument(row.document))
+        .filter(Boolean);
+      summary.recordCount = records.length;
+
+      for (const record of records) {
+        if (record.expiresAt > 0 && record.expiresAt <= resolvedNow) {
+          await deleteDocumentIfUnchanged(record.documentUrl, record.updateTime);
+          summary.expired += 1;
+          continue;
+        }
+
+        const remainingTargets = [];
+        let recordTouched = false;
+        let maximumRetryAfterMs = 0;
+        for (const target of record.targets) {
+          // Keep one external request in reserve to persist the remaining queue.
+          if (
+            summary.deviceAttempts >= attemptLimit
+            || maximumSubrequests - subrequestCount <= 1
+          ) {
+            remainingTargets.push(target);
+            summary.budgetExhausted = true;
+            continue;
+          }
+          summary.deviceAttempts += 1;
+          recordTouched = true;
+          let result;
+          try {
+            const fcmMessage = await buildReminderSyncFcmMessage({
+              userId: record.userId,
+              target,
+              action: record.action,
+              reminder: record.reminder,
+              badgeCount: record.badgeCount,
+            }, cryptoImpl);
+            result = await sendFcmMessage(fcmMessage);
+          } catch (error) {
+            result = {
+              ok: false,
+              retryable: true,
+              error: error instanceof Error ? error.message : String(error),
+            };
+          }
+          if (result.ok === true) {
+            summary.delivered += 1;
+            continue;
+          }
+          if (result.retryable === false) {
+            summary.permanentlyRejected += 1;
+            continue;
+          }
+          summary.failed += 1;
+          maximumRetryAfterMs = Math.max(
+            maximumRetryAfterMs,
+            Number(result.retryAfterMs) || 0
+          );
+          remainingTargets.push(target);
+        }
+
+        if (!recordTouched) {
+          break;
+        }
+        if (!remainingTargets.length) {
+          await deleteDocumentIfUnchanged(record.documentUrl, record.updateTime);
+          continue;
+        }
+        const attemptCount = record.attemptCount + 1;
+        const nextAttemptAt = resolvedNow + calculateRetryDelay(
+          attemptCount,
+          maximumRetryAfterMs,
+          cryptoImpl
+        );
+        await replaceDeliveryDocument(record.documentUrl, record, {
+          schemaVersion: record.schemaVersion,
+          userId: record.userId,
+          action: record.action,
+          reminder: record.reminder,
+          badgeCount: record.badgeCount,
+          targets: remainingTargets,
+          attemptCount,
+          createdAt: record.createdAt || resolvedNow,
+          updatedAt: resolvedNow,
+          nextAttemptAt,
+          expiresAt: record.expiresAt || (resolvedNow + DELIVERY_RETENTION_MS),
+        });
+        if (summary.deviceAttempts >= attemptLimit) {
+          summary.budgetExhausted = true;
+          break;
+        }
+      }
+      return summary;
     },
 
     async markDeliveryDelivered(claim, result = {}) {

@@ -9,6 +9,7 @@ import {
 } from './scheduler.js';
 
 const DEFAULT_DELIVERY_BUDGET = 6;
+const DEFAULT_PUSH_SYNC_RETRY_BUDGET = 4;
 
 function readPositiveInteger(value, fallback, maximum) {
   const numeric = Number(value);
@@ -32,6 +33,7 @@ function publicSummary(summary, queryMayBeTruncated) {
     failed: summary.failed,
     budgetExhausted: summary.budgetExhausted,
     queryMayBeTruncated,
+    pushSyncRetries: summary.pushSyncRetries || null,
   };
 }
 
@@ -73,6 +75,23 @@ export async function runSchedulerOnce(
     maxDeviceAttempts: deliveryBudget,
     maxUserLookups: deliveryBudget,
   });
+  const pushSyncRetryBudget = readPositiveInteger(
+    env?.SCHEDULER_PUSH_SYNC_RETRY_BUDGET,
+    DEFAULT_PUSH_SYNC_RETRY_BUDGET,
+    50
+  );
+  try {
+    summary.pushSyncRetries = await adapter.retryPendingPushSync(
+      nowMs,
+      pushSyncRetryBudget
+    );
+  } catch (error) {
+    summary.pushSyncRetries = {
+      failed: true,
+      error: error instanceof Error ? error.message : String(error),
+    };
+    logger.error('Unable to drain reminder push sync outbox', summary.pushSyncRetries);
+  }
   const queryMayBeTruncated = reminders.length >= queryLimit;
   const safeSummary = publicSummary(summary, queryMayBeTruncated);
   safeSummary.subrequests = adapter.getBudgetState();

@@ -618,6 +618,7 @@ test('legacy Today list items migrate once into canonical reminders before the o
     variant: 'mobile',
     firebaseDeps: createFirebaseStubs(),
   });
+  await new Promise((resolve) => setTimeout(resolve, 0));
 
   const migrated = controller.__testing.getItems()
     .filter((item) => item?.metadata?.migratedFrom === 'dailyTasksByDate');
@@ -696,6 +697,7 @@ test('legacy Today migration keeps the source when any item cannot be safely con
     variant: 'mobile',
     firebaseDeps: createFirebaseStubs(),
   });
+  await new Promise((resolve) => setTimeout(resolve, 0));
 
   expect(controller.__testing.getItems().map((item) => item.title)).toEqual(['Keep this task']);
   expect(localStorage.getItem('dailyTasksByDate')).not.toBeNull();

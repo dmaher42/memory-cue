@@ -1,5 +1,5 @@
 import { initViewportHeight } from './js/modules/viewport-height.js';
-import { initReminders } from './js/reminders.js?v=20260903a';
+import { initReminders } from './js/reminders.js?v=20260904a';
 import { initAuth } from './js/auth.js';
 import {
   loadAllNotes,

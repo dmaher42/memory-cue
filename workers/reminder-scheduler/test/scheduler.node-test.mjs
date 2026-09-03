@@ -39,6 +39,7 @@ function createMemoryAdapter({
     delivery.dueAt,
     delivery.stageKey,
     delivery.deviceId,
+    delivery.reminderUpdatedAt,
   ].join('|');
 
   return {
@@ -120,6 +121,35 @@ test('delivers T-15 and T-5 once per device with deterministic stage deduplicati
   assert.deepEqual(
     adapter.sends.map(({ urgency }) => urgency.stage.key),
     ['t-15', 't-15', 't-5', 't-5']
+  );
+});
+
+test('a newer reminder revision delivers again for the same owner, due time, stage, and device', async () => {
+  const adapter = createMemoryAdapter();
+  const firstUpdatedAt = new Date(DUE_AT - (60 * MINUTE_MS)).toISOString();
+  const newerUpdatedAt = new Date(DUE_AT - (59 * MINUTE_MS)).toISOString();
+
+  const first = await run([
+    urgentReminder({ updatedAt: firstUpdatedAt }),
+  ], DUE_AT - (15 * MINUTE_MS), adapter);
+  const duplicate = await run([
+    urgentReminder({ updatedAt: firstUpdatedAt }),
+  ], DUE_AT - (14 * MINUTE_MS), adapter);
+  const revised = await run([
+    urgentReminder({ updatedAt: newerUpdatedAt }),
+  ], DUE_AT - (14 * MINUTE_MS), adapter);
+
+  assert.equal(first.delivered, 1);
+  assert.equal(duplicate.delivered, 0);
+  assert.equal(duplicate.deduplicated, 1);
+  assert.equal(revised.delivered, 1);
+  assert.deepEqual(
+    adapter.sends.map(({ claim }) => claim.reminderUpdatedAt),
+    [Date.parse(firstUpdatedAt), Date.parse(newerUpdatedAt)]
+  );
+  assert.notEqual(
+    adapter.sends[0].claim.deliveryId,
+    adapter.sends[1].claim.deliveryId
   );
 });
 

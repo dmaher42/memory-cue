@@ -181,7 +181,7 @@ export async function registerReminderPushDevice({ userId, serviceWorkerRegistra
   });
 }
 
-export async function unregisterReminderPushDevice({ userId } = {}) {
+export async function unregisterReminderPushDevice({ userId, preserveMessagingToken = false } = {}) {
   const normalizedUserId = normalizeText(userId);
   if (!normalizedUserId) {
     return false;
@@ -199,7 +199,9 @@ export async function unregisterReminderPushDevice({ userId } = {}) {
     console.warn('[reminder-push] Failed to delete push device', error);
   }
 
-  const messagingContext = await getFirebaseMessagingContext();
+  const messagingContext = preserveMessagingToken
+    ? null
+    : await getFirebaseMessagingContext();
   if (messagingContext?.messaging && typeof messagingContext.deleteToken === 'function') {
     try {
       await messagingContext.deleteToken(messagingContext.messaging);

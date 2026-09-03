@@ -3,7 +3,7 @@ let activeReminderControllerApi = null;
 
 function loadReminderControllerModule() {
   if (!reminderControllerModulePromise) {
-    reminderControllerModulePromise = import('../src/reminders/reminderController.js?v=20260903a');
+    reminderControllerModulePromise = import('../src/reminders/reminderController.js?v=20260904a');
   }
   return reminderControllerModulePromise;
 }

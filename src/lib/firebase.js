@@ -65,6 +65,8 @@ export const getFirebaseContext = async () => {
         collection: firestoreModule.collection,
         doc: firestoreModule.doc,
         getDocs: firestoreModule.getDocs,
+        getDocsFromServer: firestoreModule.getDocsFromServer,
+        runTransaction: firestoreModule.runTransaction,
         setDoc: firestoreModule.setDoc,
         deleteDoc: firestoreModule.deleteDoc,
         onSnapshot: firestoreModule.onSnapshot,
