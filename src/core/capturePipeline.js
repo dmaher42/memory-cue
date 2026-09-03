@@ -558,6 +558,22 @@ const parseReminderDueAt = (text, now = new Date(), options = {}) => {
   return null;
 };
 
+const hasExplicitReminderTime = (text) => {
+  const normalized = normalizeText(text).toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  if (parseReminderTimeRangeFromText(normalized)) {
+    return true;
+  }
+  const dateMatch = normalized.match(DAY_MONTH_DATE_PATTERN)
+    || normalized.match(MONTH_DAY_DATE_PATTERN);
+  const textWithoutDate = dateMatch
+    ? normalized.replace(dateMatch[0], ' ')
+    : normalized;
+  return Boolean(extractTimeParts(textWithoutDate));
+};
+
 const getReminderLikeExpandedText = (text) => {
   const expandedText = resolveShorthandText(text);
   const changed = expandedText !== text;
@@ -634,7 +650,7 @@ const resolveDecision = async (text, hints) => {
   };
 };
 
-const buildPendingReminderDecision = (intent, dueAt) => {
+const buildPendingReminderDecision = (intent, dueAt, hasExplicitTime = false) => {
   const parsedEntry = intent?.parsedEntry && typeof intent.parsedEntry === 'object'
     ? intent.parsedEntry
     : {};
@@ -649,6 +665,8 @@ const buildPendingReminderDecision = (intent, dueAt) => {
       type: 'reminder',
       title: resolvedTitle || intent?.payload?.text || parsedEntry?.title || intent?.text || '',
       reminderDate: dueAt,
+      hasExplicitTime: dueAt ? hasExplicitTime === true : false,
+      urgentAlert: dueAt ? hasExplicitTime === true : false,
       metadata: {
         ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
         dueAt,
@@ -698,6 +716,14 @@ const enrichReminderDecision = (decision, text) => {
     ? parsedEntry.reminderDate.trim()
     : null;
   const dueAt = localDueAt || aiDueAt;
+  const hasExplicitTime = Boolean(
+    dueAt && (
+      hasExplicitReminderTime(text)
+      // The parse-entry contract only returns reminderDate when the user's text
+      // names a time, so its fallback date is affirmative time provenance.
+      || (localDueAt == null && Boolean(aiDueAt))
+    )
+  );
   const resolvedTitle = cleanReminderTitle(parsedEntry?.title || text);
   const missing = Array.isArray(decision?.missing)
     ? decision.missing.filter((value) => value !== 'dueAt')
@@ -717,6 +743,8 @@ const enrichReminderDecision = (decision, text) => {
       type: 'reminder',
       title: resolvedTitle || parsedEntry?.title || text,
       reminderDate: dueAt,
+      hasExplicitTime,
+      urgentAlert: hasExplicitTime,
       metadata: {
         ...(parsedEntry?.metadata && typeof parsedEntry.metadata === 'object' ? parsedEntry.metadata : {}),
         ...(dueAt ? { dueAt } : {}),
@@ -750,7 +778,11 @@ const maybeResolvePendingIntent = async (text, hints = {}) => {
   }
 
   const dueAt = parseReminderDueAt(text, new Date(), { allowTimeOnly: true });
-  const decision = buildPendingReminderDecision(pendingIntent, dueAt);
+  const decision = buildPendingReminderDecision(
+    pendingIntent,
+    dueAt,
+    hasExplicitReminderTime(text)
+  );
 
   if (!dueAt && !looksLikeReminderTimingReply(text)) {
     pendingIntentsByChannel.delete(channelKey);
@@ -1032,6 +1064,8 @@ export async function captureInput({
       const reminder = await createReminder({
         text: pendingDecision?.parsedEntry?.title || pendingDecision.text || normalizedText,
         dueAt: pendingDecision?.parsedEntry?.reminderDate || undefined,
+        hasExplicitTime: pendingDecision?.parsedEntry?.hasExplicitTime === true,
+        urgentAlert: pendingDecision?.parsedEntry?.urgentAlert === true,
         source: 'capture',
       });
       return buildAssistantResponse('Reminder created.', {
@@ -1083,6 +1117,8 @@ export async function captureInput({
       const reminder = await createReminder({
         text: decision?.parsedEntry?.title || normalizedText,
         dueAt: decision?.parsedEntry?.reminderDate || undefined,
+        hasExplicitTime: decision?.parsedEntry?.hasExplicitTime === true,
+        urgentAlert: decision?.parsedEntry?.urgentAlert === true,
         source: 'capture',
       });
       return buildAssistantResponse('Reminder created.', {

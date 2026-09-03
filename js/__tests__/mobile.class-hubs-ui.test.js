@@ -152,6 +152,8 @@ describe('mobile Class Hubs UI', () => {
     expect(followUp).toMatchObject({
       text: 'Speak to the two students next lesson',
       category: 'School',
+      hasExplicitTime: false,
+      urgentAlert: false,
       metadata: {
         classHubId: 'class-hpe',
         classHubName: 'Year 8 HPE',
@@ -193,6 +195,8 @@ describe('mobile Class Hubs UI', () => {
       classHubId: 'class-existing',
       suppressNotification: false,
     });
+    expect(cue.hasExplicitTime).toBe(true);
+    expect(cue.urgentAlert).toBe(true);
     const cueDate = new Date(cue.dueAt);
     expect(cueDate.getFullYear()).toBe(targetDate.getFullYear());
     expect(cueDate.getMonth()).toBe(targetDate.getMonth());

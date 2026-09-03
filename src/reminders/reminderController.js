@@ -701,13 +701,16 @@ export async function initReminders(sel = {}) {
     menu.appendChild(divider);
 
     addAction('Duplicate card', 'reminder', () => {
-      addItem({
+      createReminderFromPayload({
         title: reminder.title,
         priority: reminder.priority || 'Medium',
         category: reminder.category || DEFAULT_CATEGORY,
         due: reminder.due || null,
+        notifyAt: reminder.notifyAt || null,
+        hasExplicitTime: reminder.hasExplicitTime === true,
+        urgentAlert: reminder.hasExplicitTime === true && reminder.urgentAlert === true,
         notes: typeof reminder.notes === 'string' ? reminder.notes : '',
-      });
+      }, { closeSheet: false, parseSchedule: false });
     });
 
     addAction('Convert to Note', 'note', () => {
@@ -2566,12 +2569,6 @@ export async function initReminders(sel = {}) {
     const t = typeof text === 'string' ? text.trim() : '';
     if (!t) return null;
 
-    const hasStructuredReminderPayload =
-      options?.dueDate != null
-      || options?.notifyAt != null
-      || (typeof options?.category === 'string' && options.category.trim())
-      || (typeof options?.priority === 'string' && options.priority.trim())
-      || (typeof options?.notes === 'string' && options.notes.trim());
     const quickAddSource = typeof options?.source === 'string' && options.source.trim()
       ? options.source.trim()
       : 'quick-add';
@@ -2583,9 +2580,7 @@ export async function initReminders(sel = {}) {
     try {
       const routed = parseQuickAddPrefixRoute(t);
       const routedText = resolveShorthandText(routed.text || t);
-      const inferredSchedule = hasStructuredReminderPayload
-        ? { dueDate: null, notifyAt: null, cleanedText: routedText }
-        : parseReminderScheduleFromText(routedText);
+      const inferredSchedule = parseReminderScheduleFromText(routedText);
       if (routed.kind === 'reflection') {
         entry = saveReflectionQuickNote(routedText);
       } else {
@@ -2609,6 +2604,16 @@ export async function initReminders(sel = {}) {
         } else if (inferredSchedule.notifyAt instanceof Date && !Number.isNaN(inferredSchedule.notifyAt.getTime())) {
           basePayload.notifyAt = inferredSchedule.notifyAt.toISOString();
         }
+
+        const hasExplicitTime = Boolean(basePayload.dueAt && (
+          typeof options?.hasExplicitTime === 'boolean'
+            ? options.hasExplicitTime
+            : inferredSchedule.hasExplicitTime === true
+        ));
+        basePayload.hasExplicitTime = hasExplicitTime;
+        basePayload.urgentAlert = hasExplicitTime && (
+          typeof options?.urgentAlert === 'boolean' ? options.urgentAlert : true
+        );
 
         if (typeof options?.category === 'string' && options.category.trim()) {
           basePayload.category = options.category.trim();
@@ -2793,16 +2798,25 @@ export async function initReminders(sel = {}) {
       }
 
       const resolvedTime = timeParts || { hours: 9, minutes: 0 };
-      candidate.setHours(resolvedTime.hours, resolvedTime.minutes, 0, 0);
+      let resolvedHours = resolvedTime.hours;
+      const meridiem = typeof resolvedTime.meridiem === 'string'
+        ? resolvedTime.meridiem.toLowerCase()
+        : '';
+      if (meridiem === 'pm' && resolvedHours < 12) {
+        resolvedHours += 12;
+      } else if (meridiem === 'am' && resolvedHours === 12) {
+        resolvedHours = 0;
+      }
+      candidate.setHours(resolvedHours, resolvedTime.minutes, 0, 0);
       return candidate;
     };
 
     const dayMonthMatch = text.match(REMINDER_DAY_MONTH_DATE_PATTERN);
     if (dayMonthMatch) {
-      const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[dayMonthMatch[2]];
+      const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[dayMonthMatch[2].toLowerCase()];
       const day = Number.parseInt(dayMonthMatch[1], 10);
       const year = dayMonthMatch[3] ? Number.parseInt(dayMonthMatch[3], 10) : now.getFullYear();
-      const timeParts = parseTimePartsFromReminderText(text);
+      const timeParts = parseTimePartsFromReminderText(text.replace(dayMonthMatch[0], ' '));
       const candidate = buildCandidate(year, monthIndex, day, timeParts);
       if (candidate) {
         return candidate;
@@ -2811,10 +2825,10 @@ export async function initReminders(sel = {}) {
 
     const monthDayMatch = text.match(REMINDER_MONTH_DAY_DATE_PATTERN);
     if (monthDayMatch) {
-      const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[monthDayMatch[1]];
+      const monthIndex = REMINDER_MONTH_NAME_TO_INDEX[monthDayMatch[1].toLowerCase()];
       const day = Number.parseInt(monthDayMatch[2], 10);
       const year = monthDayMatch[3] ? Number.parseInt(monthDayMatch[3], 10) : now.getFullYear();
-      const timeParts = parseTimePartsFromReminderText(text);
+      const timeParts = parseTimePartsFromReminderText(text.replace(monthDayMatch[0], ' '));
       const candidate = buildCandidate(year, monthIndex, day, timeParts);
       if (candidate) {
         return candidate;
@@ -2880,7 +2894,12 @@ export async function initReminders(sel = {}) {
   }
 
   function parseReminderScheduleFromText(rawText, nowOverride = null) {
-    const result = { dueDate: null, notifyAt: null, cleanedText: '' };
+    const result = {
+      dueDate: null,
+      notifyAt: null,
+      cleanedText: '',
+      hasExplicitTime: false,
+    };
     if (!rawText) {
       return result;
     }
@@ -2892,7 +2911,13 @@ export async function initReminders(sel = {}) {
       : new Date();
     const target = new Date(now);
     const timeRange = parseReminderTimeRangeFromText(sourceText);
-    const timeParts = parseTimePartsFromReminderText(sourceText);
+    const explicitDateMatchForTime = sourceText.match(REMINDER_DAY_MONTH_DATE_PATTERN)
+      || sourceText.match(REMINDER_MONTH_DAY_DATE_PATTERN);
+    const timeParts = parseTimePartsFromReminderText(
+      explicitDateMatchForTime
+        ? sourceText.replace(explicitDateMatchForTime[0], ' ')
+        : sourceText,
+    );
     const displayParts = extractReminderInlineSchedule(sourceText);
     const weekdayMatch = text.match(/\b(?:(next)\s+)?(monday|mon|tuesday|tue|tues|wednesday|wed|thursday|thu|thur|thurs|friday|fri|saturday|sat|sunday|sun)\b/i);
     const weekdayOrder = {
@@ -2940,8 +2965,16 @@ export async function initReminders(sel = {}) {
 
     const explicitDate = parseExplicitReminderDate(sourceText, now);
     if (explicitDate) {
+      const explicitDateMatch = sourceText.match(REMINDER_DAY_MONTH_DATE_PATTERN)
+        || sourceText.match(REMINDER_MONTH_DAY_DATE_PATTERN);
+      const textWithoutDate = explicitDateMatch
+        ? sourceText.replace(explicitDateMatch[0], ' ')
+        : sourceText;
       result.dueDate = explicitDate;
       result.notifyAt = new Date(explicitDate.getTime() - 15 * 60 * 1000);
+      result.hasExplicitTime = Boolean(
+        timeRange || parseTimePartsFromReminderText(textWithoutDate)
+      );
       return result;
     }
 
@@ -2956,6 +2989,7 @@ export async function initReminders(sel = {}) {
       }
       result.dueDate = candidate;
       result.notifyAt = new Date(candidate.getTime() - 15 * 60 * 1000);
+      result.hasExplicitTime = true;
       return result;
     }
 
@@ -2989,6 +3023,7 @@ export async function initReminders(sel = {}) {
 
     result.dueDate = dueDate;
     result.notifyAt = new Date(dueDate.getTime() - 15 * 60 * 1000);
+    result.hasExplicitTime = true;
     return result;
   }
 
@@ -4842,6 +4877,8 @@ export async function initReminders(sel = {}) {
         title,
         due: dueDate.toISOString(),
         notifyAt: null,
+        hasExplicitTime: false,
+        urgentAlert: false,
         category: normalizeLegacyDailyTaskCategory(task?.category),
         priority: priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase(),
         done: Boolean(task?.completed),
@@ -5546,6 +5583,14 @@ export async function initReminders(sel = {}) {
       : null;
     const resolvedDueAt = hasExplicitDue ? explicitDueAt : parsedDueAt;
     const resolvedNotifyAt = hasExplicitDue ? explicitNotifyAt : parsedNotifyAt;
+    const hasExplicitTime = Boolean(resolvedDueAt && (
+      typeof payload?.hasExplicitTime === 'boolean'
+        ? payload.hasExplicitTime
+        : !hasExplicitDue && parsedSchedule.hasExplicitTime === true
+    ));
+    const urgentAlert = hasExplicitTime && (
+      typeof payload?.urgentAlert === 'boolean' ? payload.urgentAlert : true
+    );
     const cleanedTitle = parsedSchedule.cleanedText || stripReminderPromptPrefix(sourceText);
     const normalizedPayload = cleanedTitle && (resolvedDueAt || parsedDueAt)
       ? {
@@ -5555,8 +5600,14 @@ export async function initReminders(sel = {}) {
         dueAt: resolvedDueAt,
         due: resolvedDueAt,
         notifyAt: resolvedNotifyAt,
+        hasExplicitTime,
+        urgentAlert,
       }
-      : payload;
+      : {
+        ...payload,
+        hasExplicitTime: false,
+        urgentAlert: false,
+      };
 
     const item = reminderDataService.createReminder(normalizedPayload, {
       normalizeReminder: (record) => normalizeReminderRecord(record),
@@ -8080,6 +8131,7 @@ export async function initReminders(sel = {}) {
       return {
         date: new Date().toISOString().slice(0, 10),
         time: '',
+        hasExplicitTime: false,
       };
     }
 
@@ -8092,6 +8144,7 @@ export async function initReminders(sel = {}) {
     return {
       date: `${year}-${month}-${day}`,
       time: `${hours}:${minutes}`,
+      hasExplicitTime: parsed.hasExplicitTime === true,
     };
   }
 

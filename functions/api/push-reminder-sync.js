@@ -255,14 +255,15 @@ function normalizeReminderPayload(value = {}) {
   if (!reminderId) {
     return null;
   }
+  const hasExplicitTime = source.hasExplicitTime === true;
   return {
     id: reminderId,
     title: normalizeText(source.title).slice(0, 160) || 'Reminder',
     due: normalizeText(source.due).slice(0, 80) || null,
     notifyAt: normalizeText(source.notifyAt).slice(0, 80) || null,
     snoozedUntil: normalizeText(source.snoozedUntil).slice(0, 80) || null,
-    urgentAlert: source.urgentAlert === true,
-    hasExplicitTime: source.hasExplicitTime === true,
+    urgentAlert: hasExplicitTime && source.urgentAlert === true,
+    hasExplicitTime,
     urgentAcknowledgedAt: normalizeTimestamp(source.urgentAcknowledgedAt),
     urgentStartedAt: normalizeTimestamp(source.urgentStartedAt),
     done: source.done === true || source.completed === true,

@@ -146,4 +146,31 @@ describe('rendered reminders expose dataset metadata', () => {
     expect(row.dataset.done).toBe('false');
     expect(row.dataset.due).toContain('2025-12-24');
   });
+
+  test('duplicating an appointment uses the live creation path and keeps urgency flags', () => {
+    api.__testing.setItems([{
+      id: 'appointment-1',
+      title: 'Dentist appointment',
+      due: '2026-09-03T10:00:00.000Z',
+      notifyAt: '2026-09-03T09:45:00.000Z',
+      hasExplicitTime: true,
+      urgentAlert: true,
+      done: false,
+      category: 'General',
+      priority: 'Medium',
+    }]);
+
+    document.querySelector('[data-reminder-control="actions"]').click();
+    document.querySelector('.reminder-card-actions-menu [data-action="reminder"]').click();
+
+    const reminders = api.__testing.getItems();
+    expect(reminders).toHaveLength(2);
+    expect(reminders[0]).toEqual(expect.objectContaining({
+      title: 'Dentist appointment',
+      due: '2026-09-03T10:00:00.000Z',
+      notifyAt: '2026-09-03T09:45:00.000Z',
+      hasExplicitTime: true,
+      urgentAlert: true,
+    }));
+  });
 });

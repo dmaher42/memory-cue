@@ -54,17 +54,7 @@ function normalizeUrgentTimestamp(value) {
 }
 
 function inferHasExplicitTime(source, dueAt) {
-  if (!Number.isFinite(dueAt)) {
-    return false;
-  }
-  if (typeof source.hasExplicitTime === 'boolean') {
-    return source.hasExplicitTime;
-  }
-  if (typeof source.time === 'string' && /^\d{1,2}:\d{2}/.test(source.time.trim())) {
-    return true;
-  }
-  const rawDue = source.dueAt ?? source.due ?? source.dueDate ?? source.date;
-  return !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim()));
+  return Number.isFinite(dueAt) && source.hasExplicitTime === true;
 }
 
 function normalizePriority(value) {
@@ -149,9 +139,7 @@ export function normalizeReminder(input = {}) {
   const dueAt = normalizeEpochMs(source.dueAt ?? source.dueDate ?? source.date ?? source.time ?? source.due);
   const due = normalizeIsoString(source.due ?? source.dueAt ?? source.dueDate ?? source.date ?? source.time);
   const hasExplicitTime = inferHasExplicitTime(source, dueAt);
-  const urgentAlert = hasExplicitTime && (
-    typeof source.urgentAlert === 'boolean' ? source.urgentAlert : true
-  );
+  const urgentAlert = hasExplicitTime && source.urgentAlert === true;
 
   const reminder = {
     id: normalizeText(source.id) || createReminderId(),

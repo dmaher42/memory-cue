@@ -112,14 +112,15 @@ function buildReminderSyncPayload(reminder = {}) {
   if (!reminderId) {
     return null;
   }
+  const hasExplicitTime = reminder.hasExplicitTime === true;
   return {
     id: reminderId,
     title: normalizeText(reminder.title) || normalizeText(reminder.text) || 'Reminder',
     due: normalizeText(reminder.due) || normalizeText(reminder.dueAt) || null,
     notifyAt: normalizeText(reminder.notifyAt) || null,
     snoozedUntil: normalizeText(reminder.snoozedUntil) || null,
-    urgentAlert: reminder.urgentAlert === true,
-    hasExplicitTime: reminder.hasExplicitTime === true,
+    urgentAlert: hasExplicitTime && reminder.urgentAlert === true,
+    hasExplicitTime,
     urgentAcknowledgedAt: normalizeTimestamp(reminder.urgentAcknowledgedAt),
     urgentStartedAt: normalizeTimestamp(reminder.urgentStartedAt),
     done: reminder.done === true || reminder.completed === true,

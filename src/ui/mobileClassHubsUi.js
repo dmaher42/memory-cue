@@ -332,6 +332,8 @@ export function initMobileClassHubsUi(options = {}) {
           dueAt,
           due: dueAt,
           notifyAt: dueAt,
+          hasExplicitTime: mode === 'cue',
+          urgentAlert: mode === 'cue',
           category: 'School',
           priority: 'Medium',
           source: 'manual',

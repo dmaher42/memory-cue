@@ -41,11 +41,13 @@ const urgentReminder = (overrides = {}) => ({
   ...overrides,
 });
 
-test('timed reminders default to urgent while date-only reminders do not', () => {
+test('only explicitly flagged timed reminders are urgent', () => {
   const { isUrgentTimedReminder } = loadReminderUrgency();
 
-  expect(isUrgentTimedReminder({ due: new Date(DUE_AT).toISOString() })).toBe(true);
+  expect(isUrgentTimedReminder({ due: new Date(DUE_AT).toISOString() })).toBe(false);
+  expect(isUrgentTimedReminder({ dueAt: DUE_AT })).toBe(false);
   expect(isUrgentTimedReminder({ due: '2026-09-03' })).toBe(false);
+  expect(isUrgentTimedReminder(urgentReminder())).toBe(true);
   expect(isUrgentTimedReminder(urgentReminder({ urgentAlert: false }))).toBe(false);
   expect(isUrgentTimedReminder(urgentReminder({ hasExplicitTime: false }))).toBe(false);
   expect(isUrgentTimedReminder(urgentReminder({ metadata: { suppressNotification: true } }))).toBe(false);

@@ -78,17 +78,18 @@ function createReminderMocks(overrides = {}) {
     const updatedAt = Number.isFinite(reminder.updatedAt) ? Number(reminder.updatedAt) : createdAt;
     const done = Boolean(reminder.done ?? reminder.completed);
     const rawDue = reminder.due ?? reminder.dueAt ?? reminder.dueDate;
-    const hasExplicitTime = typeof reminder.hasExplicitTime === 'boolean'
-      ? reminder.hasExplicitTime
-      : Boolean(rawDue && !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim())));
-    const urgentAlert = hasExplicitTime && (
-      typeof reminder.urgentAlert === 'boolean' ? reminder.urgentAlert : true
-    );
+    const hasExplicitTime = Boolean(rawDue && reminder.hasExplicitTime === true);
+    const urgentAlert = hasExplicitTime && reminder.urgentAlert === true;
     return {
       id: nextId,
       title: typeof reminder.title === 'string' ? reminder.title.trim() : '',
       notes: typeof reminder.notes === 'string' ? reminder.notes : '',
       due: typeof reminder.due === 'string' ? reminder.due : '',
+      notifyAt: typeof reminder.notifyAt === 'string' && reminder.notifyAt
+        ? reminder.notifyAt
+        : typeof reminder.due === 'string'
+          ? reminder.due
+          : '',
       priority: typeof reminder.priority === 'string' && reminder.priority.trim() ? reminder.priority : 'Medium',
       category: normalizeCategory(reminder.category),
       source: typeof reminder.source === 'string' && reminder.source.trim() ? reminder.source.trim() : 'manual',

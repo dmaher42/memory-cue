@@ -75,6 +75,8 @@ describe('class hub reminder API', () => {
         due,
         dueAt: due,
         notifyAt,
+        hasExplicitTime: payload.hasExplicitTime === true,
+        urgentAlert: payload.hasExplicitTime === true && payload.urgentAlert === true,
         category: payload.category || 'School',
         priority: payload.priority || 'Medium',
         metadata: payload.metadata ? { ...payload.metadata } : null,
@@ -206,6 +208,8 @@ describe('class hub reminder API', () => {
       due: null,
       dueAt: null,
       notifyAt: null,
+      hasExplicitTime: false,
+      urgentAlert: false,
       metadata: { suppressNotification: true },
     });
     expect(createReminder).toHaveBeenCalledWith(
@@ -215,5 +219,38 @@ describe('class hub reminder API', () => {
     expect(MockNotification.requestPermission).not.toHaveBeenCalled();
     const scheduled = JSON.parse(localStorage.getItem('scheduledReminders') || '{}');
     expect(scheduled[created.id]).toBeUndefined();
+  });
+
+  test.each([
+    ['2026-09-03T10:00:00.000Z'],
+    [Date.parse('2026-09-03T10:00:00.000Z')],
+  ])('controller creation keeps an unclassified due %p ordinary', (dueAt) => {
+    const created = api.createReminderFromPayload({
+      title: 'Imported appointment',
+      dueAt,
+    }, { closeSheet: false });
+
+    expect(created).toEqual(expect.objectContaining({
+      due: '2026-09-03T10:00:00.000Z',
+      hasExplicitTime: false,
+      urgentAlert: false,
+    }));
+  });
+
+  test('controller creation preserves explicit urgency with an epoch due', () => {
+    const dueAt = Date.parse('2026-09-03T10:00:00.000Z');
+
+    const created = api.createReminderFromPayload({
+      title: 'Dentist appointment',
+      dueAt,
+      hasExplicitTime: true,
+      urgentAlert: true,
+    }, { closeSheet: false });
+
+    expect(created).toEqual(expect.objectContaining({
+      due: '2026-09-03T10:00:00.000Z',
+      hasExplicitTime: true,
+      urgentAlert: true,
+    }));
   });
 });

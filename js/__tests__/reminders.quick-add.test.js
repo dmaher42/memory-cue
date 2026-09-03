@@ -107,6 +107,9 @@ test('programmatic quick add accepts an explicit category', async () => {
   const items = controller.__testing.getItems();
   expect(items).toHaveLength(1);
   expect(items[0].category).toBe('School');
+  expect(items[0].due).toBeTruthy();
+  expect(items[0].hasExplicitTime).toBe(true);
+  expect(items[0].urgentAlert).toBe(true);
 });
 
 test('programmatic quick add routes reflection prefix to Lesson – Reflections notes folder', async () => {
@@ -180,6 +183,8 @@ test('programmatic quick add parses natural language time into due date', async 
   const expectedIso = expected.toISOString();
 
   expect(item.due).toBe(expectedIso);
+  expect(item.hasExplicitTime).toBe(true);
+  expect(item.urgentAlert).toBe(true);
 });
 
 test('programmatic quick add parses explicit date and time into due date', async () => {
@@ -196,6 +201,8 @@ test('programmatic quick add parses explicit date and time into due date', async
 
   expect(item.title).toBe('Call parents');
   expect(item.due).toBe(expectedIso);
+  expect(item.hasExplicitTime).toBe(true);
+  expect(item.urgentAlert).toBe(true);
 });
 
 test('programmatic quick add parses compact time ranges into due date and cleans title', async () => {
@@ -212,6 +219,8 @@ test('programmatic quick add parses compact time ranges into due date and cleans
 
   expect(item.title).toBe('Archer Basketball');
   expect(item.due).toBe(expectedIso);
+  expect(item.hasExplicitTime).toBe(true);
+  expect(item.urgentAlert).toBe(true);
 });
 
 test('programmatic quick add with weekday range fills edit reminder date and time fields', async () => {
@@ -243,4 +252,22 @@ test('programmatic quick add expands known teacher shorthand before saving remin
 
   expect(item.title).toBe('Classroom conversation with Year 8 Noria');
   expect(item.due).toBe(expected.toISOString());
+  expect(item.hasExplicitTime).toBe(true);
+  expect(item.urgentAlert).toBe(true);
+});
+
+test('programmatic quick add keeps a written date without a time ordinary', async () => {
+  await window.memoryCueQuickAddNow({ forceText: 'Dentist on 5 March 2026' });
+
+  const items = controller.__testing.getItems();
+  expect(items).toHaveLength(1);
+  const item = items[0];
+
+  const expected = new Date();
+  expected.setFullYear(2026, 2, 5);
+  expected.setHours(9, 0, 0, 0);
+
+  expect(item.due).toBe(expected.toISOString());
+  expect(item.hasExplicitTime).toBe(false);
+  expect(item.urgentAlert).toBe(false);
 });

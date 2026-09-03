@@ -69,9 +69,11 @@ test('createReminder applies weekday and compact time parsing for all reminder a
   expect(reminder.text).toBe('Archer Basketball');
   expect(reminder.due).toBe('2024-05-19T06:00:00.000Z');
   expect(reminder.dueAt).toBe('2024-05-19T06:00:00.000Z');
+  expect(reminder.hasExplicitTime).toBe(true);
+  expect(reminder.urgentAlert).toBe(true);
 });
 
-test('createReminder keeps an explicit epoch-millisecond dueAt (assistant/capture path)', () => {
+test('createReminder keeps an explicit epoch due but does not infer urgency without provenance', () => {
   const saved = [];
   const { createReminder } = loadReminderService({
     createReminderInStore: (reminder) => {
@@ -95,6 +97,44 @@ test('createReminder keeps an explicit epoch-millisecond dueAt (assistant/captur
   expect(reminder.text).toBe('Call mum');
   expect(reminder.due).toBe(new Date(dueMs).toISOString());
   expect(reminder.dueAt).toBe(new Date(dueMs).toISOString());
+  expect(reminder.hasExplicitTime).toBe(false);
+  expect(reminder.urgentAlert).toBe(false);
+});
+
+test('createReminder preserves explicit urgency flags with an epoch due', () => {
+  const { createReminder } = loadReminderService();
+  const dueMs = Date.UTC(2026, 2, 5, 14, 30, 0);
+
+  const reminder = createReminder({
+    title: 'Dentist appointment',
+    dueAt: dueMs,
+    hasExplicitTime: true,
+    urgentAlert: true,
+  }, {
+    createId: () => 'reminder-explicit',
+  });
+
+  expect(reminder.dueAt).toBe(new Date(dueMs).toISOString());
+  expect(reminder.hasExplicitTime).toBe(true);
+  expect(reminder.urgentAlert).toBe(true);
+});
+
+test('createReminder treats a written date without a time as ordinary', () => {
+  const { createReminder } = loadReminderService();
+
+  const reminder = createReminder({
+    title: 'Dentist on 5 March 2026',
+  }, {
+    createId: () => 'reminder-date-only',
+  });
+
+  const expected = new Date();
+  expected.setFullYear(2026, 2, 5);
+  expected.setHours(9, 0, 0, 0);
+
+  expect(reminder.dueAt).toBe(expected.toISOString());
+  expect(reminder.hasExplicitTime).toBe(false);
+  expect(reminder.urgentAlert).toBe(false);
 });
 
 test('createReminder can keep date-like class follow-up text explicitly untimed', () => {
@@ -124,6 +164,8 @@ test('createReminder can keep date-like class follow-up text explicitly untimed'
   expect(reminder.due).toBeNull();
   expect(reminder.dueAt).toBeNull();
   expect(reminder.notifyAt).toBeNull();
+  expect(reminder.hasExplicitTime).toBe(false);
+  expect(reminder.urgentAlert).toBe(false);
 });
 
 test('completeReminder records when an item was done and clears that date when reopened', () => {

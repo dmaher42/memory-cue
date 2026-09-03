@@ -45,14 +45,10 @@ function inferHasExplicitTime(reminder, dueAt) {
   if (!Number.isFinite(dueAt)) {
     return false;
   }
-  if (typeof reminder?.hasExplicitTime === 'boolean') {
-    return reminder.hasExplicitTime;
-  }
-  if (typeof reminder?.time === 'string' && /^\d{1,2}:\d{2}/.test(reminder.time.trim())) {
-    return true;
-  }
-  const rawDue = reminder?.dueAt ?? reminder?.due ?? reminder?.dueDate;
-  return !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim()));
+  // A timestamp proves when a reminder is due, but not that the user supplied
+  // a time. Older date-only reminders were also stored as full ISO timestamps,
+  // so urgency must rely on the explicit provenance flag.
+  return reminder?.hasExplicitTime === true;
 }
 
 function buildUpcomingStage(minutes, dueAt) {
@@ -104,9 +100,7 @@ export function isUrgentTimedReminder(reminder) {
   }
   const dueAt = readDueAt(reminder);
   const hasExplicitTime = inferHasExplicitTime(reminder, dueAt);
-  const urgentAlert = typeof reminder?.urgentAlert === 'boolean'
-    ? reminder.urgentAlert
-    : hasExplicitTime;
+  const urgentAlert = reminder?.urgentAlert === true;
   return Boolean(urgentAlert && hasExplicitTime && Number.isFinite(dueAt));
 }
 

@@ -1344,6 +1344,8 @@ function initAssistant() {
               dueAt: null,
               due: null,
               notifyAt: null,
+              hasExplicitTime: false,
+              urgentAlert: false,
               category: 'School',
               priority: 'Medium',
               source: 'manual',

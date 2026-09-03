@@ -96,6 +96,8 @@ test('capture pipeline parses weekday time ranges and cleans reminder titles', a
 
   expect(createdReminders[0].text).toBe('Archer Basketball');
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+  expect(createdReminders[0].hasExplicitTime).toBe(true);
+  expect(createdReminders[0].urgentAlert).toBe(true);
 });
 
 test('capture pipeline expands known shorthand into a dated reminder', async () => {
@@ -123,6 +125,8 @@ test('capture pipeline expands known shorthand into a dated reminder', async () 
   expect(createdReminders).toHaveLength(1);
   expect(createdReminders[0].text).toBe('Classroom conversation with Year 8 Noria');
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+  expect(createdReminders[0].hasExplicitTime).toBe(true);
+  expect(createdReminders[0].urgentAlert).toBe(true);
 });
 
 test('capture pipeline asks about unknown shorthand then remembers the answer', async () => {
@@ -165,6 +169,8 @@ test('capture pipeline asks about unknown shorthand then remembers the answer', 
   expect(createdReminders).toHaveLength(1);
   expect(createdReminders[0].text).toBe('Classroom conversation with Year 8 Noria');
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+  expect(createdReminders[0].hasExplicitTime).toBe(true);
+  expect(createdReminders[0].urgentAlert).toBe(true);
 });
 
 test('capture pipeline expands learned shorthand before running a memory query', async () => {
@@ -235,6 +241,8 @@ test('capture pipeline does not read a four-digit year as a time', async () => {
   expect(result.message).toBe('Reminder created.');
   expect(createdReminders).toHaveLength(1);
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+  expect(createdReminders[0].hasExplicitTime).toBe(false);
+  expect(createdReminders[0].urgentAlert).toBe(false);
 });
 
 test('capture pipeline keeps an explicit time alongside a four-digit year', async () => {
@@ -257,6 +265,83 @@ test('capture pipeline keeps an explicit time alongside a four-digit year', asyn
 
   expect(createdReminders).toHaveLength(1);
   expect(createdReminders[0].dueAt).toBe(expected.toISOString());
+  expect(createdReminders[0].hasExplicitTime).toBe(true);
+  expect(createdReminders[0].urgentAlert).toBe(true);
+});
+
+test('capture pipeline trusts an AI reminderDate only as explicit-time provenance', async () => {
+  const createdReminders = [];
+  const aiDueAt = '2026-09-03T10:00:00.000Z';
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'reminder-ai-time', ...payload };
+    },
+    intentRouter: () => ({
+      payload: {
+        decisionType: 'persist_reminder',
+        parsedType: 'reminder',
+        parsedEntry: {
+          type: 'reminder',
+          title: 'Specialist appointment',
+          reminderDate: aiDueAt,
+        },
+      },
+    }),
+  });
+
+  await captureInput({
+    text: 'Specialist appointment after lunch',
+    source: 'capture',
+  });
+
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0]).toEqual(expect.objectContaining({
+    dueAt: aiDueAt,
+    hasExplicitTime: true,
+    urgentAlert: true,
+  }));
+});
+
+test.each([
+  ['tomorrow', false],
+  ['tomorrow at 10:00', true],
+])('capture timing clarification %s records the correct urgency provenance', async (timingReply, expectedUrgent) => {
+  const createdReminders = [];
+  const { captureInput } = loadCapturePipeline({
+    createReminder: async (payload = {}) => {
+      createdReminders.push(payload);
+      return { id: 'clarified-reminder', ...payload };
+    },
+    intentRouter: (text) => ({
+      payload: {
+        decisionType: 'persist_reminder',
+        parsedType: 'reminder',
+        parsedEntry: {
+          type: 'reminder',
+          title: text,
+          reminderDate: null,
+        },
+        missing: ['dueAt'],
+      },
+    }),
+  });
+
+  const prompt = await captureInput({
+    text: 'Dentist appointment',
+    source: 'capture',
+  });
+  expect(prompt.message).toBe('When should I remind you?');
+
+  await captureInput({
+    text: timingReply,
+    source: 'capture',
+  });
+
+  expect(createdReminders).toHaveLength(1);
+  expect(createdReminders[0].dueAt).toBeTruthy();
+  expect(createdReminders[0].hasExplicitTime).toBe(expectedUrgent);
+  expect(createdReminders[0].urgentAlert).toBe(expectedUrgent);
 });
 
 test('explicit Word Rescue mode calls the assistant without reading or writing saved memories', async () => {

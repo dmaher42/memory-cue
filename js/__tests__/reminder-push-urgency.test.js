@@ -70,4 +70,37 @@ describe('cross-device urgent reminder payloads', () => {
     expect(clientPayload.updatedAt).toBeGreaterThan(0);
     expect(apiPayload.updatedAt).toBeGreaterThan(0);
   });
+
+  test('clamps inconsistent urgency flags before a reminder reaches Firestore', () => {
+    const client = loadPrivateFunctions(
+      'src/reminders/reminderPushSync.js',
+      ['buildReminderSyncPayload']
+    );
+    const api = loadPrivateFunctions(
+      'functions/api/push-reminder-sync.js',
+      ['normalizeReminderPayload']
+    );
+    const inconsistent = {
+      id: 'ordinary-task',
+      title: 'Return permission form',
+      due: '2026-09-03T09:00:00.000Z',
+      urgentAlert: true,
+      hasExplicitTime: false,
+    };
+
+    const clientPayload = client.buildReminderSyncPayload(inconsistent);
+    const apiPayload = api.normalizeReminderPayload({
+      ...inconsistent,
+      urgentAlert: true,
+    });
+
+    expect(clientPayload).toEqual(expect.objectContaining({
+      urgentAlert: false,
+      hasExplicitTime: false,
+    }));
+    expect(apiPayload).toEqual(expect.objectContaining({
+      urgentAlert: false,
+      hasExplicitTime: false,
+    }));
+  });
 });

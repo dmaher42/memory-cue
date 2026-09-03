@@ -95,17 +95,7 @@ function normalizeUrgentTimestamp(value) {
 }
 
 function inferHasExplicitTime(source, due) {
-  if (!due) {
-    return false;
-  }
-  if (typeof source.hasExplicitTime === 'boolean') {
-    return source.hasExplicitTime;
-  }
-  if (typeof source.time === 'string' && /^\d{1,2}:\d{2}/.test(source.time.trim())) {
-    return true;
-  }
-  const rawDue = source.due ?? source.dueAt ?? source.dueDate ?? source.date;
-  return !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim()));
+  return Boolean(due && source.hasExplicitTime === true);
 }
 
 export function normalizeReminderRecord(reminder = {}, options = {}) {
@@ -146,9 +136,7 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
         ? source.body
         : '';
   const hasExplicitTime = inferHasExplicitTime(source, due);
-  const urgentAlert = hasExplicitTime && (
-    typeof source.urgentAlert === 'boolean' ? source.urgentAlert : true
-  );
+  const urgentAlert = hasExplicitTime && source.urgentAlert === true;
 
   const normalized = {
     id: typeof source.id === 'string' && source.id ? source.id : fallbackId,

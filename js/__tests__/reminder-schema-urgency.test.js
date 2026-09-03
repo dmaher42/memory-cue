@@ -39,13 +39,20 @@ test('controller schema preserves urgent state across local and Firestore normal
   }));
 });
 
-test('controller schema defaults timed reminders to urgent and date-only reminders to ordinary', () => {
+test('controller schema requires explicit urgency provenance for timed reminders', () => {
   const { normalizeReminderRecord } = loadReminderSchemaHelpers();
 
+  const legacyTimestamp = normalizeReminderRecord({
+    id: 'legacy-timestamp',
+    title: 'Old reminder with an ISO timestamp',
+    due: '2026-09-03T10:00:00.000Z',
+  });
   const timed = normalizeReminderRecord({
     id: 'timed',
     title: 'Meeting',
     due: '2026-09-03T10:00:00.000Z',
+    hasExplicitTime: true,
+    urgentAlert: true,
   });
   const dateOnly = normalizeReminderRecord({
     id: 'date-only',
@@ -62,22 +69,33 @@ test('controller schema defaults timed reminders to urgent and date-only reminde
 
   expect(timed.hasExplicitTime).toBe(true);
   expect(timed.urgentAlert).toBe(true);
+  expect(legacyTimestamp.hasExplicitTime).toBe(false);
+  expect(legacyTimestamp.urgentAlert).toBe(false);
   expect(dateOnly.hasExplicitTime).toBe(false);
   expect(dateOnly.urgentAlert).toBe(false);
   expect(invalidDateOnlyOverride.urgentAlert).toBe(false);
 });
 
-test('controller schema keeps explicit-time state when dueAt arrives as epoch milliseconds', () => {
+test('controller schema keeps an epoch due but requires explicit urgency flags', () => {
   const { normalizeReminderRecord } = loadReminderSchemaHelpers();
   const dueAt = Date.parse('2026-09-03T10:00:00.000Z');
 
-  const normalized = normalizeReminderRecord({
+  const unclassified = normalizeReminderRecord({
     id: 'capture-path',
     title: 'Captured appointment',
     dueAt,
   });
+  const explicit = normalizeReminderRecord({
+    id: 'explicit-capture-path',
+    title: 'Captured appointment',
+    dueAt,
+    hasExplicitTime: true,
+    urgentAlert: true,
+  });
 
-  expect(normalized.due).toBe('2026-09-03T10:00:00.000Z');
-  expect(normalized.hasExplicitTime).toBe(true);
-  expect(normalized.urgentAlert).toBe(true);
+  expect(unclassified.due).toBe('2026-09-03T10:00:00.000Z');
+  expect(unclassified.hasExplicitTime).toBe(false);
+  expect(unclassified.urgentAlert).toBe(false);
+  expect(explicit.hasExplicitTime).toBe(true);
+  expect(explicit.urgentAlert).toBe(true);
 });

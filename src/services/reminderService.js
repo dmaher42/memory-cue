@@ -46,6 +46,12 @@ export const buildReminderPayload = (payload = {}) => {
     category: normalizeText(source.category) || null,
     priority: normalizePriority(source.priority) || 'medium',
     source: normalizeSource(source.source ?? source.metadata?.source),
+    ...(typeof source.hasExplicitTime === 'boolean'
+      ? { hasExplicitTime: source.hasExplicitTime }
+      : {}),
+    ...(typeof source.urgentAlert === 'boolean'
+      ? { urgentAlert: source.urgentAlert }
+      : {}),
   };
 };
 
