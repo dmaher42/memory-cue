@@ -44,6 +44,12 @@ export const createReminderFormHandlers = (options = {}) => {
     scrollToTop = () => {},
   } = options;
 
+  const titleHasExplicitTime = (value) => {
+    const textValue = typeof value === 'string' ? value.trim() : '';
+    return /\b\d{1,4}(?::\d{2})?\s*(?:am|pm)\b/i.test(textValue)
+      || /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(textValue);
+  };
+
   const resetForm = ({ preserveDetail = false, resetMode = true } = {}) => {
     setTitleError('');
     if (title) title.value = '';
@@ -79,7 +85,7 @@ export const createReminderFormHandlers = (options = {}) => {
     if (date && time) {
       if (item.due) {
         date.value = isoToLocalDate(item.due);
-        time.value = isoToLocalTime(item.due);
+        time.value = item.hasExplicitTime === false ? '' : isoToLocalTime(item.due);
       } else {
         date.value = '';
         time.value = '';
@@ -138,13 +144,22 @@ export const createReminderFormHandlers = (options = {}) => {
         return;
       }
       setTitleError('');
+      const previousDue = item.due || null;
+      const previousHasExplicitTime = item.hasExplicitTime === true;
+      const previousUrgentAlert = item.urgentAlert === true;
+      let hasExplicitTime = Boolean(timeValue.trim());
       let due = parseManualDueInput(dateValue, timeValue);
       if (!due) {
         const parsed = parseQuickWhen(trimmedTitle);
         if (parsed.time) {
           due = new Date(`${parsed.date}T${parsed.time}:00`).toISOString();
+          hasExplicitTime = parsed.hasExplicitTime === true || titleHasExplicitTime(trimmedTitle);
         }
       }
+      const urgentAlert = Boolean(due && hasExplicitTime);
+      const urgentScheduleChanged = previousDue !== (due || null)
+        || previousHasExplicitTime !== hasExplicitTime
+        || previousUrgentAlert !== urgentAlert;
       item.title = trimmedTitle;
       const nextPriority = getPriorityInputValue();
       item.priority = nextPriority;
@@ -153,6 +168,12 @@ export const createReminderFormHandlers = (options = {}) => {
         item.category = normalizeCategory(categoryInput.value);
       }
       item.due = due;
+      item.hasExplicitTime = hasExplicitTime;
+      item.urgentAlert = urgentAlert;
+      if (urgentScheduleChanged) {
+        item.urgentAcknowledgedAt = null;
+        item.urgentStartedAt = null;
+      }
       item.recurrence = normalizeRecurrence(item.recurrence);
       item.snoozedUntil = normalizeIsoString(item.snoozedUntil);
       item.notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore))
@@ -188,13 +209,16 @@ export const createReminderFormHandlers = (options = {}) => {
     const noteText = details ? details.value.trim() : '';
     const priorityValue = getPriorityInputValue();
     const normalizedCategory = categoryInput ? normalizeCategory(categoryInput.value) : DEFAULT_CATEGORY;
+    let hasExplicitTime = Boolean(timeValue.trim());
     let due = parseManualDueInput(dateValue, timeValue);
     if (!due) {
       const parsed = parseQuickWhen(trimmedTitle);
       if (parsed.time) {
         due = new Date(`${parsed.date}T${parsed.time}:00`).toISOString();
+        hasExplicitTime = parsed.hasExplicitTime === true || titleHasExplicitTime(trimmedTitle);
       }
     }
+    const urgentAlert = Boolean(due && hasExplicitTime);
     const plannerLessonDetail = plannerLinkId
       ? {
           lessonId: plannerLinkId,
@@ -208,6 +232,10 @@ export const createReminderFormHandlers = (options = {}) => {
       priority: priorityValue,
       category: normalizedCategory,
       dueAt: due,
+      urgentAlert,
+      hasExplicitTime,
+      urgentAcknowledgedAt: null,
+      urgentStartedAt: null,
       notes: noteText,
       plannerLessonId: plannerLinkId || null,
     }, {

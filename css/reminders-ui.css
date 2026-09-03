@@ -1712,6 +1712,187 @@ body #view-reminders .reminder-tab[aria-pressed="true"] {
   }
 }
 
+/* Persistent, explicitly acknowledged appointment alert. */
+.urgent-appointment-alert {
+  position: fixed;
+  z-index: 5000;
+  top: max(0.7rem, env(safe-area-inset-top));
+  right: 0.7rem;
+  left: 0.7rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.urgent-appointment-alert[hidden] {
+  display: none;
+}
+
+.urgent-appointment-alert__card {
+  width: min(100%, 42rem);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  border: 3px solid #dc2626;
+  border-radius: 1.15rem;
+  background: linear-gradient(145deg, #fff7f7 0%, #ffffff 62%);
+  color: #3f0d12;
+  box-shadow:
+    0 1.25rem 3.5rem rgba(69, 10, 10, 0.34),
+    0 0 0 0.38rem rgba(220, 38, 38, 0.17);
+  pointer-events: auto;
+  animation: urgent-appointment-pulse 1.4s ease-in-out infinite alternate;
+}
+
+.urgent-appointment-alert__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.urgent-appointment-alert__eyebrow,
+.urgent-appointment-alert__count {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.urgent-appointment-alert__eyebrow {
+  color: #b91c1c;
+}
+
+.urgent-appointment-alert__count {
+  padding: 0.28rem 0.58rem;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.urgent-appointment-alert__title {
+  margin: 0.48rem 0 0;
+  color: #450a0a;
+  font-size: clamp(1.32rem, 5vw, 2rem);
+  font-weight: 900;
+  line-height: 1.08;
+}
+
+.urgent-appointment-alert__status {
+  margin: 0.48rem 0 0;
+  color: #991b1b;
+  font-size: clamp(0.96rem, 2.8vw, 1.08rem);
+  font-weight: 800;
+}
+
+.urgent-appointment-alert__hint {
+  margin: 0.42rem 0 0;
+  color: #6b2a2a;
+  font-size: 0.86rem;
+}
+
+.urgent-appointment-alert__actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.48rem;
+  margin-top: 0.9rem;
+}
+
+.urgent-appointment-alert__button {
+  min-height: 2.75rem;
+  padding: 0.56rem 0.65rem;
+  border: 1px solid #efb0b0;
+  border-radius: 0.72rem;
+  background: #ffffff;
+  color: #7f1d1d;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.urgent-appointment-alert__button:hover,
+.urgent-appointment-alert__button:focus-visible {
+  border-color: #dc2626;
+  background: #fee2e2;
+  outline: 3px solid rgba(220, 38, 38, 0.24);
+  outline-offset: 2px;
+}
+
+.urgent-appointment-alert__button--seen {
+  border-color: #991b1b;
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.urgent-appointment-alert__button--done {
+  border-color: #166534;
+  background: #166534;
+  color: #ffffff;
+}
+
+@keyframes urgent-appointment-pulse {
+  from {
+    box-shadow:
+      0 1.25rem 3.5rem rgba(69, 10, 10, 0.32),
+      0 0 0 0.24rem rgba(220, 38, 38, 0.14);
+  }
+  to {
+    box-shadow:
+      0 1.25rem 3.5rem rgba(69, 10, 10, 0.4),
+      0 0 0 0.55rem rgba(220, 38, 38, 0.25);
+  }
+}
+
+@media (max-width: 620px) {
+  .urgent-appointment-alert {
+    top: max(0.42rem, env(safe-area-inset-top));
+    right: 0.42rem;
+    left: 0.42rem;
+  }
+
+  .urgent-appointment-alert__card {
+    border-radius: 0.95rem;
+  }
+
+  .urgent-appointment-alert__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .urgent-appointment-alert__card {
+    background: linear-gradient(145deg, #3f0b12 0%, #211014 72%);
+    color: #fff1f2;
+  }
+
+  .urgent-appointment-alert__title {
+    color: #fff1f2;
+  }
+
+  .urgent-appointment-alert__status,
+  .urgent-appointment-alert__eyebrow {
+    color: #fca5a5;
+  }
+
+  .urgent-appointment-alert__hint {
+    color: #fecaca;
+  }
+
+  .urgent-appointment-alert__button {
+    border-color: #7f1d1d;
+    background: #2b1518;
+    color: #fecaca;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .urgent-appointment-alert__card {
+    animation: none;
+  }
+}
+
 @keyframes reminder-strike {
   from {
     transform: scaleX(0);

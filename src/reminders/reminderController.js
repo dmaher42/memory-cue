@@ -40,6 +40,10 @@ import {
   getReminderScheduleIso,
   cosineSimilarity,
 } from './reminderSchemaHelpers.js';
+import {
+  getUrgentReminderState,
+  isUrgentTimedReminder,
+} from './reminderUrgency.js';
 
 // Shared reminder logic used by both the mobile and desktop pages.
 // This module wires up Firebase-backed reminder UI handlers.
@@ -91,6 +95,8 @@ const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
 const SERVICE_WORKER_MESSAGE_TYPES = Object.freeze({
   updateScheduledReminders: 'memoryCue:updateScheduledReminders',
   checkScheduledReminders: 'memoryCue:checkScheduledReminders',
+  showUrgentReminder: 'memoryCue:showUrgentReminder',
+  updateUrgentBadge: 'memoryCue:updateUrgentBadge',
 });
 let serviceWorkerReadyPromise = null;
 let backgroundSyncRegistrationPromise = null;
@@ -272,59 +278,6 @@ async function ensureNotificationPermission() {
   }
 
   return false;
-}
-
-function scheduleReminderNotification(reminder) {
-  if (!reminder || typeof reminder !== 'object') {
-    return;
-  }
-  if (reminder?.metadata?.suppressNotification === true) {
-    return;
-  }
-
-  const dueAtValue = typeof reminder.dueAt === 'string' && reminder.dueAt
-    ? reminder.dueAt
-    : reminder.due;
-  if (!dueAtValue) {
-    return;
-  }
-
-  const notifyMinutesBefore = Number.isFinite(reminder.notifyMinutesBefore)
-    ? reminder.notifyMinutesBefore
-    : 0;
-  const notifyTime =
-    new Date(dueAtValue).getTime() -
-    notifyMinutesBefore * 60000;
-
-  const delay = notifyTime - Date.now();
-  if (delay <= 0) {
-    return;
-  }
-
-  setTimeout(() => {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      new Notification('Reminder', {
-        body: reminder.text || reminder.title || '',
-        icon: '/icons/icon-192.png',
-        tag: reminder.id,
-      });
-    }
-  }, delay);
-
-  if (
-    typeof navigator !== 'undefined' &&
-    navigator.serviceWorker &&
-    typeof navigator.serviceWorker.ready?.then === 'function'
-  ) {
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.active?.postMessage({
-        type: 'scheduleReminder',
-        title: 'Reminder',
-        body: reminder.text || reminder.title || '',
-        time: notifyTime,
-      });
-    });
-  }
 }
 
 function supportsNotificationTriggers() {
@@ -2988,7 +2941,7 @@ export async function initReminders(sel = {}) {
     const explicitDate = parseExplicitReminderDate(sourceText, now);
     if (explicitDate) {
       result.dueDate = explicitDate;
-      result.notifyAt = new Date(explicitDate.getTime() - 10 * 60 * 1000);
+      result.notifyAt = new Date(explicitDate.getTime() - 15 * 60 * 1000);
       return result;
     }
 
@@ -3002,7 +2955,7 @@ export async function initReminders(sel = {}) {
         candidate.setDate(candidate.getDate() + (weekdayMatch ? 7 : 1));
       }
       result.dueDate = candidate;
-      result.notifyAt = new Date(candidate.getTime() - 10 * 60 * 1000);
+      result.notifyAt = new Date(candidate.getTime() - 15 * 60 * 1000);
       return result;
     }
 
@@ -3035,7 +2988,7 @@ export async function initReminders(sel = {}) {
     }
 
     result.dueDate = dueDate;
-    result.notifyAt = new Date(dueDate.getTime() - 10 * 60 * 1000);
+    result.notifyAt = new Date(dueDate.getTime() - 15 * 60 * 1000);
     return result;
   }
 
@@ -3359,7 +3312,6 @@ export async function initReminders(sel = {}) {
       items = nextItems;
     },
     getPendingDeletionItems: () => pendingDeletionItems,
-    scheduleReminderNotification,
     render,
     updateMobileRemindersHeaderSubtitle,
     persistItems,
@@ -3386,6 +3338,413 @@ export async function initReminders(sel = {}) {
     }, MAX_TIMEOUT_DELAY);
   }
   let scheduledReminders = {};
+  const URGENT_ATTENTION_TICK_MS = 5000;
+  const URGENT_TITLE_PREFIX = /^\ud83d\udd34\s+\d+\s+urgent(?:\s+appointments?)?(?:\s+\u2022\s+ALERT)?\s+\u2014\s+/u;
+  const urgentPresentedStages = new Set();
+  const urgentPresentationsPending = new Set();
+  const urgentBackgroundStages = new Set();
+  let urgentAttentionTimer = null;
+  let urgentAttentionSurface = null;
+  let urgentBaseDocumentTitle = '';
+  let lastUrgentBadgeCount = null;
+  let lastUrgentBridgeSignature = '';
+
+  function normalizeUrgentActionTimestamp(value) {
+    if (value === null || typeof value === 'undefined' || value === '') {
+      return null;
+    }
+    const timestamp = Number(value);
+    return Number.isFinite(timestamp) ? timestamp : null;
+  }
+
+  function getUrgentEntrySignature(entry) {
+    const reminderId = entry?.reminderId || entry?.reminder?.id || '';
+    const stageKey = entry?.stage?.key || '';
+    const dueAt = Number.isFinite(entry?.stage?.dueAt) ? entry.stage.dueAt : '';
+    return `${reminderId}:${stageKey}:${dueAt}`;
+  }
+
+  function formatUrgentDueTime(reminder) {
+    const dueValue = reminder?.due || reminder?.dueAt;
+    const due = dueValue ? new Date(dueValue) : null;
+    if (!due || Number.isNaN(due.getTime())) {
+      return '';
+    }
+    return due.toLocaleTimeString(locale, {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone: TZ,
+    });
+  }
+
+  function getUrgentMeetingLink(reminder) {
+    const text = [reminder?.notes, reminder?.body, reminder?.title]
+      .filter((value) => typeof value === 'string' && value.trim())
+      .join(' ');
+    const match = text.match(/https?:\/\/[^\s<>()]+/i);
+    return match ? match[0].replace(/[.,;!?]+$/, '') : '';
+  }
+
+  function ensureUrgentAttentionSurface() {
+    if (urgentAttentionSurface instanceof HTMLElement || typeof document === 'undefined' || !document.body) {
+      return urgentAttentionSurface;
+    }
+
+    const surface = document.createElement('aside');
+    surface.id = 'urgentAppointmentAlert';
+    surface.className = 'urgent-appointment-alert';
+    surface.hidden = true;
+    surface.setAttribute('aria-live', 'assertive');
+    surface.setAttribute('aria-atomic', 'true');
+    surface.innerHTML = `
+      <section class="urgent-appointment-alert__card" role="alertdialog" aria-modal="false" aria-labelledby="urgentAppointmentTitle" aria-describedby="urgentAppointmentStatus">
+        <div class="urgent-appointment-alert__topline">
+          <span class="urgent-appointment-alert__eyebrow">Urgent appointment</span>
+          <span class="urgent-appointment-alert__count" data-urgent-count></span>
+        </div>
+        <h2 id="urgentAppointmentTitle" class="urgent-appointment-alert__title" data-urgent-title></h2>
+        <p id="urgentAppointmentStatus" class="urgent-appointment-alert__status" data-urgent-status></p>
+        <p class="urgent-appointment-alert__hint">This stays visible until you choose what to do.</p>
+        <div class="urgent-appointment-alert__actions">
+          <button type="button" class="urgent-appointment-alert__button urgent-appointment-alert__button--seen" data-urgent-action="acknowledge">I've seen this</button>
+          <button type="button" class="urgent-appointment-alert__button" data-urgent-action="snooze5">Snooze 5 min</button>
+          <button type="button" class="urgent-appointment-alert__button" data-urgent-action="start">Start / join</button>
+          <button type="button" class="urgent-appointment-alert__button urgent-appointment-alert__button--done" data-urgent-action="done">Done</button>
+        </div>
+      </section>`;
+
+    surface.addEventListener('click', (event) => {
+      const button = event.target instanceof Element
+        ? event.target.closest('[data-urgent-action]')
+        : null;
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+      const reminderId = surface.dataset.reminderId || '';
+      const stageKey = surface.dataset.stageKey || '';
+      void handleUrgentAction(button.dataset.urgentAction || '', reminderId, stageKey);
+    });
+
+    document.body.appendChild(surface);
+    urgentAttentionSurface = surface;
+    return surface;
+  }
+
+  function hideUrgentAttentionSurface() {
+    const surface = ensureUrgentAttentionSurface();
+    if (surface) {
+      surface.hidden = true;
+      surface.removeAttribute('data-reminder-id');
+      surface.removeAttribute('data-stage-key');
+    }
+  }
+
+  function renderUrgentAttentionSurface(entry, badgeCount) {
+    const surface = ensureUrgentAttentionSurface();
+    const reminder = entry?.reminder;
+    if (!surface || !reminder) {
+      return;
+    }
+    const dueLabel = formatUrgentDueTime(reminder);
+    const statusParts = [entry?.stage?.label || 'Due soon'];
+    if (dueLabel) {
+      statusParts.push(`Scheduled for ${dueLabel}`);
+    }
+    const titleElement = surface.querySelector('[data-urgent-title]');
+    const statusElement = surface.querySelector('[data-urgent-status]');
+    const countElement = surface.querySelector('[data-urgent-count]');
+    if (titleElement) titleElement.textContent = reminder.title || 'Appointment';
+    if (statusElement) statusElement.textContent = statusParts.join(' \u2022 ');
+    if (countElement) {
+      countElement.textContent = badgeCount > 1 ? `${badgeCount} need attention` : 'Needs attention';
+    }
+    surface.dataset.reminderId = reminder.id || '';
+    surface.dataset.stageKey = entry?.stage?.key || '';
+    surface.hidden = false;
+  }
+
+  function updateUrgentDocumentTitle(state) {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const currentTitle = document.title || 'Memory Cue';
+    if (!URGENT_TITLE_PREFIX.test(currentTitle)) {
+      urgentBaseDocumentTitle = currentTitle;
+    }
+    if (!urgentBaseDocumentTitle) {
+      urgentBaseDocumentTitle = currentTitle.replace(URGENT_TITLE_PREFIX, '') || 'Memory Cue';
+    }
+    if (!state.badgeCount) {
+      document.title = urgentBaseDocumentTitle;
+      return;
+    }
+    const noun = state.badgeCount === 1 ? 'urgent appointment' : 'urgent appointments';
+    const alertMarker = state.alertItems.length ? ' \u2022 ALERT' : '';
+    document.title = `\ud83d\udd34 ${state.badgeCount} ${noun}${alertMarker} \u2014 ${urgentBaseDocumentTitle}`;
+  }
+
+  function emitWindowsAttention(action, state, stage = null) {
+    if (typeof window === 'undefined' || typeof window.postMessage !== 'function') {
+      return;
+    }
+    const count = Math.max(0, Number(state?.badgeCount) || 0);
+    const signature = `${action}:${count}:${stage?.key || ''}`;
+    if (signature === lastUrgentBridgeSignature) {
+      return;
+    }
+    lastUrgentBridgeSignature = signature;
+    window.postMessage({
+      source: 'memory-cue',
+      type: 'memoryCue:windowsAttention',
+      action,
+      count,
+      stage: stage?.key || undefined,
+    }, window.location.origin);
+  }
+
+  function updateInstalledAppBadge(count) {
+    const nextCount = Math.max(0, Number(count) || 0);
+    if (nextCount === lastUrgentBadgeCount) {
+      return;
+    }
+    lastUrgentBadgeCount = nextCount;
+    if (typeof navigator !== 'undefined') {
+      try {
+        const result = nextCount > 0 && typeof navigator.setAppBadge === 'function'
+          ? navigator.setAppBadge(nextCount)
+          : nextCount === 0 && typeof navigator.clearAppBadge === 'function'
+            ? navigator.clearAppBadge()
+            : null;
+        if (result && typeof result.catch === 'function') {
+          result.catch(() => undefined);
+        }
+      } catch {
+        // Badging is an optional installed-app capability.
+      }
+    }
+    void postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.updateUrgentBadge,
+      count: nextCount,
+    });
+  }
+
+  function buildUrgentNotificationBody(entry) {
+    const reminder = entry?.reminder || {};
+    const dueLabel = formatUrgentDueTime(reminder);
+    const stageLabel = entry?.stage?.label || 'Due soon';
+    return [stageLabel, dueLabel ? `At ${dueLabel}` : '', buildReminderNotificationBody(reminder)]
+      .filter(Boolean)
+      .join(' \u2022 ');
+  }
+
+  function presentUrgentEntry(entry, badgeCount) {
+    const signature = getUrgentEntrySignature(entry);
+    if (
+      !signature
+      || urgentPresentedStages.has(signature)
+      || urgentPresentationsPending.has(signature)
+    ) {
+      return;
+    }
+    if (typeof document !== 'undefined' && typeof document.hasFocus === 'function' && !document.hasFocus()) {
+      urgentBackgroundStages.add(signature);
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try { navigator.vibrate([250, 120, 250]); } catch { /* optional capability */ }
+    }
+    const reminder = entry.reminder || {};
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      return;
+    }
+    urgentPresentationsPending.add(signature);
+    void postMessageToServiceWorker({
+      type: SERVICE_WORKER_MESSAGE_TYPES.showUrgentReminder,
+      reminder: {
+        id: reminder.id,
+        title: reminder.title || 'Appointment',
+        body: buildUrgentNotificationBody(entry),
+        due: reminder.due || null,
+        meetingUrl: getUrgentMeetingLink(reminder),
+        urlPath: reminderLandingPath,
+      },
+      stage: entry.stage,
+      badgeCount,
+    }).then((delivered) => {
+      urgentPresentationsPending.delete(signature);
+      if (delivered) {
+        urgentPresentedStages.add(signature);
+      }
+    }).catch(() => {
+      urgentPresentationsPending.delete(signature);
+    });
+  }
+
+  function refreshUrgentAttention(nowMs = Date.now()) {
+    const state = getUrgentReminderState(items, nowMs);
+    updateInstalledAppBadge(state.badgeCount);
+    updateUrgentDocumentTitle(state);
+
+    state.alertItems.forEach((entry) => presentUrgentEntry(entry, state.badgeCount));
+    const primaryEntry = state.alertItems[0] || null;
+    if (primaryEntry) {
+      renderUrgentAttentionSurface(primaryEntry, state.badgeCount);
+      emitWindowsAttention('urgent', state, primaryEntry.stage);
+    } else {
+      hideUrgentAttentionSurface();
+      emitWindowsAttention(state.badgeCount ? 'acknowledged' : 'clear', state);
+    }
+    return state;
+  }
+
+  function commitUrgentReminderUpdate(reminder) {
+    if (!reminder) return;
+    reminder.updatedAt = Date.now();
+    saveToFirebase(reminder);
+    persistItems();
+    scheduleReminder(reminder);
+    suppressRenderMemoryEvent = true;
+    render();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items: getReminders() });
+    refreshUrgentAttention();
+  }
+
+  async function handleUrgentAction(action, reminderId, _stageKey = '', options = {}) {
+    const reminder = items.find((entry) => entry?.id === reminderId);
+    if (!reminder) {
+      return false;
+    }
+    const now = Date.now();
+    if (action === 'done') {
+      setReminderCompleted(reminder.id, true);
+      refreshUrgentAttention(now);
+      return true;
+    }
+    if (action === 'snooze5') {
+      snoozeReminder(reminder, 5);
+      refreshUrgentAttention(now);
+      return true;
+    }
+    if (action === 'start') {
+      const meetingLink = getUrgentMeetingLink(reminder);
+      if (
+        meetingLink
+        && options.meetingAlreadyOpened !== true
+        && typeof window !== 'undefined'
+        && typeof window.open === 'function'
+      ) {
+        window.open(meetingLink, '_blank', 'noopener,noreferrer');
+      }
+      reminder.urgentStartedAt = now;
+      reminder.urgentAcknowledgedAt = now;
+      commitUrgentReminderUpdate(reminder);
+      return true;
+    }
+    if (action === 'acknowledge') {
+      reminder.urgentAcknowledgedAt = now;
+      commitUrgentReminderUpdate(reminder);
+      return true;
+    }
+    return false;
+  }
+
+  function acknowledgeBackgroundUrgentStages() {
+    if (!urgentBackgroundStages.size) {
+      return;
+    }
+    const state = getUrgentReminderState(items, Date.now());
+    const entries = state.alertItems.filter((entry) => urgentBackgroundStages.has(getUrgentEntrySignature(entry)));
+    urgentBackgroundStages.clear();
+    if (!entries.length) {
+      return;
+    }
+    const now = Date.now();
+    entries.forEach((entry) => {
+      const reminder = entry.reminder;
+      reminder.urgentAcknowledgedAt = now;
+      reminder.updatedAt = now;
+      saveToFirebase(reminder);
+      scheduleReminder(reminder);
+    });
+    persistItems();
+    suppressRenderMemoryEvent = true;
+    render();
+    dispatchCueEvent('memoryCue:remindersUpdated', { items: getReminders() });
+    refreshUrgentAttention(now);
+  }
+
+  function consumeUrgentActionFromUrl() {
+    if (typeof window === 'undefined' || !window.location) {
+      return false;
+    }
+    let url;
+    try {
+      url = new URL(window.location.href);
+    } catch {
+      return false;
+    }
+    const action = url.searchParams.get('urgentAction');
+    const reminderId = url.searchParams.get('reminderId');
+    const stageKey = url.searchParams.get('urgentStage') || '';
+    const meetingAlreadyOpened = url.searchParams.get('meetingOpened') === '1';
+    if (!action || !reminderId || !items.some((entry) => entry?.id === reminderId)) {
+      return false;
+    }
+    url.searchParams.delete('urgentAction');
+    url.searchParams.delete('reminderId');
+    url.searchParams.delete('urgentStage');
+    url.searchParams.delete('meetingOpened');
+    if (window.history && typeof window.history.replaceState === 'function') {
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+    void handleUrgentAction(action, reminderId, stageKey, { meetingAlreadyOpened });
+    return true;
+  }
+
+  function setupUrgentAttention() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+    const refresh = () => {
+      consumeUrgentActionFromUrl();
+      refreshUrgentAttention();
+    };
+    const stopTimer = () => {
+      if (urgentAttentionTimer) {
+        clearInterval(urgentAttentionTimer);
+        urgentAttentionTimer = null;
+      }
+    };
+    const startTimer = () => {
+      if (!urgentAttentionTimer) {
+        urgentAttentionTimer = window.setInterval(refresh, URGENT_ATTENTION_TICK_MS);
+      }
+    };
+    stopTimer();
+    document.addEventListener('memoryCue:remindersUpdated', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('pageshow', () => {
+      startTimer();
+      refresh();
+    });
+    window.addEventListener('focus', acknowledgeBackgroundUrgentStages);
+    if (navigator.serviceWorker && typeof navigator.serviceWorker.addEventListener === 'function') {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        const data = event?.data;
+        if (data?.type !== 'memoryCue:urgentAction') {
+          return;
+        }
+        void handleUrgentAction(
+          data.action || '',
+          data.reminderId || '',
+          data.stageKey || '',
+          { meetingAlreadyOpened: data.meetingAlreadyOpened === true }
+        );
+      });
+    }
+    startTimer();
+    window.addEventListener('pagehide', stopTimer);
+    refresh();
+  }
   const reminderSheetTitle =
     typeof document !== 'undefined'
       ? document.getElementById('createSheetTitle')
@@ -4883,8 +5242,9 @@ export async function initReminders(sel = {}) {
           await setupReminderFirestoreSync();
           await syncNotesFromFirestoreOnLogin();
           await migrateOfflineRemindersIfNeeded();
-          await ensureNotificationPermission();
-          await syncCurrentDevicePushRegistration();
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            await syncCurrentDevicePushRegistration();
+          }
           startGroupColorSync();
           startBoardLabelSync();
           return;
@@ -5009,6 +5369,7 @@ export async function initReminders(sel = {}) {
       userId,
       reminder: item,
       action,
+      badgeCount: getUrgentReminderState(items, Date.now()).badgeCount,
     }).catch((error) => {
       console.warn('[reminder-push] Failed to sync reminder across devices', error);
       return null;
@@ -5030,6 +5391,10 @@ export async function initReminders(sel = {}) {
       pendingSync: true,
     });
     persistItems();
+
+    if (!userId) {
+      return true;
+    }
 
     try {
       await saveReminder(userId, {
@@ -5115,7 +5480,7 @@ export async function initReminders(sel = {}) {
       ? parsedSchedule.dueDate.toISOString()
       : null;
     const parsedNotifyAt = parsedSchedule.dueDate instanceof Date && Number.isFinite(parsedSchedule.dueDate.getTime())
-      ? new Date(parsedSchedule.dueDate.getTime() - 10 * 60 * 1000).toISOString()
+      ? new Date(parsedSchedule.dueDate.getTime() - 15 * 60 * 1000).toISOString()
       : null;
     const resolvedDueAt = hasExplicitDue ? explicitDueAt : parsedDueAt;
     const resolvedNotifyAt = hasExplicitDue ? explicitNotifyAt : parsedNotifyAt;
@@ -5159,28 +5524,12 @@ export async function initReminders(sel = {}) {
           saveToFirebase(createdEntry);
         }
 
-        const notifyMinutesBefore = (() => {
-          if (typeof createdEntry.notifyAt !== 'string' || !createdEntry.notifyAt || typeof createdEntry.due !== 'string' || !createdEntry.due) {
-            return 0;
-          }
-          const dueMs = new Date(createdEntry.due).getTime();
-          const notifyMs = new Date(createdEntry.notifyAt).getTime();
-          if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
-            return 0;
-          }
-          return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
-        })();
-
         const notificationsSuppressed = createdEntry?.metadata?.suppressNotification === true;
-        scheduleReminderNotification({
-          id: createdEntry.id,
-          text: createdEntry.title,
-          dueAt: createdEntry.due,
-          notifyMinutesBefore,
-          metadata: createdEntry.metadata,
-        });
-        if (!notificationsSuppressed) {
-          ensureNotificationPermission();
+        if (
+          !notificationsSuppressed
+          && typeof Notification !== 'undefined'
+          && Notification.permission === 'granted'
+        ) {
           syncCurrentDevicePushRegistration();
         }
         scheduleReminder(createdEntry);
@@ -5299,6 +5648,7 @@ export async function initReminders(sel = {}) {
         label: `Reminder reopened · ${it.title}`,
       });
     }
+    refreshUrgentAttention();
     return getReminders().find((entry) => entry.id === id) || null;
   }
 
@@ -5352,25 +5702,9 @@ export async function initReminders(sel = {}) {
     } else {
       saveToFirebase(item);
     }
-    const notifyMinutesBefore = (() => {
-      if (typeof item.notifyAt !== 'string' || !item.notifyAt || typeof item.due !== 'string' || !item.due) {
-        return 0;
-      }
-      const dueMs = new Date(item.due).getTime();
-      const notifyMs = new Date(item.notifyAt).getTime();
-      if (!Number.isFinite(dueMs) || !Number.isFinite(notifyMs)) {
-        return 0;
-      }
-      return Math.max(0, Math.round((dueMs - notifyMs) / 60000));
-    })();
-    scheduleReminderNotification({
-      id: item.id,
-      text: item.title,
-      dueAt: item.due,
-      notifyMinutesBefore,
-    });
-    ensureNotificationPermission();
-    syncCurrentDevicePushRegistration();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      syncCurrentDevicePushRegistration();
+    }
     emitReminderUpdates();
     dispatchCueEvent('memoryCue:remindersUpdated', { items });
     emitActivity({
@@ -5646,6 +5980,10 @@ export async function initReminders(sel = {}) {
   }
 
   function handleReminderTriggered(item) {
+    if (isUrgentTimedReminder(item)) {
+      refreshUrgentAttention();
+      return;
+    }
     showReminder(item);
     const current = items.find((entry) => entry?.id === item?.id);
     if (current && scheduleRecurringReminder(current)) {
@@ -5679,6 +6017,7 @@ export async function initReminders(sel = {}) {
     scheduleReminder(reminder);
     persistItems();
     render();
+    refreshUrgentAttention();
     console.log('[reminder] snoozed', { id: reminder.id, snoozedUntil: reminder.snoozedUntil });
   }
 
@@ -5752,9 +6091,14 @@ export async function initReminders(sel = {}) {
         category: entry.category || DEFAULT_CATEGORY,
         notes: typeof entry.notes === 'string' ? entry.notes : '',
         body: buildReminderNotificationBody(entry),
+        meetingUrl: typeof entry.meetingUrl === 'string' ? entry.meetingUrl : '',
         urlPath: entry.urlPath || reminderLandingPath,
         updatedAt: Number.isFinite(entry.updatedAt) ? entry.updatedAt : Date.now(),
         notifiedAt: Number.isFinite(entry.notifiedAt) ? entry.notifiedAt : null,
+        urgentAlert: entry.urgentAlert === true,
+        hasExplicitTime: entry.hasExplicitTime === true,
+        urgentAcknowledgedAt: normalizeUrgentActionTimestamp(entry.urgentAcknowledgedAt),
+        urgentStartedAt: normalizeUrgentActionTimestamp(entry.urgentStartedAt),
         semanticEmbedding: normalizeSemanticEmbedding(entry.semanticEmbedding),
       }));
   }
@@ -5799,6 +6143,7 @@ export async function initReminders(sel = {}) {
       }
       const notification = new Notification(item.title,{
         body: buildReminderNotificationBody(item),
+        icon: new URL('./icons/icon-192.png', window.location.href).href,
         tag:item.id
       });
       activeNotifications.set(item.id, notification);
@@ -5865,6 +6210,7 @@ export async function initReminders(sel = {}) {
       priority: item.priority || 'Medium',
       notes: typeof item.notes === 'string' ? item.notes : '',
       body: buildReminderNotificationBody(item),
+      meetingUrl: getUrgentMeetingLink(item),
       urlPath: reminderLandingPath,
       updatedAt: Date.now(),
       viaTrigger: !!previous.viaTrigger,
@@ -5874,6 +6220,10 @@ export async function initReminders(sel = {}) {
         const prevNotified = Number.isFinite(previous.notifiedAt) ? previous.notifiedAt : null;
         return prevDue === item.due ? prevNotified : null;
       })(),
+      urgentAlert: item.urgentAlert === true,
+      hasExplicitTime: item.hasExplicitTime === true,
+      urgentAcknowledgedAt: normalizeUrgentActionTimestamp(item.urgentAcknowledgedAt),
+      urgentStartedAt: normalizeUrgentActionTimestamp(item.urgentStartedAt),
     };
     scheduledReminders[item.id]=stored;
     saveScheduled();
@@ -5882,6 +6232,10 @@ export async function initReminders(sel = {}) {
     if(!('Notification' in window) || Notification.permission!=='granted'){ return; }
     const scheduleIso = stored.due;
     if(!scheduleIso){ cancelReminder(item.id); return; }
+    if(isUrgentTimedReminder(item)){
+      refreshUrgentAttention();
+      return;
+    }
     const dueTime = new Date(scheduleIso).getTime();
     if(!Number.isFinite(dueTime)) return;
     const notifyMinutesBefore = Number.isFinite(Number(item.notifyMinutesBefore)) ? Number(item.notifyMinutesBefore) : 0;
@@ -7944,6 +8298,7 @@ export async function initReminders(sel = {}) {
   rescheduleAllReminders();
   render();
   persistItems();
+  setupUrgentAttention();
   scheduleEmbeddingBackfill();
 
   if (variant === 'mobile') {
@@ -7963,6 +8318,7 @@ export async function initReminders(sel = {}) {
     createReminderFromPayload,
     getReminders,
     setReminderCompleted,
+    handleUrgentAction,
     openReminderById,
     render,
     setupReminderFirestoreSync,
@@ -7980,6 +8336,7 @@ export async function initReminders(sel = {}) {
     askAssistant,
     getReminders,
     setReminderCompleted,
+    handleUrgentAction,
     openReminderById,
     undoCapturedReminder,
     __testing: {
@@ -7991,6 +8348,8 @@ export async function initReminders(sel = {}) {
       },
       render,
       getItems: () => items.map(item => ({ ...item })),
+      refreshUrgentAttention,
+      getUrgentState: (nowMs = Date.now()) => getUrgentReminderState(items, nowMs),
       migrateLegacyDailyTasks,
       persistItems,
       parseInboxTimeQuery,

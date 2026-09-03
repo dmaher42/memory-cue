@@ -77,6 +77,13 @@ function createReminderMocks(overrides = {}) {
     const createdAt = Number.isFinite(reminder.createdAt) ? Number(reminder.createdAt) : Date.now();
     const updatedAt = Number.isFinite(reminder.updatedAt) ? Number(reminder.updatedAt) : createdAt;
     const done = Boolean(reminder.done ?? reminder.completed);
+    const rawDue = reminder.due ?? reminder.dueAt ?? reminder.dueDate;
+    const hasExplicitTime = typeof reminder.hasExplicitTime === 'boolean'
+      ? reminder.hasExplicitTime
+      : Boolean(rawDue && !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim())));
+    const urgentAlert = hasExplicitTime && (
+      typeof reminder.urgentAlert === 'boolean' ? reminder.urgentAlert : true
+    );
     return {
       id: nextId,
       title: typeof reminder.title === 'string' ? reminder.title.trim() : '',
@@ -96,6 +103,14 @@ function createReminderMocks(overrides = {}) {
       order: Number.isFinite(reminder.order) ? Number(reminder.order) : null,
       orderIndex: Number.isFinite(reminder.orderIndex) ? Number(reminder.orderIndex) : null,
       pinToToday: reminder.pinToToday === true,
+      urgentAlert,
+      hasExplicitTime,
+      urgentAcknowledgedAt: reminder.urgentAcknowledgedAt === null || typeof reminder.urgentAcknowledgedAt === 'undefined' || reminder.urgentAcknowledgedAt === ''
+        ? null
+        : Number.isFinite(Number(reminder.urgentAcknowledgedAt)) ? Number(reminder.urgentAcknowledgedAt) : null,
+      urgentStartedAt: reminder.urgentStartedAt === null || typeof reminder.urgentStartedAt === 'undefined' || reminder.urgentStartedAt === ''
+        ? null
+        : Number.isFinite(Number(reminder.urgentStartedAt)) ? Number(reminder.urgentStartedAt) : null,
       metadata: reminder.metadata && typeof reminder.metadata === 'object' ? { ...reminder.metadata } : null,
     };
   });
@@ -149,6 +164,14 @@ function createReminderMocks(overrides = {}) {
       completed: false,
       done: false,
       pendingSync: false,
+      urgentAcknowledgedAt: payload.urgentAcknowledgedAt === null || typeof payload.urgentAcknowledgedAt === 'undefined' || payload.urgentAcknowledgedAt === ''
+        ? null
+        : Number.isFinite(Number(payload.urgentAcknowledgedAt)) ? Number(payload.urgentAcknowledgedAt) : null,
+      urgentStartedAt: payload.urgentStartedAt === null || typeof payload.urgentStartedAt === 'undefined' || payload.urgentStartedAt === ''
+        ? null
+        : Number.isFinite(Number(payload.urgentStartedAt)) ? Number(payload.urgentStartedAt) : null,
+      ...(typeof payload.urgentAlert === 'boolean' ? { urgentAlert: payload.urgentAlert } : {}),
+      ...(typeof payload.hasExplicitTime === 'boolean' ? { hasExplicitTime: payload.hasExplicitTime } : {}),
     };
     if (typeof options.onCreated === 'function') {
       options.onCreated(reminder);
@@ -252,6 +275,12 @@ function createReminderMocks(overrides = {}) {
     computeNextOccurrence: overrides.computeNextOccurrence || (() => null),
     getReminderScheduleIso: overrides.getReminderScheduleIso || ((reminder) => reminder?.due || null),
     cosineSimilarity: overrides.cosineSimilarity || (() => 0),
+    isUrgentTimedReminder: overrides.isUrgentTimedReminder || (() => false),
+    getUrgentReminderState: overrides.getUrgentReminderState || (() => ({
+      badgeItems: [],
+      alertItems: [],
+      badgeCount: 0,
+    })),
   };
 }
 
@@ -282,6 +311,7 @@ function loadReminderController(overrides = {}) {
     HTMLElement: window.HTMLElement,
     Element: window.Element,
     HTMLInputElement: window.HTMLInputElement,
+    HTMLButtonElement: window.HTMLButtonElement,
     HTMLTextAreaElement: window.HTMLTextAreaElement,
     CustomEvent: window.CustomEvent,
     Event: window.Event,

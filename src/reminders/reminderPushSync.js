@@ -1,7 +1,6 @@
 import { getFirebaseContext, getFirebaseMessagingContext } from '../lib/firebase.js';
 import {
   deleteReminderPushDevice,
-  listReminderPushDevices,
   saveReminderPushDevice,
 } from '../repositories/reminderPushDeviceRepository.js';
 
@@ -10,6 +9,54 @@ const DEFAULT_REMINDER_URL_PATH = 'mobile.html#reminders';
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeTimestamp(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return numeric;
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function normalizeBadgeCount(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  const count = Number(value);
+  return Number.isFinite(count) && count >= 0 ? Math.floor(count) : null;
+}
+
+function normalizeHttpUrl(value) {
+  const text = normalizeText(value);
+  if (!text) {
+    return '';
+  }
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function getReminderMeetingUrl(reminder = {}) {
+  const explicit = normalizeHttpUrl(reminder.meetingUrl);
+  if (explicit) {
+    return explicit;
+  }
+  const text = [reminder.notes, reminder.body, reminder.title]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .join(' ');
+  const match = text.match(/https?:\/\/[^\s<>()]+/i);
+  return match ? normalizeHttpUrl(match[0].replace(/[.,;!?]+$/, '')) : '';
 }
 
 function getLocalStorage() {
@@ -71,10 +118,16 @@ function buildReminderSyncPayload(reminder = {}) {
     due: normalizeText(reminder.due) || normalizeText(reminder.dueAt) || null,
     notifyAt: normalizeText(reminder.notifyAt) || null,
     snoozedUntil: normalizeText(reminder.snoozedUntil) || null,
+    urgentAlert: reminder.urgentAlert === true,
+    hasExplicitTime: reminder.hasExplicitTime === true,
+    urgentAcknowledgedAt: normalizeTimestamp(reminder.urgentAcknowledgedAt),
+    urgentStartedAt: normalizeTimestamp(reminder.urgentStartedAt),
+    done: reminder.done === true || reminder.completed === true,
     priority: normalizeText(reminder.priority) || 'Medium',
     category: normalizeText(reminder.category) || 'General',
     notes: buildReminderBody(reminder).slice(0, 240),
-    updatedAt: Number.isFinite(Number(reminder.updatedAt)) ? Number(reminder.updatedAt) : Date.now(),
+    meetingUrl: getReminderMeetingUrl(reminder),
+    updatedAt: normalizeTimestamp(reminder.updatedAt) ?? Date.now(),
     urlPath: normalizeText(reminder.urlPath) || DEFAULT_REMINDER_URL_PATH,
   };
 }
@@ -159,6 +212,7 @@ export async function syncReminderToOtherDevices({
   userId,
   reminder,
   action = 'upsert',
+  badgeCount = null,
 } = {}) {
   const normalizedUserId = normalizeText(userId);
   if (!normalizedUserId) {
@@ -171,17 +225,7 @@ export async function syncReminderToOtherDevices({
   }
 
   const currentDeviceId = getReminderPushDeviceId();
-  const devices = await listReminderPushDevices(normalizedUserId).catch((error) => {
-    console.warn('[reminder-push] Failed to load push devices', error);
-    return [];
-  });
-  const targets = devices.filter((device) => (
-    device
-    && device.id !== currentDeviceId
-    && normalizeText(device.token)
-  ));
-
-  if (!targets.length) {
+  if (!currentDeviceId) {
     return { sent: 0, skipped: true };
   }
 
@@ -190,10 +234,8 @@ export async function syncReminderToOtherDevices({
     userId: normalizedUserId,
     idToken,
     action: action === 'delete' ? 'delete' : 'upsert',
-    targets: targets.map((device) => ({
-      deviceId: device.id,
-      token: device.token,
-    })),
+    badgeCount: normalizeBadgeCount(badgeCount),
+    currentDeviceId,
     reminder: reminderPayload,
   };
 

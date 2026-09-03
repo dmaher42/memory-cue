@@ -4,14 +4,16 @@ Memory Cue is a progressive web app for capturing reminders, notes, and study ai
 
 ## Background reminders
 
-Memory Cue ships with a service worker that now schedules reminders using the Notification Triggers API where supported (currently Chromium-based browsers). When you enable notifications from the Reminders screen the app registers `service-worker-v3.js` (via `js/register-service-worker-v2.js`), stores each due reminder, and asks the browser to display it even if the page or installed PWA is closed. If Notification Triggers are unavailable the app falls back to in-page timers so you still see alerts while the tab is open.
+Memory Cue treats timed reminders as urgent appointment cues. While the app is running, it checks at 15 minutes, 5 minutes, 1 minute, the due time, and every 5 minutes overdue. The persistent alert supports Seen, Snooze 5, Start / Join, and Done. Seen stops the current interruption; the red app badge remains until Done.
+
+The service worker stores the schedule and can show lock-screen notifications whenever the browser wakes it. Cross-device Firebase push also wakes the service worker when a reminder changes. Web browsers do not provide a dependable future alarm clock for a fully closed PWA, so exact closed-phone timing requires the separate scheduler in `workers/reminder-scheduler/`. Its code and tests are included, but it remains inactive until its Firebase permissions, encrypted credentials, Firestore indexes, Cloudflare plan, deployment, and real-phone test are approved and completed. Do not describe browser-controlled periodic sync as an exact alarm.
 
 To test background reminders locally:
 
 1. Serve the project over HTTPS (or `http://localhost`) and open the Reminders view.
 2. Click the bell icon to grant notification permission.
 3. Add a reminder with a future due time.
-4. Close the tab or minimise the app—Chrome on desktop and Android will fire the scheduled notification at the due time.
+4. Keep the app open for an exact local timing test. A closed-app test is only deterministic after the production push scheduler is configured.
 
 Each notification links back to the Reminders board; tapping it reopens the PWA if necessary. Remember that browsers can suspend background delivery, so keep critical deadlines in an external calendar as a safety net.
 
@@ -63,6 +65,15 @@ Optional Firebase runtime variables:
 
 - `FIREBASE_STORAGE_BUCKET`
 - `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_WEB_PUSH_VAPID_KEY`
+
+The cross-device push endpoint also needs server-only Firebase credentials in Cloudflare Pages. These must never be written into the client runtime file:
+
+- `FIREBASE_API_KEY`
+- `FIREBASE_PROJECT_ID`
+- either `FIREBASE_SERVICE_ACCOUNT_JSON`, or both `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`
+
+That service account must be allowed to read the signed-in user's registered push devices from Firestore and send Firebase Cloud Messaging messages. The endpoint resolves device tokens on the server; it does not trust target tokens supplied by a browser.
 
 For local development, place the same values in an untracked `.env.local` file before running `npm run build`. The generated runtime env script preserves any values already present in `window.__ENV`, and `js/init-env.js` remains the single runtime initializer.
 

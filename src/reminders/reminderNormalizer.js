@@ -49,6 +49,24 @@ function normalizeEpochMs(value) {
   return null;
 }
 
+function normalizeUrgentTimestamp(value) {
+  return normalizeEpochMs(value);
+}
+
+function inferHasExplicitTime(source, dueAt) {
+  if (!Number.isFinite(dueAt)) {
+    return false;
+  }
+  if (typeof source.hasExplicitTime === 'boolean') {
+    return source.hasExplicitTime;
+  }
+  if (typeof source.time === 'string' && /^\d{1,2}:\d{2}/.test(source.time.trim())) {
+    return true;
+  }
+  const rawDue = source.dueAt ?? source.due ?? source.dueDate ?? source.date;
+  return !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim()));
+}
+
 function normalizePriority(value) {
   if (typeof value !== 'string') {
     return null;
@@ -130,6 +148,10 @@ export function normalizeReminder(input = {}) {
     : null;
   const dueAt = normalizeEpochMs(source.dueAt ?? source.dueDate ?? source.date ?? source.time ?? source.due);
   const due = normalizeIsoString(source.due ?? source.dueAt ?? source.dueDate ?? source.date ?? source.time);
+  const hasExplicitTime = inferHasExplicitTime(source, dueAt);
+  const urgentAlert = hasExplicitTime && (
+    typeof source.urgentAlert === 'boolean' ? source.urgentAlert : true
+  );
 
   const reminder = {
     id: normalizeText(source.id) || createReminderId(),
@@ -150,6 +172,10 @@ export function normalizeReminder(input = {}) {
     source: normalizeSource(source.source ?? source.metadata?.source),
     recurrence: normalizeNullableString(source.recurrence),
     snoozedUntil: normalizeIsoString(source.snoozedUntil),
+    urgentAlert,
+    hasExplicitTime,
+    urgentAcknowledgedAt: normalizeUrgentTimestamp(source.urgentAcknowledgedAt),
+    urgentStartedAt: normalizeUrgentTimestamp(source.urgentStartedAt),
     notifyAt: normalizeIsoString(source.notifyAt) || due,
     notifyMinutesBefore: Number.isFinite(Number(source.notifyMinutesBefore)) ? Number(source.notifyMinutesBefore) : 0,
     userId: normalizeNullableString(source.userId),

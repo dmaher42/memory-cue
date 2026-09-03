@@ -1,7 +1,7 @@
 (function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
-  const SERVICE_WORKER_URL = './service-worker-v3.js?v=20260420a';
+  const SERVICE_WORKER_URL = './service-worker-v3.js?v=20260903a';
   const PERIODIC_PERMISSION_NAME = 'periodic-background-sync';
   const PERIODIC_PROBE_TAG = 'mc-periodic-sync-permission-probe';
   const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -67,6 +67,42 @@
         return null;
       });
     return readyPromise;
+  };
+
+  const postMessage = async (message) => {
+    if (!message || typeof message !== 'object') {
+      return false;
+    }
+    const registration = await waitForReady();
+    const worker = navigator.serviceWorker.controller
+      || registration?.active
+      || registration?.waiting
+      || registration?.installing;
+    if (!worker || typeof worker.postMessage !== 'function') {
+      return false;
+    }
+    worker.postMessage(message);
+    return true;
+  };
+
+  const updateUrgentBadge = (count) => postMessage({
+    type: 'memoryCue:updateUrgentBadge',
+    count,
+  });
+
+  const forwardServiceWorkerMessage = (event) => {
+    const data = event?.data;
+    if (!data || typeof data !== 'object' || typeof window?.dispatchEvent !== 'function') {
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('memoryCue:serviceWorkerMessage', {
+      detail: data,
+    }));
+    if (data.type === 'memoryCue:urgentAction') {
+      window.dispatchEvent(new CustomEvent('memoryCue:urgentAction', {
+        detail: data,
+      }));
+    }
   };
 
   const registrationMatches = (registration, expectedUrl) => {
@@ -172,6 +208,8 @@
       ensureRegistration: register,
       waitForReady,
       resolveServiceWorkerUrl,
+      postMessage,
+      updateUrgentBadge,
     };
   }
 
@@ -191,5 +229,6 @@
       window.location.reload();
       */
     });
+    navigator.serviceWorker.addEventListener('message', forwardServiceWorkerMessage);
   }
 })();

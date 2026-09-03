@@ -85,3 +85,38 @@ test('keeps a completion timestamp and backfills older completed reminders from 
   expect(active.completedAt).toBeNull();
 });
 
+test('persists urgent appointment state and defaults only timed reminders to urgent', () => {
+  const { normalizeReminder } = loadReminderNormalizer();
+  const acknowledgedAt = Date.parse('2026-09-03T09:46:00.000Z');
+
+  const timed = normalizeReminder({
+    id: 'timed',
+    title: 'Timed appointment',
+    due: '2026-09-03T10:00:00.000Z',
+    urgentAcknowledgedAt: new Date(acknowledgedAt).toISOString(),
+    urgentStartedAt: acknowledgedAt + 1000,
+  });
+  const dateOnly = normalizeReminder({
+    id: 'date-only',
+    title: 'Date-only reminder',
+    due: '2026-09-03',
+  });
+  const explicitlyDisabled = normalizeReminder({
+    id: 'disabled',
+    title: 'Ordinary timed reminder',
+    due: '2026-09-03T11:00:00.000Z',
+    hasExplicitTime: true,
+    urgentAlert: false,
+  });
+
+  expect(timed).toEqual(expect.objectContaining({
+    hasExplicitTime: true,
+    urgentAlert: true,
+    urgentAcknowledgedAt: acknowledgedAt,
+    urgentStartedAt: acknowledgedAt + 1000,
+  }));
+  expect(dateOnly.hasExplicitTime).toBe(false);
+  expect(dateOnly.urgentAlert).toBe(false);
+  expect(explicitlyDisabled.hasExplicitTime).toBe(true);
+  expect(explicitlyDisabled.urgentAlert).toBe(false);
+});

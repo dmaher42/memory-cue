@@ -171,14 +171,7 @@ describe('class hub reminder API', () => {
       metadata: { classHubId: 'class-y8-hpe' },
     });
     expect(api.getReminders()[0]).toMatchObject({ done: true, completed: true });
-    expect(saveReminder).toHaveBeenCalledWith(
-      null,
-      expect.objectContaining({
-        id: 'follow-up-1',
-        done: true,
-        metadata: expect.objectContaining({ classHubId: 'class-y8-hpe' }),
-      }),
-    );
+    expect(saveReminder).not.toHaveBeenCalled();
     expect(updateEvents).toHaveLength(1);
     expect(updateEvents[0].items[0]).toMatchObject({ id: 'follow-up-1', done: true });
     expect(localStorage.getItem('memoryCueNotes')).toBe(originalNotes);

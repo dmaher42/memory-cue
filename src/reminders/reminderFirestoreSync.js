@@ -14,7 +14,6 @@ export const createReminderFirestoreSync = (options = {}) => {
     getItems = () => [],
     setItems = () => {},
     getPendingDeletionItems = () => new Map(),
-    scheduleReminderNotification = () => {},
     render = () => {},
     updateMobileRemindersHeaderSubtitle = () => {},
     persistItems = () => {},
@@ -63,13 +62,6 @@ export const createReminderFirestoreSync = (options = {}) => {
 
     const nextItems = ensureOrderIndicesInitialized(Array.from(mergedById.values()));
     setItems(nextItems);
-    nextItems.forEach((reminder) => {
-      scheduleReminderNotification({
-        ...reminder,
-        dueAt: reminder.due,
-        text: reminder.title,
-      });
-    });
     render();
     updateMobileRemindersHeaderSubtitle();
     persistItems();

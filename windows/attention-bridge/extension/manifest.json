@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Memory Cue Windows Attention Bridge",
+  "version": "0.1.0",
+  "description": "Connects validated Memory Cue appointment alerts to the one-shot Windows taskbar host.",
+  "permissions": [
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "https://memory-cue.pages.dev/*",
+    "http://localhost/*",
+    "https://localhost/*",
+    "http://127.0.0.1/*",
+    "https://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://memory-cue.pages.dev/*",
+        "http://localhost/*",
+        "https://localhost/*",
+        "http://127.0.0.1/*",
+        "https://127.0.0.1/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}

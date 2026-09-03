@@ -78,6 +78,36 @@ export function normalizeIsoString(value) {
   return parsed.toISOString();
 }
 
+function normalizeUrgentTimestamp(value) {
+  if (value instanceof Date) {
+    const timestamp = value.getTime();
+    return Number.isFinite(timestamp) ? timestamp : null;
+  }
+  const numeric = Number(value);
+  if (value !== null && value !== '' && Number.isFinite(numeric) && numeric > 0) {
+    return numeric;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function inferHasExplicitTime(source, due) {
+  if (!due) {
+    return false;
+  }
+  if (typeof source.hasExplicitTime === 'boolean') {
+    return source.hasExplicitTime;
+  }
+  if (typeof source.time === 'string' && /^\d{1,2}:\d{2}/.test(source.time.trim())) {
+    return true;
+  }
+  const rawDue = source.due ?? source.dueAt ?? source.dueDate ?? source.date;
+  return !(typeof rawDue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDue.trim()));
+}
+
 export function normalizeReminderRecord(reminder = {}, options = {}) {
   const source = reminder && typeof reminder === 'object' ? reminder : {};
   const now = Number.isFinite(options.now) ? options.now : Date.now();
@@ -89,10 +119,14 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
   const titleCandidates = [source.title, source.text, source.name];
   const title = titleCandidates.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
   const dueCandidate = [source.due, source.dueAt, source.dueDate]
-    .find((value) => value instanceof Date || (typeof value === 'string' && value.trim()));
+    .find((value) => value instanceof Date
+      || (typeof value === 'string' && value.trim())
+      || (typeof value === 'number' && Number.isFinite(value)));
   const due = dueCandidate instanceof Date
     ? dueCandidate.toISOString()
-    : normalizeIsoString(dueCandidate);
+    : typeof dueCandidate === 'number'
+      ? new Date(dueCandidate).toISOString()
+      : normalizeIsoString(dueCandidate);
   const notifyCandidate = source.notifyAt instanceof Date
     ? source.notifyAt.toISOString()
     : normalizeIsoString(source.notifyAt);
@@ -111,6 +145,10 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
       : typeof source.body === 'string'
         ? source.body
         : '';
+  const hasExplicitTime = inferHasExplicitTime(source, due);
+  const urgentAlert = hasExplicitTime && (
+    typeof source.urgentAlert === 'boolean' ? source.urgentAlert : true
+  );
 
   const normalized = {
     id: typeof source.id === 'string' && source.id ? source.id : fallbackId,
@@ -132,6 +170,10 @@ export function normalizeReminderRecord(reminder = {}, options = {}) {
     metadata: source.metadata && typeof source.metadata === 'object' ? source.metadata : null,
     recurrence: normalizeRecurrence(source.recurrence),
     snoozedUntil: normalizeIsoString(source.snoozedUntil),
+    urgentAlert,
+    hasExplicitTime,
+    urgentAcknowledgedAt: normalizeUrgentTimestamp(source.urgentAcknowledgedAt),
+    urgentStartedAt: normalizeUrgentTimestamp(source.urgentStartedAt),
     notifyMinutesBefore: Number.isFinite(Number(source.notifyMinutesBefore)) ? Number(source.notifyMinutesBefore) : 0,
     userId: typeof source.userId === 'string' && source.userId ? source.userId : null,
     pendingSync: !!source.pendingSync,

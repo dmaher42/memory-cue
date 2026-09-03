@@ -358,7 +358,7 @@ const parseReminderSchedule = (payload = {}) => {
   const cleanedText = cleanReminderTitle(sourceText);
   const dueAt = toIsoString(dueDate);
   const notifyAt = dueDate instanceof Date && Number.isFinite(dueDate.getTime())
-    ? new Date(dueDate.getTime() - 10 * 60 * 1000).toISOString()
+    ? new Date(dueDate.getTime() - 15 * 60 * 1000).toISOString()
     : null;
 
   return {
