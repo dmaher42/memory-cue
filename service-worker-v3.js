@@ -15,6 +15,8 @@ const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') |
 const CACHE_NAME = 'memory-cue-v4';
 const RUNTIME_CACHE = CACHE_NAME;
 const NAVIGATION_TIMEOUT_MS = 4000;
+const SERVICE_WORKER_RELEASE = new URL(self.location.href).searchParams.get('v') || '';
+const IMMEDIATE_ACTIVATION_RELEASE = '20260903b';
 
 const SHOW_URGENT_REMINDER_MESSAGE_TYPE = 'memoryCue:showUrgentReminder';
 const UPDATE_URGENT_BADGE_MESSAGE_TYPE = 'memoryCue:updateUrgentBadge';
@@ -274,10 +276,13 @@ async function showUrgentReminder(rawPayload) {
 }
 
 self.addEventListener('install', (event) => {
-  // We no longer call skipWaiting() immediately here.
-  // This allows the UI to prompt the user to refresh, prevent data loss.
-
   event.waitUntil((async () => {
+    // Activate only this targeted notification repair immediately. Future releases
+    // retain the normal wait-for-close behavior that protects in-progress page work.
+    if (SERVICE_WORKER_RELEASE === IMMEDIATE_ACTIVATION_RELEASE) {
+      await self.skipWaiting();
+    }
+
     const cache = await caches.open(RUNTIME_CACHE);
 
     await Promise.allSettled(
@@ -1201,6 +1206,53 @@ function buildNotificationDestination(data = {}, action = '') {
   }
 }
 
+function isMobileAppEntryPath(pathname = '') {
+  const scopePathWithoutTrailingSlash = APP_PATH === '/'
+    ? '/'
+    : APP_PATH.replace(/\/$/, '');
+  const mobileEntryPaths = new Set([
+    APP_PATH,
+    scopePathWithoutTrailingSlash,
+    `${APP_PATH}mobile`,
+    `${APP_PATH}mobile/`,
+    `${APP_PATH}mobile.html`,
+    `${APP_PATH}index.html`,
+  ]);
+  return mobileEntryPaths.has(pathname);
+}
+
+function findNotificationWindowClient(windowClients = [], destination = '') {
+  let targetUrl;
+  try {
+    targetUrl = new URL(destination);
+  } catch (_) {
+    return null;
+  }
+
+  let equivalentMobileClient = null;
+  for (const client of windowClients) {
+    try {
+      const clientUrl = new URL(client.url);
+      if (clientUrl.origin !== targetUrl.origin) {
+        continue;
+      }
+      if (clientUrl.pathname === targetUrl.pathname) {
+        return client;
+      }
+      if (
+        !equivalentMobileClient
+        && isMobileAppEntryPath(clientUrl.pathname)
+        && isMobileAppEntryPath(targetUrl.pathname)
+      ) {
+        equivalentMobileClient = client;
+      }
+    } catch (_) {
+      // Ignore malformed client URLs.
+    }
+  }
+  return equivalentMobileClient;
+}
+
 async function postUrgentActionToClients({
   action,
   reminderId,
@@ -1243,21 +1295,15 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil((async () => {
     try {
       const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      let matching = null;
       const targetUrl = new URL(destination);
-      for (const client of allClients) {
-        try {
-          const clientUrl = new URL(client.url);
-          if (clientUrl.pathname === targetUrl.pathname) {
-            matching = client;
-            break;
-          }
-        } catch (_) {
-          // Ignore malformed client URLs.
-        }
-      }
+      const matching = findNotificationWindowClient(allClients, destination);
       if (matching) {
-        await matching.focus();
+        try {
+          await matching.focus();
+        } catch (_) {
+          // The action can still reach an open app even when Windows rejects focus.
+          // Do not fall through to openWindow(), which would create a duplicate.
+        }
         let meetingAlreadyOpened = false;
         if (meetingUrl && self.clients.openWindow) {
           try {

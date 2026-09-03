@@ -4,16 +4,23 @@ const vm = require('vm');
 
 const SERVICE_WORKER_PATH = path.join(__dirname, '..', '..', 'service-worker-v3.js');
 
-function createServiceWorkerHarness({ windowClients = [], openWindowResult = null } = {}) {
+function createServiceWorkerHarness({
+  windowClients = [],
+  openWindowResult = null,
+  scope = 'https://memory-cue.test/app/',
+  serviceWorkerUrl = new URL('service-worker-v3.js', scope).href,
+} = {}) {
   const listeners = new Map();
   const showNotification = jest.fn().mockResolvedValue(undefined);
   const setAppBadge = jest.fn().mockResolvedValue(undefined);
   const clearAppBadge = jest.fn().mockResolvedValue(undefined);
   const openWindow = jest.fn().mockResolvedValue(openWindowResult);
   const matchAll = jest.fn().mockResolvedValue(windowClients);
+  const skipWaiting = jest.fn().mockResolvedValue(undefined);
+  const cache = { put: jest.fn().mockResolvedValue(undefined) };
   const serviceWorkerGlobal = {
     registration: {
-      scope: 'https://memory-cue.test/app/',
+      scope,
       showNotification,
     },
     navigator: {
@@ -25,8 +32,8 @@ function createServiceWorkerHarness({ windowClients = [], openWindowResult = nul
       matchAll,
       openWindow,
     },
-    location: new URL('https://memory-cue.test/app/service-worker-v3.js'),
-    skipWaiting: jest.fn(),
+    location: new URL(serviceWorkerUrl),
+    skipWaiting,
     addEventListener(type, listener) {
       const handlers = listeners.get(type) || [];
       handlers.push(listener);
@@ -42,8 +49,10 @@ function createServiceWorkerHarness({ windowClients = [], openWindowResult = nul
       warn: jest.fn(),
       error: jest.fn(),
     },
-    caches: {},
-    fetch: jest.fn(),
+    caches: {
+      open: jest.fn().mockResolvedValue(cache),
+    },
+    fetch: jest.fn().mockResolvedValue(null),
     setTimeout,
     clearTimeout,
   });
@@ -76,6 +85,7 @@ function createServiceWorkerHarness({ windowClients = [], openWindowResult = nul
     clearAppBadge,
     matchAll,
     openWindow,
+    skipWaiting,
   };
 }
 
@@ -294,6 +304,105 @@ describe('Memory Cue urgent service-worker alerts', () => {
     expect(client.navigate).not.toHaveBeenCalled();
     expect(harness.setAppBadge).not.toHaveBeenCalled();
     expect(harness.clearAppBadge).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['acknowledge'],
+    ['snooze5'],
+  ])('reuses the installed root app for the %s notification action', async (action) => {
+    const client = {
+      url: 'https://memory-cue.pages.dev/',
+      postMessage: jest.fn(),
+      focus: jest.fn().mockResolvedValue(undefined),
+      navigate: jest.fn().mockResolvedValue(undefined),
+    };
+    const harness = createServiceWorkerHarness({
+      windowClients: [client],
+      scope: 'https://memory-cue.pages.dev/',
+    });
+
+    await harness.dispatch('notificationclick', {
+      action,
+      notification: {
+        close: jest.fn(),
+        data: {
+          type: 'memoryCue:urgentReminder',
+          reminderId: 'appointment-42',
+          stageKey: 't-15',
+          urlPath: 'mobile.html#reminders',
+        },
+      },
+    });
+
+    expect(client.focus).toHaveBeenCalledTimes(1);
+    expect(client.postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'memoryCue:urgentAction',
+      action,
+      reminderId: 'appointment-42',
+      stageKey: 't-15',
+    }));
+    expect(client.navigate).not.toHaveBeenCalled();
+    expect(harness.openWindow).not.toHaveBeenCalled();
+  });
+
+  test('does not open a duplicate when focusing the existing app is rejected', async () => {
+    const client = {
+      url: 'https://memory-cue.test/app/',
+      postMessage: jest.fn(),
+      focus: jest.fn().mockRejectedValue(new Error('Focus unavailable')),
+      navigate: jest.fn().mockResolvedValue(undefined),
+    };
+    const harness = createServiceWorkerHarness({ windowClients: [client] });
+
+    await harness.dispatch('notificationclick', {
+      action: 'snooze5',
+      notification: {
+        close: jest.fn(),
+        data: {
+          type: 'memoryCue:urgentReminder',
+          reminderId: 'appointment-42',
+          stageKey: 't-15',
+          urlPath: 'mobile.html#reminders',
+        },
+      },
+    });
+
+    expect(client.postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'memoryCue:urgentAction',
+      action: 'snooze5',
+      reminderId: 'appointment-42',
+    }));
+    expect(harness.openWindow).not.toHaveBeenCalled();
+  });
+
+  test('reuses the desktop entry when a notification targets the mobile entry', async () => {
+    const client = {
+      url: 'https://memory-cue.test/app/index.html',
+      postMessage: jest.fn(),
+      focus: jest.fn().mockResolvedValue(undefined),
+      navigate: jest.fn().mockResolvedValue(undefined),
+    };
+    const harness = createServiceWorkerHarness({ windowClients: [client] });
+
+    await harness.dispatch('notificationclick', {
+      action: 'acknowledge',
+      notification: {
+        close: jest.fn(),
+        data: {
+          type: 'memoryCue:urgentReminder',
+          reminderId: 'appointment-42',
+          stageKey: 'due',
+          urlPath: 'mobile.html#reminders',
+        },
+      },
+    });
+
+    expect(client.focus).toHaveBeenCalledTimes(1);
+    expect(client.postMessage).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'acknowledge',
+      reminderId: 'appointment-42',
+    }));
+    expect(harness.openWindow).not.toHaveBeenCalled();
   });
 
   test('opens the app action fallback and meeting link when the app is closed', async () => {
@@ -519,6 +628,26 @@ describe('Memory Cue urgent service-worker alerts', () => {
 });
 
 describe('Memory Cue service-worker install identity', () => {
+  test('immediately activates the targeted duplicate-window repair', async () => {
+    const harness = createServiceWorkerHarness({
+      serviceWorkerUrl: 'https://memory-cue.test/app/service-worker-v3.js?v=20260903b',
+    });
+
+    await harness.dispatch('install');
+
+    expect(harness.skipWaiting).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns later service-worker releases to normal wait-for-close activation', async () => {
+    const harness = createServiceWorkerHarness({
+      serviceWorkerUrl: 'https://memory-cue.test/app/service-worker-v3.js?v=20260903c',
+    });
+
+    await harness.dispatch('install');
+
+    expect(harness.skipWaiting).not.toHaveBeenCalled();
+  });
+
   test('uses a stable PWA id and a bumped registration version', () => {
     const manifest = JSON.parse(fs.readFileSync(
       path.join(__dirname, '..', '..', 'manifest.webmanifest'),
@@ -544,7 +673,7 @@ describe('Memory Cue service-worker install identity', () => {
     expect(readPngSize('icon-192.png')).toEqual([192, 192]);
     expect(readPngSize('icon-512.png')).toEqual([512, 512]);
     expect(readPngSize('apple-touch-icon.png')).toEqual([180, 180]);
-    expect(registrationSource).toContain('service-worker-v3.js?v=20260903a');
+    expect(registrationSource).toContain('service-worker-v3.js?v=20260903b');
 
     const serviceWorkerSource = fs.readFileSync(SERVICE_WORKER_PATH, 'utf8');
     expect(serviceWorkerSource).toContain('const REMINDER_DB_VERSION = 2;');
