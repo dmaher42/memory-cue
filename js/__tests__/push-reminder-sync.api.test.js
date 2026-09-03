@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { TextEncoder } = require('util');
+const { TextDecoder, TextEncoder } = require('util');
 
 const API_PATH = path.join(__dirname, '..', '..', 'functions', 'api', 'push-reminder-sync.js');
 
@@ -12,6 +12,7 @@ function loadPushApi(fetchMock) {
   const module = { exports: {} };
   const fakeCrypto = {
     subtle: {
+      digest: jest.fn().mockResolvedValue(new Uint8Array(32).fill(7).buffer),
       importKey: jest.fn().mockResolvedValue({}),
       sign: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
     },
@@ -24,6 +25,7 @@ function loadPushApi(fetchMock) {
     Response,
     URL,
     URLSearchParams,
+    TextDecoder,
     TextEncoder,
     Uint8Array,
     Date,
@@ -36,7 +38,10 @@ function loadPushApi(fetchMock) {
   return module.exports;
 }
 
-function makeContext(body) {
+function makeContext(body, { headers = {} } = {}) {
+  const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+  const bodyBuffer = new TextEncoder().encode(rawBody);
+  let bodyRead = false;
   return {
     env: {
       FIREBASE_API_KEY: 'test-api-key',
@@ -45,7 +50,29 @@ function makeContext(body) {
       FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----',
     },
     request: {
-      json: jest.fn().mockResolvedValue(body),
+      headers: {
+        get(name) {
+          const match = Object.entries(headers).find(
+            ([key]) => key.toLowerCase() === String(name).toLowerCase()
+          );
+          return match ? match[1] : null;
+        },
+      },
+      body: {
+        getReader() {
+          return {
+            async read() {
+              if (bodyRead) {
+                return { done: true, value: undefined };
+              }
+              bodyRead = true;
+              return { done: false, value: bodyBuffer };
+            },
+            async cancel() {},
+          };
+        },
+      },
+      text: jest.fn().mockResolvedValue(rawBody),
     },
   };
 }
@@ -116,6 +143,11 @@ describe('push reminder sync API authorization', () => {
     expect(fcmBody.message.token).toBe('registered-laptop-token');
     expect(fcmBody.message.token).not.toBe('attacker-supplied-token');
     expect(fcmBody.message.webpush.fcm_options).toBeUndefined();
+    expect(fcmBody.message.webpush.headers).toEqual({
+      Urgency: 'high',
+      TTL: '240',
+      Topic: 'BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcH',
+    });
   });
 
   test('rejects an oversized payload before contacting Firebase', async () => {
@@ -130,6 +162,28 @@ describe('push reminder sync API authorization', () => {
     }));
 
     expect(response.status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('rejects a declared oversized payload without reading or contacting Firebase', async () => {
+    const fetchMock = jest.fn();
+    const { onRequestPost } = loadPushApi(fetchMock);
+
+    const response = await onRequestPost(makeContext({}, {
+      headers: { 'Content-Length': String(33 * 1024) },
+    }));
+
+    expect(response.status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('returns a client error for malformed JSON without contacting Firebase', async () => {
+    const fetchMock = jest.fn();
+    const { onRequestPost } = loadPushApi(fetchMock);
+
+    const response = await onRequestPost(makeContext('{not-json'));
+
+    expect(response.status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

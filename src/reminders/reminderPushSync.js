@@ -190,9 +190,11 @@ export async function unregisterReminderPushDevice({ userId } = {}) {
     return false;
   }
 
+  let deviceRecordRemoved = true;
   try {
     await deleteReminderPushDevice(normalizedUserId, deviceId);
   } catch (error) {
+    deviceRecordRemoved = false;
     console.warn('[reminder-push] Failed to delete push device', error);
   }
 
@@ -205,7 +207,7 @@ export async function unregisterReminderPushDevice({ userId } = {}) {
     }
   }
 
-  return true;
+  return deviceRecordRemoved;
 }
 
 export async function syncReminderToOtherDevices({

@@ -11,6 +11,8 @@ const DEFAULT_SUBREQUEST_BUDGET = 45;
 const MAX_PUSH_DEVICE_DOCUMENTS = 100;
 const PUSH_TTL_SECONDS = 240;
 const FCM_MAX_DATA_BYTES = 4096;
+const ACCESS_TOKEN_CACHE_LIFETIME_MS = 45 * 60 * 1000;
+const serviceAccountAccessTokenCache = new Map();
 const GOOGLE_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/datastore',
   'https://www.googleapis.com/auth/firebase.messaging',
@@ -225,6 +227,63 @@ export async function createServiceAccountAccessToken(
     throw new Error('Firebase scheduler token exchange returned no access token');
   }
   return accessToken;
+}
+
+function serviceAccountAccessTokenCacheKey(serviceAccount = {}) {
+  return [
+    normalizeText(serviceAccount.projectId),
+    normalizeText(serviceAccount.clientEmail),
+  ].join('|');
+}
+
+async function getCachedServiceAccountAccessToken(
+  serviceAccount,
+  {
+    fetchImpl,
+    cryptoImpl,
+    nowMs,
+    cache = serviceAccountAccessTokenCache,
+  }
+) {
+  if (!cache || typeof cache.get !== 'function' || typeof cache.set !== 'function') {
+    return createServiceAccountAccessToken(serviceAccount, {
+      fetchImpl,
+      cryptoImpl,
+      nowMs,
+    });
+  }
+
+  const key = serviceAccountAccessTokenCacheKey(serviceAccount);
+  const existing = cache.get(key);
+  if (
+    normalizeText(existing?.accessToken)
+    && Number(existing.expiresAt) > Number(nowMs)
+  ) {
+    return existing.accessToken;
+  }
+  if (existing?.pending && typeof existing.pending.then === 'function') {
+    return existing.pending;
+  }
+
+  const pending = createServiceAccountAccessToken(serviceAccount, {
+    fetchImpl,
+    cryptoImpl,
+    nowMs,
+  });
+  cache.set(key, { pending });
+  try {
+    const accessToken = await pending;
+    cache.set(key, {
+      accessToken,
+      expiresAt: Number(nowMs) + ACCESS_TOKEN_CACHE_LIFETIME_MS,
+    });
+    return accessToken;
+  } catch (error) {
+    if (cache.get(key)?.pending === pending && typeof cache.delete === 'function') {
+      cache.delete(key);
+    }
+    throw error;
+  }
 }
 
 function toFirestoreValue(value) {
@@ -575,16 +634,11 @@ function findFcmErrorCode(body) {
   return normalizeText(fcmDetail?.errorCode || body?.error?.status);
 }
 
-function isPermanentSendFailure(errorCode, status) {
-  const statusCode = Number(status);
+function isPermanentSendFailure(errorCode, { payloadKnownValid = false } = {}) {
   return (
     errorCode === 'UNREGISTERED'
     || errorCode === 'SENDER_ID_MISMATCH'
-    || errorCode === 'INVALID_ARGUMENT'
-    || statusCode === 400
-    || statusCode === 401
-    || statusCode === 403
-    || statusCode === 404
+    || (payloadKnownValid && errorCode === 'INVALID_ARGUMENT')
   );
 }
 
@@ -646,6 +700,7 @@ export async function createFirebaseRestAdapter(
     cryptoImpl = crypto,
     now = () => Date.now(),
     logger = console,
+    accessTokenCache = serviceAccountAccessTokenCache,
   } = {}
 ) {
   const serviceAccount = parseServiceAccount(env);
@@ -656,6 +711,8 @@ export async function createFirebaseRestAdapter(
     ? Math.min(900, Math.floor(configuredSubrequestBudget))
     : DEFAULT_SUBREQUEST_BUDGET;
   let subrequestCount = 0;
+  let activeAccessToken = '';
+  const accessTokenCacheKey = serviceAccountAccessTokenCacheKey(serviceAccount);
   const request = async (...args) => {
     if (subrequestCount >= maximumSubrequests) {
       const error = new Error(
@@ -666,13 +723,27 @@ export async function createFirebaseRestAdapter(
       throw error;
     }
     subrequestCount += 1;
-    return fetchImpl(...args);
+    const response = await fetchImpl(...args);
+    if (
+      response?.status === 401
+      && activeAccessToken
+      && typeof accessTokenCache?.get === 'function'
+      && typeof accessTokenCache?.delete === 'function'
+    ) {
+      const cached = accessTokenCache.get(accessTokenCacheKey);
+      if (!cached?.accessToken || cached.accessToken === activeAccessToken) {
+        accessTokenCache.delete(accessTokenCacheKey);
+      }
+    }
+    return response;
   };
-  const accessToken = await createServiceAccountAccessToken(serviceAccount, {
+  const accessToken = await getCachedServiceAccountAccessToken(serviceAccount, {
     fetchImpl: request,
     cryptoImpl,
     nowMs: now(),
+    cache: accessTokenCache,
   });
+  activeAccessToken = accessToken;
   const projectId = serviceAccount.projectId;
   const documentsRoot = firestoreDocumentsRoot(projectId);
   const deviceCache = new Map();
@@ -966,7 +1037,9 @@ export async function createFirebaseRestAdapter(
         ok: false,
         status: response.status,
         errorCode,
-        retryable: !isPermanentSendFailure(errorCode, response.status),
+        retryable: !isPermanentSendFailure(errorCode, {
+          payloadKnownValid: true,
+        }),
         retryAfterMs: retryAfterDelay(
           response.headers.get('Retry-After'),
           now()

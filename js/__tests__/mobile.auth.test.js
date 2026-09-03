@@ -49,7 +49,7 @@ describe('mobile auth initialisation', () => {
     jest.clearAllMocks();
   });
 
-  test('passes the current sign-in and sign-out selectors into initAuth', async () => {
+  test('observes auth for notes without binding the shared auth buttons twice', async () => {
     loadMobileModule();
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
     await Promise.resolve();
@@ -66,7 +66,7 @@ describe('mobile auth initialisation', () => {
           syncStatus: ['#notesSyncStatus'],
           feedback: ['#notesSyncMessage'],
         }),
-        disableButtonBinding: false,
+        disableButtonBinding: true,
         onSessionChange: expect.any(Function),
       }),
     );

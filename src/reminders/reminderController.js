@@ -3282,6 +3282,22 @@ export async function initReminders(sel = {}) {
   let items = [];
   let suppressRenderMemoryEvent = false;
   let userId = null;
+  let pushUnregisteredBeforeSignOutUserId = null;
+  const emitNotificationPermissionState = (phonePushStatus = 'unavailable') => {
+    const normalizedPhonePushStatus = phonePushStatus === 'connected'
+      ? 'connected'
+      : 'unavailable';
+    const permission = typeof window !== 'undefined' && 'Notification' in window
+      ? window.Notification.permission
+      : 'unsupported';
+    if (typeof window !== 'undefined') {
+      window.__MEMORY_CUE_PHONE_PUSH_STATUS = normalizedPhonePushStatus;
+    }
+    dispatchCueEvent('reminder:notification-permission-changed', {
+      permission,
+      phonePushStatus: normalizedPhonePushStatus,
+    });
+  };
   let notesMigrationComplete = false;
   let notesMigrationUserId = null;
   let lastSyncedNoteIds = new Set();
@@ -4636,11 +4652,18 @@ export async function initReminders(sel = {}) {
   function applySignedOutState() {
     const previousUserId = userId;
     userId = null;
-    if (previousUserId) {
+    if (
+      previousUserId
+      && pushUnregisteredBeforeSignOutUserId !== previousUserId
+    ) {
       unregisterReminderPushDevice({ userId: previousUserId }).catch((error) => {
         console.warn('[reminder-push] Failed to unregister push device', error);
       });
     }
+    if (pushUnregisteredBeforeSignOutUserId === previousUserId) {
+      pushUnregisteredBeforeSignOutUserId = null;
+    }
+    emitNotificationPermissionState('unavailable');
     renderSyncIndicator('local');
     googleSignInBtns.forEach((btn) => btn.classList.remove('hidden'));
     googleSignOutBtns.forEach((btn) => btn.classList.add('hidden'));
@@ -5239,12 +5262,14 @@ export async function initReminders(sel = {}) {
           googleSignInBtns.forEach((btn) => btn.classList.add('hidden'));
           googleSignOutBtns.forEach((btn) => btn.classList.remove('hidden'));
           if (googleUserName) googleUserName.textContent = user.email || '';
-          await setupReminderFirestoreSync();
-          await syncNotesFromFirestoreOnLogin();
-          await migrateOfflineRemindersIfNeeded();
+          // Phone registration is safety-critical and must not wait behind notes,
+          // migration, or reminder sync work that could fail independently.
           if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             await syncCurrentDevicePushRegistration();
           }
+          await setupReminderFirestoreSync();
+          await syncNotesFromFirestoreOnLogin();
+          await migrateOfflineRemindersIfNeeded();
           startGroupColorSync();
           startBoardLabelSync();
           return;
@@ -5273,6 +5298,9 @@ export async function initReminders(sel = {}) {
       return;
     }
     button.addEventListener('click', (event) => {
+      // The mobile overflow menu also observes this click. Mark it so that menu
+      // code closes the menu without starting a second auth request.
+      event.__memoryCueAuthHandled = true;
       try {
         const outcome = handler(event);
         if (outcome && typeof outcome.then === 'function') {
@@ -5287,12 +5315,39 @@ export async function initReminders(sel = {}) {
     button._authWired = true;
   };
 
+  const signOutAfterPushCleanup = async () => {
+    const signingOutUserId = userId;
+    if (signingOutUserId) {
+      try {
+        const deviceRecordRemoved = await unregisterReminderPushDevice({
+          userId: signingOutUserId,
+        });
+        if (deviceRecordRemoved !== false) {
+          pushUnregisteredBeforeSignOutUserId = signingOutUserId;
+        }
+      } catch (error) {
+        console.warn('[reminder-push] Failed to unregister push device before sign-out', error);
+      }
+    }
+    try {
+      return await startSignOutFlow();
+    } catch (error) {
+      if (pushUnregisteredBeforeSignOutUserId === signingOutUserId) {
+        pushUnregisteredBeforeSignOutUserId = null;
+      }
+      // If sign-out itself fails, keep this still-signed-in device connected so
+      // an urgent phone alert is not silently lost after the cleanup attempt.
+      await syncCurrentDevicePushRegistration();
+      throw error;
+    }
+  };
+
   if (shouldWireAuthButtons && googleSignInBtns.length) {
     googleSignInBtns.forEach((btn) => wireAuthButton(btn, startSignInFlow));
   }
 
   if (shouldWireAuthButtons && googleSignOutBtns.length) {
-    googleSignOutBtns.forEach((btn) => wireAuthButton(btn, startSignOutFlow));
+    googleSignOutBtns.forEach((btn) => wireAuthButton(btn, signOutAfterPushCleanup));
   }
 
   const initialScopedUserId = typeof window !== 'undefined' && typeof window.__MEMORY_CUE_AUTH_USER_ID === 'string'
@@ -5349,16 +5404,23 @@ export async function initReminders(sel = {}) {
 
   async function syncCurrentDevicePushRegistration() {
     if (!userId) {
+      emitNotificationPermissionState('unavailable');
       return null;
     }
     const registration = await ensureServiceWorkerRegistration().catch(() => null);
     if (!registration) {
+      emitNotificationPermissionState('unavailable');
       return null;
     }
-    return registerReminderPushDevice({
+    const registeredDevice = await registerReminderPushDevice({
       userId,
       serviceWorkerRegistration: registration,
+    }).catch((error) => {
+      console.warn('[reminder-push] Failed to register this device', error);
+      return null;
     });
+    emitNotificationPermissionState(registeredDevice ? 'connected' : 'unavailable');
+    return registeredDevice;
   }
 
   async function syncReminderAcrossDevices(item, action = 'upsert') {
@@ -8205,18 +8267,16 @@ export async function initReminders(sel = {}) {
   });
 
   notifBtn?.addEventListener('click', async () => {
-    const emitPermissionState = () => {
-      const permission = 'Notification' in window ? Notification.permission : 'unsupported';
-      dispatchCueEvent('reminder:notification-permission-changed', { permission });
-    };
     if(!('Notification' in window)){
       toast('Notifications not supported');
-      emitPermissionState();
+      emitNotificationPermissionState('unavailable');
       return;
     }
     if(Notification.permission === 'granted'){
-      await syncCurrentDevicePushRegistration();
-      toast('Notifications enabled');
+      const registeredDevice = await syncCurrentDevicePushRegistration();
+      toast(registeredDevice
+        ? 'Local reminders enabled. This device is registered for lock-screen alerts.'
+        : 'Local reminders enabled. This device is not registered for lock-screen alerts.');
       if(supportsNotificationTriggers()) {
         ensureServiceWorkerRegistration();
       } else {
@@ -8225,14 +8285,15 @@ export async function initReminders(sel = {}) {
       }
       rescheduleAllReminders();
       render();
-      emitPermissionState();
       return;
     }
     try {
       const granted = await ensureNotificationPermission();
       if(granted){
-        await syncCurrentDevicePushRegistration();
-        toast('Notifications enabled');
+        const registeredDevice = await syncCurrentDevicePushRegistration();
+        toast(registeredDevice
+          ? 'Local reminders enabled. This device is registered for lock-screen alerts.'
+          : 'Local reminders enabled. This device is not registered for lock-screen alerts.');
         if(supportsNotificationTriggers()) {
           ensureServiceWorkerRegistration();
         } else {
@@ -8243,11 +8304,11 @@ export async function initReminders(sel = {}) {
         render();
       } else {
         toast('Notifications blocked');
+        emitNotificationPermissionState('unavailable');
       }
     } catch {
       toast('Notifications blocked');
-    } finally {
-      emitPermissionState();
+      emitNotificationPermissionState('unavailable');
     }
   });
 

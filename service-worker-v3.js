@@ -12,7 +12,7 @@
 'use strict';
 
 const APP_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '/') || '/';
-const CACHE_NAME = 'memory-cue-v4';
+const CACHE_NAME = 'memory-cue-v5';
 const RUNTIME_CACHE = CACHE_NAME;
 const NAVIGATION_TIMEOUT_MS = 4000;
 const SERVICE_WORKER_RELEASE = new URL(self.location.href).searchParams.get('v') || '';
@@ -44,11 +44,16 @@ self.addEventListener('message', (event) => {
 });
 
 const REMINDER_DB_NAME = 'memory-cue-reminders';
-const REMINDER_DB_VERSION = 2;
+const REMINDER_DB_VERSION = 3;
 const REMINDER_STORE_NAME = 'scheduled';
 const PROCESSED_URGENT_DELIVERY_STORE_NAME = 'processedUrgentDeliveries';
+const URGENT_STAGE_CLAIM_STORE_NAME = 'urgentStageClaims';
 const PROCESSED_URGENT_DELIVERY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const PROCESSED_URGENT_DELIVERY_LIMIT = 512;
+const URGENT_STAGE_CLAIM_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const URGENT_STAGE_CLAIM_PENDING_TIMEOUT_MS = 2 * MINUTE_MS;
+const URGENT_STAGE_CLAIM_LIMIT = 1024;
+const URGENT_STAGE_CLAIM_PRUNE_TARGET = 896;
 const URGENT_DELIVERY_ID_PATTERN = /^v1_[A-Za-z0-9_-]{43}$/;
 const REMINDER_PERIODIC_SYNC_TAG = 'memory-cue-reminder-sync';
 const DEFAULT_REMINDER_CATEGORY = 'General';
@@ -56,6 +61,8 @@ const DEFAULT_REMINDER_URL_PATH = 'mobile.html';
 
 let reminderDbPromise = null;
 const inFlightUrgentDeliveries = new Map();
+const inFlightUrgentStages = new Map();
+let urgentStageClaimSequence = 0;
 
 const SHELL_URLS = [
   `${APP_PATH}`,
@@ -229,8 +236,233 @@ function sanitizeUrgentReminderPayload(rawPayload) {
   };
 }
 
-async function showUrgentReminder(rawPayload) {
-  const urgent = sanitizeUrgentReminderPayload(rawPayload);
+function buildUrgentStageClaimId(urgent) {
+  const reminderId = normalizeText(urgent?.reminderId);
+  const stageKey = normalizeText(urgent?.stageKey);
+  if (!reminderId || !stageKey) {
+    return '';
+  }
+  const dueAt = parseTimestamp(urgent?.due);
+  const dueIdentity = dueAt === null
+    ? normalizeText(String(urgent?.due ?? '')) || 'unknown-due'
+    : String(dueAt);
+  return JSON.stringify([reminderId, dueIdentity, stageKey]);
+}
+
+function createUrgentStageClaimToken(now = Date.now()) {
+  urgentStageClaimSequence += 1;
+  if (self.crypto && typeof self.crypto.randomUUID === 'function') {
+    return self.crypto.randomUUID();
+  }
+  return `${now.toString(36)}-${urgentStageClaimSequence.toString(36)}`;
+}
+
+async function pruneUrgentStageClaims(now = Date.now(), preserveId = '') {
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(URGENT_STAGE_CLAIM_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(URGENT_STAGE_CLAIM_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const records = await idbRequestToPromise(store.getAll());
+    const retainedIds = new Set(
+      (Array.isArray(records) ? records : [])
+        .filter((record) => (
+          record
+          && typeof record.id === 'string'
+          && Number.isFinite(record.expiresAt)
+          && record.expiresAt > now
+        ))
+        .sort((left, right) => {
+          if (left.id === preserveId) return -1;
+          if (right.id === preserveId) return 1;
+          return (right.completedAt || right.claimedAt || 0)
+            - (left.completedAt || left.claimedAt || 0);
+        })
+        .slice(0, URGENT_STAGE_CLAIM_PRUNE_TARGET)
+        .map((record) => record.id)
+    );
+    for (const record of Array.isArray(records) ? records : []) {
+      if (record?.id && !retainedIds.has(record.id)) {
+        await idbRequestToPromise(store.delete(record.id));
+      }
+    }
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to prune urgent reminder stage history', error);
+    return false;
+  }
+}
+
+async function claimUrgentStage(stageClaimId, now = Date.now()) {
+  if (!stageClaimId) {
+    return { status: 'untracked', token: '' };
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return { status: 'unavailable', token: '' };
+    }
+    const tx = db.transaction(URGENT_STAGE_CLAIM_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(URGENT_STAGE_CLAIM_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const [current, recordCount] = await Promise.all([
+      idbRequestToPromise(store.get(stageClaimId)),
+      idbRequestToPromise(store.count()),
+    ]);
+    if (
+      current?.status === 'shown'
+      && Number.isFinite(current.expiresAt)
+      && current.expiresAt > now
+    ) {
+      await done;
+      return { status: 'shown', token: '' };
+    }
+    if (
+      current?.status === 'pending'
+      && Number.isFinite(current.claimedAt)
+      && current.claimedAt > now - URGENT_STAGE_CLAIM_PENDING_TIMEOUT_MS
+    ) {
+      await done;
+      return { status: 'pending', token: '' };
+    }
+
+    const token = createUrgentStageClaimToken(now);
+    await idbRequestToPromise(store.put({
+      id: stageClaimId,
+      status: 'pending',
+      token,
+      claimedAt: now,
+      expiresAt: now + URGENT_STAGE_CLAIM_PENDING_TIMEOUT_MS,
+    }));
+    await done;
+    if (Number(recordCount) >= URGENT_STAGE_CLAIM_LIMIT) {
+      await pruneUrgentStageClaims(now, stageClaimId);
+    }
+    return { status: 'claimed', token };
+  } catch (error) {
+    console.warn('Failed to claim urgent reminder stage', error);
+    return { status: 'unavailable', token: '' };
+  }
+}
+
+async function completeUrgentStageClaim(stageClaimId, token, now = Date.now()) {
+  if (!stageClaimId || !token) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(URGENT_STAGE_CLAIM_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(URGENT_STAGE_CLAIM_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const current = await idbRequestToPromise(store.get(stageClaimId));
+    if (current?.status !== 'pending' || current.token !== token) {
+      await done;
+      return false;
+    }
+    await idbRequestToPromise(store.put({
+      ...current,
+      status: 'shown',
+      token: '',
+      completedAt: now,
+      expiresAt: now + URGENT_STAGE_CLAIM_RETENTION_MS,
+    }));
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to complete urgent reminder stage claim', error);
+    return false;
+  }
+}
+
+async function releaseUrgentStageClaim(stageClaimId, token) {
+  if (!stageClaimId || !token) {
+    return false;
+  }
+  try {
+    const db = await getReminderDb();
+    if (!db) {
+      return false;
+    }
+    const tx = db.transaction(URGENT_STAGE_CLAIM_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(URGENT_STAGE_CLAIM_STORE_NAME);
+    const done = waitForTransaction(tx);
+    const current = await idbRequestToPromise(store.get(stageClaimId));
+    if (current?.status !== 'pending' || current.token !== token) {
+      await done;
+      return false;
+    }
+    await idbRequestToPromise(store.delete(stageClaimId));
+    await done;
+    return true;
+  } catch (error) {
+    console.warn('Failed to release urgent reminder stage claim', error);
+    return false;
+  }
+}
+
+async function runUrgentStageOnce(
+  stageClaimId,
+  operation,
+  {
+    claimStage = claimUrgentStage,
+    completeStage = completeUrgentStageClaim,
+    releaseStage = releaseUrgentStageClaim,
+  } = {}
+) {
+  if (!stageClaimId || typeof operation !== 'function') {
+    return typeof operation === 'function' ? operation() : false;
+  }
+  if (inFlightUrgentStages.has(stageClaimId)) {
+    return inFlightUrgentStages.get(stageClaimId);
+  }
+
+  const stagePromise = (async () => {
+    const claim = await claimStage(stageClaimId);
+    if (claim?.status === 'shown') {
+      return true;
+    }
+    // A surviving pending claim may belong to a worker that stopped before it
+    // displayed anything. Keep the scheduled stage unmarked so it can retry
+    // after the short pending timeout instead of being suppressed forever.
+    if (claim?.status === 'pending') {
+      return false;
+    }
+    const claimed = claim?.status === 'claimed' && Boolean(claim.token);
+    let succeeded = false;
+    try {
+      succeeded = await operation() === true;
+    } catch (error) {
+      console.warn('Failed to display urgent reminder notification', error);
+    }
+    if (!succeeded) {
+      if (claimed) {
+        await releaseStage(stageClaimId, claim.token);
+      }
+      return false;
+    }
+    if (claimed) {
+      await completeStage(stageClaimId, claim.token);
+    }
+    return true;
+  })();
+  inFlightUrgentStages.set(stageClaimId, stagePromise);
+  try {
+    return await stagePromise;
+  } finally {
+    if (inFlightUrgentStages.get(stageClaimId) === stagePromise) {
+      inFlightUrgentStages.delete(stageClaimId);
+    }
+  }
+}
+
+async function displayUrgentReminder(urgent) {
   if (!urgent || !self.registration || typeof self.registration.showNotification !== 'function') {
     return false;
   }
@@ -259,20 +491,28 @@ async function showUrgentReminder(rawPayload) {
     options.timestamp = urgent.timestamp;
   }
 
-  const badgePromise = urgent.badgeCount === null
-    ? Promise.resolve(false)
-    : applyUrgentBadge(urgent.badgeCount);
-
   try {
-    await Promise.all([
-      badgePromise,
-      self.registration.showNotification(urgent.title, options),
-    ]);
+    await self.registration.showNotification(urgent.title, options);
     return true;
   } catch (error) {
     console.warn('Failed to display urgent reminder notification', error);
     return false;
   }
+}
+
+async function showUrgentReminder(rawPayload, stageClaimDependencies) {
+  const urgent = sanitizeUrgentReminderPayload(rawPayload);
+  if (!urgent) {
+    return false;
+  }
+  if (urgent.badgeCount !== null) {
+    await applyUrgentBadge(urgent.badgeCount);
+  }
+  return runUrgentStageOnce(
+    buildUrgentStageClaimId(urgent),
+    () => displayUrgentReminder(urgent),
+    stageClaimDependencies
+  );
 }
 
 self.addEventListener('install', (event) => {
@@ -527,6 +767,9 @@ function getReminderDb() {
             }
             if (!db.objectStoreNames.contains(PROCESSED_URGENT_DELIVERY_STORE_NAME)) {
               db.createObjectStore(PROCESSED_URGENT_DELIVERY_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(URGENT_STAGE_CLAIM_STORE_NAME)) {
+              db.createObjectStore(URGENT_STAGE_CLAIM_STORE_NAME, { keyPath: 'id' });
             }
           } catch (error) {
             reject(error);
@@ -904,9 +1147,9 @@ async function handleReminderSyncPush(rawPayload = {}) {
     return false;
   }
   if (mutationResult === false) {
-    if (normalizeBadgeCount(payload.badgeCount) !== null) {
-      await applyUrgentBadge(payload.badgeCount);
-    }
+    // This mutation lost the updatedAt conflict, so its badge count is stale too.
+    // Rebuild the badge from the reminder schedule that actually won.
+    await recomputeScheduledUrgentBadge();
     return true;
   }
   const processed = await checkAndNotifyDueReminders({ source: 'push-sync' });
@@ -1011,7 +1254,21 @@ function getScheduledUrgentState(reminder, now) {
   return { stage, shouldBadge: true, shouldAlert };
 }
 
-async function checkAndNotifyDueReminders({ source = 'unknown' } = {}) {
+async function recomputeScheduledUrgentBadge(now = Date.now()) {
+  const reminders = await readScheduledReminders();
+  if (!Array.isArray(reminders)) {
+    return false;
+  }
+  const urgentBadgeCount = reminders.filter(
+    (reminder) => getScheduledUrgentState(reminder, now).shouldBadge
+  ).length;
+  return applyUrgentBadge(urgentBadgeCount);
+}
+
+async function checkAndNotifyDueReminders({
+  source = 'unknown',
+  stageClaimDependencies,
+} = {}) {
   if (!self.registration || typeof self.registration.showNotification !== 'function') {
     return false;
   }
@@ -1040,18 +1297,21 @@ async function checkAndNotifyDueReminders({ source = 'unknown' } = {}) {
         && reminder.lastUrgentStageKey !== urgentState.stage.key
       ) {
         try {
-          const displayed = await showUrgentReminder({
-            reminder: {
-              id: reminder.id,
-              title: reminder.title,
-              body: reminder.body,
-              due: reminder.due,
-              meetingUrl: reminder.meetingUrl,
-              urlPath: reminder.urlPath,
+          const displayed = await showUrgentReminder(
+            {
+              reminder: {
+                id: reminder.id,
+                title: reminder.title,
+                body: reminder.body,
+                due: reminder.due,
+                meetingUrl: reminder.meetingUrl,
+                urlPath: reminder.urlPath,
+              },
+              stage: urgentState.stage,
+              badgeCount: urgentBadgeCount,
             },
-            stage: urgentState.stage,
-            badgeCount: urgentBadgeCount,
-          });
+            stageClaimDependencies
+          );
           if (displayed) {
             reminder.notifiedAt = now;
             reminder.lastUrgentStageKey = urgentState.stage.key;

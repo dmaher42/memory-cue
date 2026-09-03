@@ -3233,17 +3233,28 @@ function openEditor() {
     detailsInput?.addEventListener('input', syncDisclosureSummaries);
     prioritySelect?.addEventListener('change', syncDisclosureSummaries);
 
-    const syncNotificationPresentation = () => {
+    let phonePushStatus = window.__MEMORY_CUE_PHONE_PUSH_STATUS === 'connected'
+      ? 'connected'
+      : 'unavailable';
+
+    const syncNotificationPresentation = (event) => {
       if (!(notifToggle instanceof HTMLInputElement)) return;
       let message = 'Enable alerts on this device';
       let checked = false;
       let disabled = false;
 
+      const reportedPhonePushStatus = event?.detail?.phonePushStatus;
+      if (reportedPhonePushStatus === 'connected' || reportedPhonePushStatus === 'unavailable') {
+        phonePushStatus = reportedPhonePushStatus;
+      }
+
       if (typeof window === 'undefined' || !('Notification' in window)) {
         message = 'Alerts are not supported on this device';
         disabled = true;
       } else if (window.Notification.permission === 'granted') {
-        message = 'Alerts enabled on this device';
+        message = phonePushStatus === 'connected'
+          ? 'Local reminders on · This device is registered for lock-screen alerts'
+          : 'Local reminders on · This device is not registered for lock-screen alerts';
         checked = true;
         disabled = true;
       } else if (window.Notification.permission === 'denied') {
@@ -6330,7 +6341,8 @@ async function wireMobileNotesFirebaseAuth() {
     stopChatLiveSync = await subscribeToChatHistoryChanges({ uid });
   };
 
-  // 2. Initialise auth, binding to mobile sign-in / sign-out buttons
+  // 2. Observe auth for notes sync. The reminder controller owns the shared
+  // sign-in/sign-out buttons so cleanup and auth cannot race each other.
   if (typeof initAuth !== 'function') {
     return;
   }
@@ -6348,7 +6360,7 @@ async function wireMobileNotesFirebaseAuth() {
       syncStatus: ['#notesSyncStatus'],
       feedback: ['#notesSyncMessage'],
     },
-    disableButtonBinding: false,
+    disableButtonBinding: true,
     async onSessionChange(user, session) {
       const normalizedUser = user && typeof user.id === 'string' ? user : null;
       debugLog('[notes-sync] Mobile session change', { userId: normalizedUser?.id || null });

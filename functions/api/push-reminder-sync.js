@@ -2,6 +2,7 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const FIRESTORE_API_ROOT = 'https://firestore.googleapis.com/v1';
 const MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_PUSH_TARGETS = 20;
+const PUSH_TTL_SECONDS = 4 * 60;
 const GOOGLE_AUTH_LOOKUP_URL = (apiKey) => (
   `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`
 );
@@ -75,6 +76,69 @@ function base64UrlEncodeBytes(bytes) {
     binary += String.fromCharCode(byte);
   });
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function createWebPushTopic(userId, reminderId) {
+  const identity = [
+    'memory-cue',
+    normalizeText(userId),
+    normalizeText(reminderId),
+  ].join('|');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(identity)
+  );
+  return base64UrlEncodeBytes(new Uint8Array(digest)).slice(0, 32);
+}
+
+async function readBoundedJsonRequest(request, maximumBytes = MAX_REQUEST_BYTES) {
+  const contentLengthHeader = request?.headers?.get?.('Content-Length');
+  const contentLength = Number(contentLengthHeader);
+  if (
+    contentLengthHeader !== null
+    && contentLengthHeader !== undefined
+    && contentLengthHeader !== ''
+    && Number.isFinite(contentLength)
+    && contentLength > maximumBytes
+  ) {
+    return { body: null, tooLarge: true };
+  }
+
+  let rawBody = '';
+  let bodyBytes = 0;
+  const reader = request?.body?.getReader?.();
+  if (reader) {
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      const chunk = value instanceof Uint8Array ? value : new Uint8Array(value || []);
+      bodyBytes += chunk.byteLength;
+      if (bodyBytes > maximumBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { body: null, tooLarge: true };
+      }
+      rawBody += decoder.decode(chunk, { stream: true });
+    }
+    rawBody += decoder.decode();
+  } else {
+    rawBody = await request.text();
+    bodyBytes = new TextEncoder().encode(rawBody).byteLength;
+    if (bodyBytes > maximumBytes) {
+      return { body: null, tooLarge: true };
+    }
+  }
+
+  try {
+    return {
+      body: rawBody.trim() ? JSON.parse(rawBody) : null,
+      tooLarge: false,
+    };
+  } catch {
+    return { body: null, tooLarge: false };
+  }
 }
 
 function pemToArrayBuffer(pem) {
@@ -250,7 +314,15 @@ async function listRegisteredPushDevices({ accessToken, projectId, userId }) {
     });
 }
 
-async function sendPushMessage({ accessToken, projectId, token, action, reminder, badgeCount }) {
+async function sendPushMessage({
+  accessToken,
+  projectId,
+  userId,
+  token,
+  action,
+  reminder,
+  badgeCount,
+}) {
   const data = {
     type: 'memoryCue:reminder-sync',
     action,
@@ -259,6 +331,7 @@ async function sendPushMessage({ accessToken, projectId, token, action, reminder
   if (badgeCount !== null) {
     data.badgeCount = String(badgeCount);
   }
+  const topic = await createWebPushTopic(userId, reminder?.id);
   const response = await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/messages:send`, {
     method: 'POST',
     headers: {
@@ -272,6 +345,8 @@ async function sendPushMessage({ accessToken, projectId, token, action, reminder
         webpush: {
           headers: {
             Urgency: 'high',
+            TTL: String(PUSH_TTL_SECONDS),
+            Topic: topic,
           },
         },
       },
@@ -302,12 +377,13 @@ export async function onRequestPost(context) {
       );
     }
 
-    const body = await context.request.json().catch(() => null);
-    const bodyBytes = body
-      ? new TextEncoder().encode(JSON.stringify(body)).byteLength
-      : 0;
-    if (!body || bodyBytes > MAX_REQUEST_BYTES) {
+    const parsedRequest = await readBoundedJsonRequest(context.request);
+    if (parsedRequest.tooLarge) {
       return jsonResponse({ error: 'Invalid or oversized push sync payload' }, { status: 413 });
+    }
+    const body = parsedRequest.body;
+    if (!body) {
+      return jsonResponse({ error: 'Invalid push sync payload' }, { status: 400 });
     }
     const userId = normalizeText(body?.userId);
     const idToken = normalizeText(body?.idToken);
@@ -319,7 +395,7 @@ export async function onRequestPost(context) {
     if (!userId || !idToken || !currentDeviceId) {
       return jsonResponse({ error: 'Missing push sync payload' }, { status: 400 });
     }
-    if (action !== 'delete' && !reminder) {
+    if (!reminder) {
       return jsonResponse({ error: 'Missing reminder payload' }, { status: 400 });
     }
 
@@ -355,6 +431,7 @@ export async function onRequestPost(context) {
       const result = await sendPushMessage({
         accessToken,
         projectId: serviceAccount.projectId,
+        userId,
         token: target.token,
         action,
         reminder,

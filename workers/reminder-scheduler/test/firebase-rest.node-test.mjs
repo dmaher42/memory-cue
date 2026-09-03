@@ -255,7 +255,7 @@ function createMockFirebaseApi() {
   };
 }
 
-async function createAdapter(api, envOverrides = {}) {
+async function createAdapter(api, envOverrides = {}, adapterOptions = {}) {
   return createFirebaseRestAdapter({
     FIREBASE_PROJECT_ID: PROJECT_ID,
     FIREBASE_CLIENT_EMAIL: 'scheduler@memory-cue-test.iam.gserviceaccount.com',
@@ -271,6 +271,7 @@ async function createAdapter(api, envOverrides = {}) {
       warn() {},
       error() {},
     },
+    accessTokenCache: adapterOptions.accessTokenCache || new Map(),
   });
 }
 
@@ -657,7 +658,7 @@ test('UNREGISTERED is permanent and retires every duplicate registration record'
   );
 });
 
-test('transient FCM errors honour Retry-After while payload errors do not retry', async () => {
+test('transient FCM errors honour Retry-After while validated payload errors do not retry', async () => {
   const api = createMockFirebaseApi();
   const adapter = await createAdapter(api);
   const device = { id: DEVICE_ID, token: 'private-phone-token' };
@@ -709,6 +710,63 @@ test('transient FCM errors honour Retry-After while payload errors do not retry'
     badgeCount: 1,
   });
   assert.equal(invalid.retryable, false);
+});
+
+test('generic authentication and permission failures retry after configuration recovers', async () => {
+  const api = createMockFirebaseApi();
+  const accessTokenCache = new Map();
+  const adapter = await createAdapter(api, {}, { accessTokenCache });
+  const input = {
+    claim: {
+      userId: USER_ID,
+      deliveryId: 'v1_retryable-auth-failure',
+    },
+    device: { id: DEVICE_ID, token: 'private-phone-token' },
+    reminder: {
+      id: REMINDER_ID,
+      title: 'Dentist appointment',
+      due: new Date(DUE_AT).toISOString(),
+    },
+    urgency: { stage: { key: 't-5' } },
+    badgeCount: 1,
+  };
+
+  for (const status of [401, 403]) {
+    api.setFcmFailure({
+      status,
+      statusName: status === 401 ? 'UNAUTHENTICATED' : 'PERMISSION_DENIED',
+    });
+    const result = await adapter.sendReminderPush(input);
+    assert.equal(result.retryable, true);
+  }
+
+  api.setFcmFailure(null);
+  const recoveredAdapter = await createAdapter(api, {}, { accessTokenCache });
+  const recovered = await recoveredAdapter.sendReminderPush(input);
+  assert.equal(recovered.ok, true);
+  assert.equal(
+    api.requests.filter(({ url }) => url === 'https://oauth2.googleapis.com/token').length,
+    2
+  );
+});
+
+test('warm scheduler invocations reuse a short-lived service-account access token', async () => {
+  const api = createMockFirebaseApi();
+  const accessTokenCache = new Map();
+
+  await createAdapter(api, {}, { accessTokenCache });
+  await createAdapter(api, {}, { accessTokenCache });
+  assert.equal(
+    api.requests.filter(({ url }) => url === 'https://oauth2.googleapis.com/token').length,
+    1
+  );
+
+  api.setNow(api.getNow() + (46 * 60 * 1000));
+  await createAdapter(api, {}, { accessTokenCache });
+  assert.equal(
+    api.requests.filter(({ url }) => url === 'https://oauth2.googleapis.com/token').length,
+    2
+  );
 });
 
 test('the adapter stops before its configured external-subrequest ceiling', async () => {

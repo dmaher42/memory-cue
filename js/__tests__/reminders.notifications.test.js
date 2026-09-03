@@ -81,7 +81,58 @@ describe('reminder notification management', () => {
     api?.closeActiveNotifications();
     localStorage.clear();
     jest.clearAllTimers();
+    delete window.toast;
+    delete window.__MEMORY_CUE_PHONE_PUSH_STATUS;
+    delete navigator.serviceWorker;
   });
+
+  async function waitForMockCall(mock, attempts = 20) {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      if (mock.mock.calls.length > 0) {
+        return;
+      }
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    throw new Error('Timed out waiting for the notification registration attempt');
+  }
+
+  async function initialiseNotificationButton(pushRegistrationResult) {
+    document.body.innerHTML = `
+      <div id="status"></div>
+      <input id="notifBtn" type="checkbox" />
+    `;
+    const serviceWorkerRegistration = {
+      active: { postMessage: jest.fn() },
+    };
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        ready: Promise.resolve(serviceWorkerRegistration),
+        controller: serviceWorkerRegistration.active,
+      },
+    });
+
+    const registerReminderPushDevice = jest.fn().mockResolvedValue(pushRegistrationResult);
+    window.toast = jest.fn();
+
+    const remindersModule = loadReminderController({
+      initAuth: async ({ onSessionChange }) => {
+        await onSessionChange({ uid: 'phone-user', email: 'phone@example.com' });
+        return {};
+      },
+      registerReminderPushDevice,
+    });
+    api = await remindersModule.initReminders({
+      statusSel: '#status',
+      notifBtnSel: '#notifBtn',
+    });
+
+    await waitForMockCall(registerReminderPushDevice);
+    registerReminderPushDevice.mockClear();
+    window.toast.mockClear();
+    return registerReminderPushDevice;
+  }
 
   function createImmediateReminder(id = 'rem-1') {
     return {
@@ -119,5 +170,47 @@ describe('reminder notification management', () => {
 
     expect(notification.close).toHaveBeenCalledTimes(1);
     expect(active.size).toBe(0);
+  });
+
+  test('reports local reminders separately when phone push registration is unavailable', async () => {
+    const registerReminderPushDevice = await initialiseNotificationButton(null);
+    const statusEvents = [];
+    document.addEventListener('reminder:notification-permission-changed', (event) => {
+      statusEvents.push(event.detail);
+    }, { once: true });
+
+    document.getElementById('notifBtn').click();
+    await waitForMockCall(registerReminderPushDevice);
+
+    expect(window.toast).toHaveBeenCalledWith(
+      'Local reminders enabled. This device is not registered for lock-screen alerts.'
+    );
+    expect(window.toast).not.toHaveBeenCalledWith('Notifications enabled');
+    expect(statusEvents).toContainEqual({
+      permission: 'granted',
+      phonePushStatus: 'unavailable',
+    });
+  });
+
+  test('confirms the phone connection only after push registration succeeds', async () => {
+    const registerReminderPushDevice = await initialiseNotificationButton({
+      id: 'phone-device',
+      token: 'registered-token',
+    });
+    const statusEvents = [];
+    document.addEventListener('reminder:notification-permission-changed', (event) => {
+      statusEvents.push(event.detail);
+    }, { once: true });
+
+    document.getElementById('notifBtn').click();
+    await waitForMockCall(registerReminderPushDevice);
+
+    expect(window.toast).toHaveBeenCalledWith(
+      'Local reminders enabled. This device is registered for lock-screen alerts.'
+    );
+    expect(statusEvents).toContainEqual({
+      permission: 'granted',
+      phonePushStatus: 'connected',
+    });
   });
 });

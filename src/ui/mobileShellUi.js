@@ -424,6 +424,9 @@ export const initHeaderOverflowMenu = () => {
       case 'sign-in': {
         const primarySignInBtn = document.getElementById('googleSignInBtn');
         runMenuAction(() => {
+          if (event.__memoryCueAuthHandled === true) {
+            return;
+          }
           if (primarySignInBtn instanceof HTMLElement) {
             primarySignInBtn.click();
             focusElement(primarySignInBtn);
@@ -439,6 +442,9 @@ export const initHeaderOverflowMenu = () => {
       case 'sign-out': {
         const primarySignOutBtn = document.getElementById('googleSignOutBtn');
         runMenuAction(() => {
+          if (event.__memoryCueAuthHandled === true) {
+            return;
+          }
           if (primarySignOutBtn instanceof HTMLElement) {
             primarySignOutBtn.click();
             focusElement(primarySignOutBtn);

@@ -262,6 +262,213 @@ describe('Memory Cue urgent service-worker alerts', () => {
     expect(mergedReschedule.lastUrgentStageKey).toBeNull();
   });
 
+  test('shares a stage claim between foreground and scheduled delivery while allowing later stages', async () => {
+    const harness = createServiceWorkerHarness();
+    const result = await harness.evaluate(`(async () => {
+      const due = '2026-09-03T10:30:00.000Z';
+      let now = Date.parse('2026-09-03T10:15:00.000Z');
+      const originalDateNow = Date.now;
+      Date.now = () => now;
+      const scheduledReminder = {
+        id: 'shared-stage-1',
+        title: 'Important appointment',
+        body: 'Leave now',
+        due,
+        urgentAlert: true,
+        hasExplicitTime: true,
+        lastUrgentStageKey: null,
+      };
+      const claims = new Map();
+      let sequence = 0;
+      const stageClaimDependencies = {
+        claimStage: async (id) => {
+          const current = claims.get(id);
+          if (current?.status === 'shown') {
+            return { status: 'shown', token: '' };
+          }
+          const token = 'claim-' + (++sequence);
+          claims.set(id, { status: 'pending', token });
+          return { status: 'claimed', token };
+        },
+        completeStage: async (id, token) => {
+          const current = claims.get(id);
+          if (current?.token !== token) return false;
+          claims.set(id, { status: 'shown', token: '' });
+          return true;
+        },
+        releaseStage: async (id, token) => {
+          const current = claims.get(id);
+          if (current?.token !== token) return false;
+          claims.delete(id);
+          return true;
+        },
+      };
+      readScheduledReminders = async () => [scheduledReminder];
+      writeScheduledReminders = async (reminders) => {
+        Object.assign(scheduledReminder, reminders[0]);
+        return true;
+      };
+      try {
+        const foregroundResult = await showUrgentReminder({
+          reminder: scheduledReminder,
+          stage: {
+            key: 't-15',
+            label: '15 minutes to go',
+            kind: 'upcoming',
+            startAt: now,
+            dueAt: Date.parse(due),
+          },
+          badgeCount: 1,
+        }, stageClaimDependencies);
+        const sameStageSyncResult = await checkAndNotifyDueReminders({
+          source: 'push-sync',
+          stageClaimDependencies,
+        });
+        now = Date.parse('2026-09-03T10:25:00.000Z');
+        const laterStageResult = await checkAndNotifyDueReminders({
+          source: 'push-sync',
+          stageClaimDependencies,
+        });
+        return {
+          foregroundResult,
+          sameStageSyncResult,
+          laterStageResult,
+          claimCount: claims.size,
+          lastUrgentStageKey: scheduledReminder.lastUrgentStageKey,
+        };
+      } finally {
+        Date.now = originalDateNow;
+      }
+    })()`);
+
+    expect(result).toEqual({
+      foregroundResult: true,
+      sameStageSyncResult: true,
+      laterStageResult: true,
+      claimCount: 2,
+      lastUrgentStageKey: 't-5',
+    });
+    expect(harness.showNotification).toHaveBeenCalledTimes(2);
+    expect(harness.showNotification.mock.calls.map(([, options]) => options.data.stageKey))
+      .toEqual(['t-15', 't-5']);
+  });
+
+  test('releases a failed stage claim so the same alert can retry', async () => {
+    const harness = createServiceWorkerHarness();
+    harness.showNotification
+      .mockRejectedValueOnce(new Error('notification display failed'))
+      .mockResolvedValueOnce(undefined);
+
+    const result = await harness.evaluate(`(async () => {
+      const claims = new Map();
+      let released = 0;
+      let sequence = 0;
+      const stageClaimDependencies = {
+        claimStage: async (id) => {
+          const current = claims.get(id);
+          if (current?.status === 'shown') return { status: 'shown', token: '' };
+          const token = 'retry-' + (++sequence);
+          claims.set(id, { status: 'pending', token });
+          return { status: 'claimed', token };
+        },
+        completeStage: async (id, token) => {
+          const current = claims.get(id);
+          if (current?.token !== token) return false;
+          claims.set(id, { status: 'shown', token: '' });
+          return true;
+        },
+        releaseStage: async (id, token) => {
+          const current = claims.get(id);
+          if (current?.token !== token) return false;
+          claims.delete(id);
+          released += 1;
+          return true;
+        },
+      };
+      const payload = {
+        reminder: {
+          id: 'retry-stage-1',
+          title: 'Retry appointment',
+          due: '2026-09-03T10:30:00.000Z',
+        },
+        stage: { key: 'due', label: 'Due now', kind: 'due' },
+      };
+      const first = await showUrgentReminder(payload, stageClaimDependencies);
+      const second = await showUrgentReminder(payload, stageClaimDependencies);
+      return { first, second, released, claimCount: claims.size };
+    })()`);
+
+    expect(result).toEqual({
+      first: false,
+      second: true,
+      released: 1,
+      claimCount: 1,
+    });
+    expect(harness.showNotification).toHaveBeenCalledTimes(2);
+  });
+
+  test('does not mark a surviving pending stage as delivered', async () => {
+    const harness = createServiceWorkerHarness();
+    const result = await harness.evaluate(`(async () => {
+      let displayAttempts = 0;
+      const delivered = await runUrgentStageOnce(
+        JSON.stringify(['pending-stage-1', '1788402600000', 't-15']),
+        async () => {
+          displayAttempts += 1;
+          return true;
+        },
+        {
+          claimStage: async () => ({ status: 'pending', token: '' }),
+          completeStage: async () => true,
+          releaseStage: async () => true,
+        }
+      );
+      return { delivered, displayAttempts };
+    })()`);
+
+    expect(result).toEqual({ delivered: false, displayAttempts: 0 });
+  });
+
+  test('recomputes the badge from accepted local reminders when a sync is stale', async () => {
+    const harness = createServiceWorkerHarness();
+    const result = await harness.evaluate(`(async () => {
+      upsertScheduledReminder = async () => false;
+      readScheduledReminders = async () => [
+        {
+          id: 'accepted-active',
+          due: '2020-01-01T00:00:00.000Z',
+          urgentAlert: true,
+          hasExplicitTime: true,
+          done: false,
+        },
+        {
+          id: 'accepted-done',
+          due: '2020-01-01T00:00:00.000Z',
+          urgentAlert: true,
+          hasExplicitTime: true,
+          done: true,
+        },
+      ];
+      return handleReminderSyncPush({
+        type: 'memoryCue:reminder-sync',
+        action: 'upsert',
+        badgeCount: 9,
+        reminder: {
+          id: 'stale-remote-copy',
+          due: '2020-01-01T00:00:00.000Z',
+          updatedAt: 1000,
+          urgentAlert: true,
+          hasExplicitTime: true,
+        },
+      });
+    })()`);
+
+    expect(result).toBe(true);
+    expect(harness.setAppBadge).toHaveBeenCalledTimes(1);
+    expect(harness.setAppBadge).toHaveBeenCalledWith(1);
+    expect(harness.setAppBadge).not.toHaveBeenCalledWith(9);
+  });
+
   test('routes a notification action to clients and an exact reminder URL', async () => {
     const client = {
       url: 'https://memory-cue.test/app/mobile.html',
@@ -657,6 +864,10 @@ describe('Memory Cue service-worker install identity', () => {
       path.join(__dirname, '..', 'register-service-worker-v2.js'),
       'utf8'
     );
+    const mobileSource = fs.readFileSync(
+      path.join(__dirname, '..', '..', 'mobile.html'),
+      'utf8'
+    );
 
     expect(manifest.id).toBe('./');
     expect(manifest.icons).toEqual(expect.arrayContaining([
@@ -673,11 +884,16 @@ describe('Memory Cue service-worker install identity', () => {
     expect(readPngSize('icon-192.png')).toEqual([192, 192]);
     expect(readPngSize('icon-512.png')).toEqual([512, 512]);
     expect(readPngSize('apple-touch-icon.png')).toEqual([180, 180]);
-    expect(registrationSource).toContain('service-worker-v3.js?v=20260903b');
+    expect(registrationSource).toContain('service-worker-v3.js?v=20260903c');
+    expect(mobileSource).toContain('register-service-worker-v2.js?v=20260903c');
+    expect(mobileSource).toContain('mobile.js?v=20260903b');
 
     const serviceWorkerSource = fs.readFileSync(SERVICE_WORKER_PATH, 'utf8');
-    expect(serviceWorkerSource).toContain('const REMINDER_DB_VERSION = 2;');
+    expect(serviceWorkerSource).toContain("const CACHE_NAME = 'memory-cue-v5';");
+    expect(serviceWorkerSource).toContain('const REMINDER_DB_VERSION = 3;');
     expect(serviceWorkerSource).toContain("const PROCESSED_URGENT_DELIVERY_STORE_NAME = 'processedUrgentDeliveries';");
+    expect(serviceWorkerSource).toContain("const URGENT_STAGE_CLAIM_STORE_NAME = 'urgentStageClaims';");
     expect(serviceWorkerSource).toContain('const PROCESSED_URGENT_DELIVERY_LIMIT = 512;');
+    expect(serviceWorkerSource).toContain('const URGENT_STAGE_CLAIM_PRUNE_TARGET = 896;');
   });
 });
