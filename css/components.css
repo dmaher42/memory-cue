@@ -161,6 +161,36 @@
   color: #ffffff;
 }
 .class-hub-action:disabled { opacity: 0.56; cursor: wait; }
+/* Keep the overview light; the full hub keeps its existing detail layout. */
+#notesOverviewPanel:not(.class-hub-is-open) #classHubsPanel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: 0.5rem;
+}
+.class-hubs-heading { gap: 0.4rem; }
+.class-hubs-title {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+.class-hubs-heading .class-hub-action {
+  padding: 0 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--accent-color, #0f766e);
+}
+.class-hubs-list { margin-top: 0; gap: 0.25rem; }
+.class-hub-row-button { min-height: 44px; padding: 0.35rem 0.65rem; }
+.class-hub-row-button > span:first-child {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.65rem;
+  min-width: 0;
+}
+.class-hub-row-button .class-hub-row-meta { margin: 0; font-size: 0.72rem; }
 .class-hub-follow-up-row {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) auto;
