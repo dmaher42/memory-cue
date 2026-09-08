@@ -83,6 +83,8 @@ const normalizeReviewHistory = (value) => (
           hintUsed: review.hintUsed === true,
           wasEarly: review.wasEarly === true,
           isRetry: review.isRetry === true,
+          isApplication: review.isApplication === true,
+          applicationContext: normalizeText(review.applicationContext, 40),
           missedItems: normalizeTextList(review.missedItems, 20, 120),
           orderMissed: review.orderMissed === true,
           stageBefore: clampInteger(review.stageBefore, 0, MEMORY_COACH_INTERVAL_DAYS.length - 1, 0),
@@ -156,6 +158,7 @@ export const normalizeMemoryCoachMetadata = (value, options = {}) => {
     history: normalizeReviewHistory(value.history),
     lastMissedItems: normalizeTextList(value.lastMissedItems, 20, 120).filter((item) => items.includes(item)),
     lastOrderMissed: value.kind === 'list' && value.orderMatters === true && value.lastOrderMissed === true,
+    applicationCount: clampInteger(value.applicationCount, 0, 100000, 0),
   };
 };
 
@@ -237,6 +240,7 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
   const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
   let updatedItem = null;
   let updated = false;
+  let failureReason = '';
   const nextEntries = entries.map((entry) => {
     if (entry?.id !== normalizedId) {
       return entry;
@@ -244,6 +248,13 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
 
     const current = normalizeMemoryCoachMetadata(entry?.metadata?.memoryCoach, { now });
     if (!current) {
+      return entry;
+    }
+
+    const isApplication = options.isApplication === true;
+    if (isApplication && (!['vocabulary', 'expression'].includes(current.kind)
+      || (options.expectedUpdatedAt && options.expectedUpdatedAt !== current.updatedAt))) {
+      failureReason = 'changed';
       return entry;
     }
 
@@ -259,7 +270,7 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
     const dueAtBefore = current.dueAt;
     const dueTimestampBefore = toTimestamp(dueAtBefore) ?? now;
     const isRetry = options.isRetry === true;
-    const wasEarly = isRetry || dueTimestampBefore > now;
+    const wasEarly = isRetry || isApplication || dueTimestampBefore > now;
     let nextStage = current.stage;
     let intervalDays = wasEarly
       ? Math.max(0, Math.ceil((dueTimestampBefore - now) / DAY_MS))
@@ -304,6 +315,8 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
       hintUsed: options.hintUsed === true,
       wasEarly,
       isRetry,
+      isApplication,
+      applicationContext: isApplication ? options.applicationContext : '',
       missedItems,
       orderMissed,
       stageBefore: current.stage,
@@ -314,10 +327,11 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
       ...current,
       updatedAt: now,
       dueAt: nextDueAt,
-      lastReviewedAt: isRetry ? current.lastReviewedAt : now,
+      lastReviewedAt: isRetry || isApplication ? current.lastReviewedAt : now,
       lastRating: nextLastRating,
       stage: nextStage,
-      reviewCount: current.reviewCount + (isRetry ? 0 : 1),
+      reviewCount: current.reviewCount + (isRetry || isApplication ? 0 : 1),
+      applicationCount: current.applicationCount + (isApplication ? 1 : 0),
       streak: nextStreak,
       lapses: nextLapses,
       history: [...current.history, review],
@@ -330,7 +344,7 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
     return nextEntry;
   });
 
-  return { entries: nextEntries, updated, item: updatedItem };
+  return { entries: nextEntries, updated, item: updatedItem, ...(failureReason ? { reason: failureReason } : {}) };
 };
 
 export const setPracticeItemEnabled = (entries = [], entryId, enabled, options = {}) => {
@@ -390,7 +404,7 @@ export const updatePracticeEntry = (entries = [], entryId, payload = {}, options
     ...current, prompt, answer, items, orderMatters,
     explanation: '', example: '', hints: [], alternatives: [],
     updatedAt: now, dueAt: now, lastReviewedAt: null, lastRating: null,
-    stage: 0, reviewCount: 0, streak: 0, lapses: 0, history: [],
+    stage: 0, reviewCount: 0, streak: 0, lapses: 0, history: [], applicationCount: 0,
     lastMissedItems: [], lastOrderMissed: false,
   }, { now });
   const entry = withMemoryCoachMetadata(existing, memoryCoach, now);

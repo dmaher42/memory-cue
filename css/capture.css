@@ -1647,3 +1647,4 @@ html.dark #thinkingBarVoiceButton.is-listening {
 #memoryCoachContainer .memory-coach-library-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 #memoryCoachContainer .memory-coach-library-filters > .memory-coach-button { grid-column: auto; padding-inline: 0.35rem; }
 #memoryCoachContainer .memory-coach-library-item .memory-coach-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#memoryCoachContainer .memory-coach-library-item [data-memory-coach-action="practise-wording"] { grid-column: 1 / -1; }

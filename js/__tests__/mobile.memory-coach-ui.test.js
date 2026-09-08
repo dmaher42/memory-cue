@@ -573,3 +573,65 @@ test('library list editing preserves draft through renders and keeps ordering', 
   document.querySelector('[data-memory-coach-form]').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
   expect(getStoredEntries()[0].metadata.memoryCoach).toMatchObject({ items: ['Boots', 'Water', 'Whistle'], orderMatters: true });
 });
+
+test('wording practice hides the reference until an attempt and records a separate self-check', () => {
+  const entry = makePracticeEntry();
+  entry.metadata.memoryCoach.alternatives = ['avoiding a straight answer'];
+  const { controller, getStoredEntries, createEntry } = setup([entry]);
+  controller.activate(); clickCoach('library'); clickCoach('practise-wording');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('evasive');
+  clickCoach('wording-situation-parent');
+  expect(document.querySelector('.memory-coach-card').textContent).toContain('parent or carer');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('evasive');
+  expect(document.querySelector('[data-memory-coach-action="wording-rate-got_it"]')).toBeNull();
+  const before = JSON.parse(JSON.stringify(getStoredEntries()[0].metadata.memoryCoach));
+  clickCoach('wording-compare');
+  expect(document.querySelector('.memory-coach-answer').textContent).toContain('evasive');
+  expect(document.querySelector('.memory-coach-answer').textContent).toContain('avoiding a straight answer');
+  expect(document.querySelector('.memory-coach-card').textContent).toContain('Different wording can be just as good');
+  clickCoach('wording-rate-got_it');
+  const after = getStoredEntries()[0].metadata.memoryCoach;
+  expect(after.dueAt).toBe(before.dueAt);
+  expect(after.reviewCount).toBe(before.reviewCount);
+  expect(after.applicationCount).toBe(1);
+  expect(after.history.at(-1)).toMatchObject({ isApplication: true, applicationContext: 'parent' });
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Self-check saved');
+  expect(createEntry).not.toHaveBeenCalled();
+});
+
+test('changing situations hides reference again and cancelling does not record an attempt', () => {
+  const { controller, getStoredEntries } = setup([makePracticeEntry()]);
+  controller.activate(); clickCoach('library'); clickCoach('practise-wording');
+  clickCoach('wording-situation-colleague'); clickCoach('wording-choose'); clickCoach('wording-situation-message');
+  expect(document.querySelector('.memory-coach-card').textContent).toContain('short message');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('evasive');
+  clickCoach('wording-back');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('My memories');
+  expect(getStoredEntries()[0].metadata.memoryCoach.reviewCount).toBe(0);
+  expect(getStoredEntries()[0].metadata.memoryCoach.history).toHaveLength(0);
+});
+
+test('review summary offers wording practice after recording recall, then returns to that summary', () => {
+  const { controller, getStoredEntries } = setup([makePracticeEntry()]);
+  controller.activate(); clickCoach('reveal'); clickCoach('rate-got_it');
+  const dueAt = getStoredEntries()[0].metadata.memoryCoach.dueAt;
+  clickCoach('practise-wording'); clickCoach('wording-situation-everyday'); clickCoach('wording-compare'); clickCoach('wording-rate-hard');
+  clickCoach('wording-back');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Good retrieval work');
+  expect(getStoredEntries()[0].metadata.memoryCoach.dueAt).toBe(dueAt);
+  expect(getStoredEntries()[0].metadata.memoryCoach.reviewCount).toBe(1);
+});
+
+test('lists do not offer expression exercises', () => {
+  const { controller } = setup([makeListEntry()]);
+  controller.activate(); clickCoach('library');
+  expect(document.querySelector('[data-memory-coach-action="practise-wording"]')).toBeNull();
+});
+
+test('unsaved wording self-check stays visible on persistence failure', () => {
+  const { controller } = setup([makePracticeEntry()], { updateEntry: () => null });
+  controller.activate(); clickCoach('library'); clickCoach('practise-wording');
+  clickCoach('wording-situation-colleague'); clickCoach('wording-compare'); clickCoach('wording-rate-got_it');
+  expect(document.querySelector('.memory-coach-create-error').textContent).toContain('Could not save');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Compare the meaning');
+});

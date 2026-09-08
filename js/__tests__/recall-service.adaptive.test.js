@@ -404,3 +404,37 @@ test('editing lists retains order and rejects oversized lists rather than droppi
   expect(service.updatePracticeEntry([entry], 'list', { ...payload, items: ['Only one'] }).status).toBe('invalid');
   expect(service.updatePracticeEntry([entry], 'list', { ...payload, items: Array.from({ length: 21 }, (_, i) => String(i)) }).status).toBe('invalid');
 });
+
+test('wording self-checks preserve an overdue recall schedule and its progress', () => {
+  const entry = makeCoachEntry('wording', { answer: 'evasive', stage: 3, reviewCount: 5, streak: 3, lastRating: 'got_it' });
+  const before = service.getMemoryCoachItems([entry], { now: NOW })[0];
+  const result = service.recordPracticeResult([entry], 'wording', 'hard', {
+    now: NOW, isApplication: true, applicationContext: 'parent', expectedUpdatedAt: before.updatedAt,
+  });
+  expect(result.item).toMatchObject({ dueAt: before.dueAt, stage: before.stage, reviewCount: 5, streak: 3,
+    lastRating: 'got_it', lastReviewedAt: before.lastReviewedAt, applicationCount: 1 });
+  expect(result.item.history.at(-1)).toMatchObject({ isApplication: true, applicationContext: 'parent', rating: 'hard', isRetry: false });
+  expect(service.getPracticeSummary(result.entries, { now: NOW }).due).toBe(1);
+});
+
+test('extra wording practice keeps paused cards paused and future reviews in place', () => {
+  const entry = makeCoachEntry('paused-word', { answer: 'evasive', enabled: false, dueAt: new Date(NOW + 7 * DAY_MS).toISOString() });
+  const result = service.recordPracticeResult([entry], 'paused-word', 'got_it', { now: NOW, isApplication: true, applicationContext: 'message' });
+  expect(result.item.enabled).toBe(false);
+  expect(result.item.dueAt).toBe(entry.metadata.memoryCoach.dueAt);
+  expect(result.item.reviewCount).toBe(entry.metadata.memoryCoach.reviewCount);
+});
+
+test('wording self-checks reject stale snapshots and non-wording cards', () => {
+  const entry = makeCoachEntry('stale');
+  expect(service.recordPracticeResult([entry], 'stale', 'got_it', { isApplication: true, expectedUpdatedAt: 'stale' }).updated).toBe(false);
+  entry.metadata.memoryCoach.kind = 'memory';
+  expect(service.recordPracticeResult([entry], 'stale', 'got_it', { isApplication: true }).updated).toBe(false);
+});
+
+test('editing the meaning resets wording practice counts along with obsolete clues', () => {
+  const entry = makeCoachEntry('edit-word');
+  entry.metadata.memoryCoach.applicationCount = 7;
+  const result = service.updatePracticeEntry([entry], 'edit-word', { prompt: 'A direct answer', answer: 'forthright' }, { now: NOW });
+  expect(result.entry.metadata.memoryCoach.applicationCount).toBe(0);
+});

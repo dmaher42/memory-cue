@@ -16,6 +16,15 @@ const RATING_LABELS = Object.freeze({
   got_it: 'Recalled clearly',
 });
 
+const WORDING_SITUATIONS = Object.freeze([
+  { id: 'colleague', label: 'A colleague', prompt: 'A colleague asks what you mean. Explain this idea in one clear sentence they could act on.' },
+  { id: 'parent', label: 'A parent or carer', prompt: 'You are explaining this idea to a parent or carer. Say it respectfully and plainly, without jargon.' },
+  { id: 'everyday', label: 'Everyday conversation', prompt: 'A friend is unfamiliar with this idea. Explain it naturally, using a different example from your saved one.' },
+  { id: 'message', label: 'A short message', prompt: 'Imagine sending someone a short message about this idea. Say one concise sentence with enough context to be understood.' },
+]);
+
+const supportsWordingPractice = (item) => ['vocabulary', 'expression'].includes(item?.kind);
+
 const createElement = (tagName, className = '', text = '') => {
   const element = document.createElement(tagName);
   if (className) {
@@ -124,6 +133,7 @@ export const createMemoryCoachUi = (options = {}) => {
   let retryCount = 0;
   let missedItems = new Set();
   let orderMissed = false;
+  let wording = null;
   let creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
   const defaultControlsLabel = controlsRegion instanceof HTMLElement
     ? controlsRegion.getAttribute('aria-label') || ''
@@ -200,6 +210,7 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const startSession = () => {
+    wording = null;
     session = createPracticeSession(getEntries(), {
       now: now(),
       limit: 5,
@@ -226,6 +237,7 @@ export const createMemoryCoachUi = (options = {}) => {
       return;
     }
     active = false;
+    wording = null;
     session = null;
     lastPausedItem = null;
     resetCardState();
@@ -727,6 +739,9 @@ export const createMemoryCoachUi = (options = {}) => {
     if (retryCount) card.appendChild(createElement('p', 'memory-coach-copy', `You also made ${retryCount} extra ${retryCount === 1 ? 'attempt' : 'attempts'}. Your spaced reviews remain scheduled.`));
     appendStats(card, summary);
     const actions = createElement('div', 'memory-coach-actions');
+    const wordingItem = getMemoryCoachItems(getEntries(), { includePaused: true, now: now() })
+      .find((item) => supportsWordingPractice(item) && session?.itemIds?.includes(item.id));
+    if (wordingItem) appendButton(actions, 'Practise wording', 'practise-wording').dataset.memoryCoachId = wordingItem.id;
     if (summary.due > 0) {
       appendButton(actions, 'Continue practice', 'continue', { primary: true, focus: true });
     }
@@ -801,10 +816,12 @@ export const createMemoryCoachUi = (options = {}) => {
           : item.answer));
         if (item.lastMissedItems.length) answer.appendChild(createElement('p', 'memory-coach-copy', `Last review: missed ${item.lastMissedItems.join(', ')}.`));
         if (item.lastOrderMissed) answer.appendChild(createElement('p', 'memory-coach-copy', 'Last review: order needs practice.'));
+        if (item.applicationCount) answer.appendChild(createElement('p', 'memory-coach-copy', `Wording practice: ${item.applicationCount} ${item.applicationCount === 1 ? 'attempt' : 'attempts'}.`));
         row.appendChild(answer);
         const rowActions = createElement('div', 'memory-coach-actions');
         appendButton(rowActions, 'Edit', 'edit-memory').dataset.memoryCoachId = item.id;
         appendButton(rowActions, item.enabled ? 'Pause' : 'Resume', 'toggle-memory').dataset.memoryCoachId = item.id;
+        if (supportsWordingPractice(item)) appendButton(rowActions, 'Practise wording', 'practise-wording').dataset.memoryCoachId = item.id;
         row.appendChild(rowActions);
         list.appendChild(row);
       });
@@ -812,6 +829,81 @@ export const createMemoryCoachUi = (options = {}) => {
     search.addEventListener('input', () => { libraryQuery = search.value; drawList(); });
     drawList();
     card.appendChild(list);
+  };
+
+  const openWordingPractice = (id) => {
+    const item = getMemoryCoachItems(getEntries(), { includePaused: true, now: now() }).find((entry) => entry.id === id);
+    if (!supportsWordingPractice(item)) return;
+    wording = { item, returnPhase: phase === 'complete' ? 'complete' : 'library', situation: null, error: '' };
+    phase = 'wording-choose';
+    requestCoachRender();
+  };
+
+  const renderWordingPractice = (card) => {
+    const item = wording?.item;
+    if (!item) { phase = 'library'; renderLibrary(card); return; }
+    const actions = createElement('div', 'memory-coach-actions memory-coach-wording-actions');
+    const backLabel = wording.returnPhase === 'complete' ? 'Back to review summary' : 'Back to my memories';
+    if (phase === 'wording-done') {
+      appendCardHeader(card, 'Wording practice', 'Self-check saved');
+      card.appendChild(createElement('p', 'memory-coach-copy', 'Your recall schedule is unchanged. Try the same idea with another audience when you want more practice.'));
+      appendButton(actions, 'Try another situation', 'wording-choose', { primary: true, focus: true });
+    } else if (phase === 'wording-choose') {
+      appendCardHeader(card, 'Wording practice', 'Choose a situation');
+      card.appendChild(createElement('p', 'memory-coach-copy', 'Practise conveying the idea in your own words. The saved expression stays hidden until you compare.'));
+      WORDING_SITUATIONS.forEach((situation, index) => {
+        appendButton(actions, situation.label, `wording-situation-${situation.id}`, { focus: index === 0 });
+      });
+    } else if (phase === 'wording-try') {
+      appendCardHeader(card, wording.situation.label, 'Say it in your own words');
+      card.appendChild(createElement('p', 'memory-coach-prompt', item.prompt));
+      card.appendChild(createElement('p', 'memory-coach-copy', wording.situation.prompt));
+      card.appendChild(createElement('p', 'memory-coach-copy', 'Say your sentence aloud, or form it clearly in your mind, before comparing.'));
+      appendButton(actions, 'I’ve tried it — compare', 'wording-compare', { primary: true, focus: true });
+      appendButton(actions, 'Choose another situation', 'wording-choose');
+    } else {
+      appendCardHeader(card, wording.situation.label, 'Compare the meaning');
+      const reference = createElement('div', 'memory-coach-answer');
+      reference.appendChild(createElement('span', 'memory-coach-answer-detail', 'Your saved wording'));
+      reference.appendChild(createElement('strong', 'memory-coach-answer-word', item.answer));
+      if (item.explanation) reference.appendChild(createElement('span', 'memory-coach-answer-detail', item.explanation));
+      if (item.example) reference.appendChild(createElement('span', 'memory-coach-answer-detail', `Saved example: ${item.example}`));
+      if (item.alternatives.length) reference.appendChild(createElement('span', 'memory-coach-answer-detail', `Other possibilities: ${item.alternatives.join('; ')}`));
+      card.appendChild(reference);
+      card.appendChild(createElement('p', 'memory-coach-copy', 'Did your sentence convey the intended meaning and suit the audience? Different wording can be just as good. This is your own assessment.'));
+      [['got_it', 'Expressed it clearly'], ['hard', 'Needed some support'], ['forgot', 'Couldn’t express it yet']].forEach(([rating, label], index) => {
+        appendButton(actions, label, `wording-rate-${rating}`, { primary: index === 0, focus: index === 0 });
+      });
+    }
+    if (wording.error) {
+      const error = createElement('p', 'memory-coach-create-error', wording.error);
+      error.setAttribute('role', 'alert');
+      card.appendChild(error);
+    }
+    appendButton(actions, backLabel, 'wording-back');
+    card.appendChild(actions);
+  };
+
+  const rateWordingPractice = (rating) => {
+    if (phase !== 'wording-compare' || !wording?.situation) return;
+    const result = recordPracticeResult(getEntries(), wording.item.id, rating, {
+      now: now(), isApplication: true, applicationContext: wording.situation.id,
+      expectedUpdatedAt: wording.item.updatedAt,
+    });
+    if (!result.updated) {
+      wording.error = 'This memory changed or is no longer available. Go back and reopen it before continuing.';
+      requestCoachRender('wording-back');
+      return;
+    }
+    if (!persistEntry(result.item.entry)) {
+      wording.error = 'Could not save this self-check. Try again, or go back without saving.';
+      requestCoachRender();
+      return;
+    }
+    wording.item = result.item;
+    wording.error = '';
+    phase = 'wording-done';
+    requestCoachRender('wording-choose');
   };
 
   const openEditMemory = (id) => {
@@ -927,7 +1019,30 @@ export const createMemoryCoachUi = (options = {}) => {
       return;
     }
     const action = button.dataset.memoryCoachAction || '';
-    if (action === 'library') {
+    if (action === 'practise-wording') {
+      openWordingPractice(button.dataset.memoryCoachId);
+    } else if (action.startsWith('wording-situation-') && wording) {
+      const situation = WORDING_SITUATIONS.find((entry) => entry.id === action.slice('wording-situation-'.length));
+      if (!situation) return;
+      wording.situation = situation;
+      wording.error = '';
+      phase = 'wording-try';
+      requestCoachRender('wording-compare');
+    } else if (action === 'wording-choose' && wording) {
+      wording.error = '';
+      phase = 'wording-choose';
+      requestCoachRender();
+    } else if (action === 'wording-compare' && phase === 'wording-try') {
+      phase = 'wording-compare';
+      requestCoachRender();
+    } else if (action.startsWith('wording-rate-')) {
+      rateWordingPractice(action.slice('wording-rate-'.length));
+    } else if (action === 'wording-back' && wording) {
+      phase = wording.returnPhase;
+      wording = null;
+      requestCoachRender();
+    } else if (action === 'library') {
+      wording = null;
       phase = 'library';
       editingItemId = '';
       requestCoachRender('back-to-practice');
@@ -1013,7 +1128,9 @@ export const createMemoryCoachUi = (options = {}) => {
 
     const entries = getEntries();
     const summary = getPracticeSummary(entries, { now: now() });
-    if (phase === 'library') {
+    if (phase.startsWith('wording-')) {
+      renderWordingPractice(card);
+    } else if (phase === 'library') {
       renderLibrary(card);
     } else if (phase === 'retry-offer') {
       renderRetryOffer(card);
@@ -1048,7 +1165,7 @@ export const createMemoryCoachUi = (options = {}) => {
 
     appendPauseUndo(card);
 
-    if (phase !== 'library' && !editingItemId && !['create', 'create-list'].includes(phase)
+    if (phase !== 'library' && !phase.startsWith('wording-') && !editingItemId && !['create', 'create-list'].includes(phase)
       && getMemoryCoachItems(entries, { includePaused: true, now: now() }).length) {
       const toolbar = createElement('div', 'memory-coach-toolbar');
       appendButton(toolbar, 'My memories', 'library');
