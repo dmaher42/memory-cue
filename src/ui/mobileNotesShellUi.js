@@ -1051,6 +1051,7 @@ export const initMobileNotesShellUi = (options = {}) => {
     onOpenNoteOptionsMove = null,
     onOpenNoteFromDashboard = null,
     onOpenTeacherNoteView = null,
+    onPractiseNote = null,
   } = options;
 
   let notesMode = 'notebooks';
@@ -1119,6 +1120,9 @@ export const initMobileNotesShellUi = (options = {}) => {
     'Create Lesson Cue',
     '.note-action-toggle-pin',
   );
+  const noteActionPractiseBtn = typeof onPractiseNote === 'function'
+    ? ensureSheetActionButton(null, 'note-action-practise', 'Help me remember this', '.note-action-rename')
+    : null;
   noteActionSetActiveLessonBtn = ensureSheetActionButton(
     noteActionSetActiveLessonBtn,
     'note-action-set-active-lesson',
@@ -2258,6 +2262,17 @@ export const initMobileNotesShellUi = (options = {}) => {
     noteOptionsOverlay.classList.add('open');
     noteOptionsOverlay.setAttribute('aria-hidden', 'false');
   };
+
+  noteActionPractiseBtn?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    const noteId = currentNoteOptionsNoteId;
+    if (!noteId) return;
+    await flushCurrentNote();
+    const note = getAllNotes().find((item) => item.id === noteId);
+    if (!note) return;
+    closeNoteOptionsMenu();
+    onPractiseNote(note);
+  });
 
   if (noteOptionsOverlay) {
     noteOptionsOverlay.addEventListener('click', (event) => {

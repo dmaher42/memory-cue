@@ -2177,6 +2177,9 @@ function initAssistant() {
     memoryCoachUi = createMemoryCoachUi({
       container: memoryCoachContainer,
       navigationView: 'coach',
+      dueBadge: document.getElementById('memoryCoachDueBadge'),
+      duePrompt: document.getElementById('memoryCoachDuePrompt'),
+      navigationButton: memoryCoachLauncher,
       loadEntries: () => getInboxEntries({ includeMemoryCoach: true }),
       createEntry: saveInboxEntry,
       updateEntry: updateMemoryCoachInboxEntry,
@@ -2743,6 +2746,12 @@ function initAssistant() {
         }
       }
     };
+
+    window.addEventListener('memoryCue:practiceNote', (event) => {
+      if (memoryCoachUi?.openNoteDraft(event.detail)) {
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'coach' } }));
+      }
+    });
 
     const thinkingBarComposer = createChatComposer({
       form: thinkingBarForm,
@@ -6060,6 +6069,17 @@ const initMobileNotes = () => {
     refreshFromStorage,
     saveAllNotes,
     showNoteToast,
+    onPractiseNote: (note) => {
+      const text = getNoteBodyText(note);
+      if (!text.trim()) {
+        showNoteToast('Add some text to this note before making a practice question.');
+        return;
+      }
+      hideSavedNotesSheet();
+      window.dispatchEvent(new CustomEvent('memoryCue:practiceNote', {
+        detail: { title: note.title || '', text },
+      }));
+    },
     onOpenNoteOptionsMove: (noteId, note, triggerEl) => {
       openFolderSelectorForNote(noteId, {
         initialFolderId:

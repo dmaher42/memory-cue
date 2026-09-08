@@ -84,6 +84,9 @@ export const createMemoryCoachUi = (options = {}) => {
     beforeActivate = () => {},
     onFindWord = () => {},
     navigationView = '',
+    dueBadge = null,
+    duePrompt = null,
+    navigationButton = null,
     now = () => Date.now(),
   } = options;
 
@@ -110,6 +113,7 @@ export const createMemoryCoachUi = (options = {}) => {
   let preferredFocusAction = '';
   let lastPausedItem = null;
   let creationError = '';
+  let sourceNoteText = '';
   let creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
   const defaultControlsLabel = controlsRegion instanceof HTMLElement
     ? controlsRegion.getAttribute('aria-label') || ''
@@ -118,6 +122,21 @@ export const createMemoryCoachUi = (options = {}) => {
   const getEntries = () => {
     const entries = loadEntries();
     return Array.isArray(entries) ? entries : [];
+  };
+
+  const refreshDueStatus = () => {
+    const { due } = getPracticeSummary(getEntries(), { now: now() });
+    if (dueBadge) {
+      dueBadge.hidden = due === 0;
+      dueBadge.textContent = due > 99 ? '99+' : String(due);
+    }
+    navigationButton?.setAttribute('aria-label', due
+      ? `Go to Memory Coach, ${due} ${due === 1 ? 'memory' : 'memories'} ready for practice`
+      : 'Go to Memory Coach');
+    if (duePrompt) {
+      duePrompt.hidden = due === 0;
+      duePrompt.textContent = `Two-minute practice · ${due} ${due === 1 ? 'memory' : 'memories'} ready`;
+    }
   };
 
   const syncModeUi = () => {
@@ -216,6 +235,7 @@ export const createMemoryCoachUi = (options = {}) => {
   };
 
   const announceUpdatedItems = (successMessage) => {
+    refreshDueStatus();
     const entries = getEntries();
     document.dispatchEvent(new CustomEvent('memoryCue:memoryCoachUpdated', {
       detail: { items: getMemoryCoachItems(entries, { includePaused: true, now: now() }) },
@@ -387,17 +407,22 @@ export const createMemoryCoachUi = (options = {}) => {
     card.appendChild(actions);
   };
 
-  const appendCreationField = (form, { id, label, help, placeholder, maxLength }) => {
+  const appendCreationField = (form, { id, label, help, placeholder, maxLength, multiline = false }) => {
     const field = createElement('label', 'memory-coach-create-field');
     field.setAttribute('for', id);
     field.appendChild(createElement('span', 'memory-coach-create-label', label));
     if (help) {
       field.appendChild(createElement('span', 'memory-coach-create-help', help));
     }
-    const input = createElement('input', 'memory-coach-create-input');
+    const input = createElement(multiline ? 'textarea' : 'input', 'memory-coach-create-input');
     input.id = id;
     input.name = id;
-    input.type = 'text';
+    if (multiline) {
+      input.rows = 3;
+      input.classList.add('memory-coach-create-textarea');
+    } else {
+      input.type = 'text';
+    }
     input.placeholder = placeholder;
     input.maxLength = maxLength;
     input.autocomplete = 'off';
@@ -411,8 +436,16 @@ export const createMemoryCoachUi = (options = {}) => {
     card.appendChild(createElement(
       'p',
       'memory-coach-copy',
-      'Use a specific prompt. The answer stays hidden while you practise retrieving it.',
+      sourceNoteText
+        ? 'Check this draft question and short excerpt. Edit them to practise one clear point.'
+        : 'Use a specific prompt. The answer stays hidden while you practise retrieving it.',
     ));
+    if (sourceNoteText) {
+      const source = createElement('details', 'memory-coach-note-source');
+      source.append(createElement('summary', '', 'Read source note'),
+        createElement('p', 'memory-coach-source-text', sourceNoteText));
+      card.appendChild(source);
+    }
     const form = createElement('form', 'memory-coach-create-form');
     form.dataset.memoryCoachForm = 'create';
     const promptInput = appendCreationField(form, {
@@ -421,13 +454,15 @@ export const createMemoryCoachUi = (options = {}) => {
       help: 'What question or situation should trigger the memory?',
       placeholder: 'e.g. What is my new colleague’s name?',
       maxLength: 600,
+      multiline: Boolean(sourceNoteText),
     });
     const answerInput = appendCreationField(form, {
       id: 'memoryCoachNewAnswer',
       label: 'What you want to remember',
-      help: 'This remains hidden until you reveal it.',
+      help: sourceNoteText ? 'One short answer, up to 120 characters.' : 'This remains hidden until you reveal it.',
       placeholder: 'e.g. Priya Shah',
       maxLength: 120,
+      multiline: Boolean(sourceNoteText),
     });
     promptInput.enterKeyHint = 'next';
     answerInput.enterKeyHint = 'done';
@@ -738,11 +773,13 @@ export const createMemoryCoachUi = (options = {}) => {
       startSession();
       requestCoachRender('hint');
     } else if (action === 'add-memory') {
+      sourceNoteText = '';
       creationError = '';
       creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
       phase = 'create';
       requestCoachRender('memory-prompt');
     } else if (action === 'add-list') {
+      sourceNoteText = '';
       creationError = '';
       creationDraft = { prompt: '', answer: '', itemsText: '', orderMatters: false };
       phase = 'create-list';
@@ -859,6 +896,42 @@ export const createMemoryCoachUi = (options = {}) => {
     }
   };
   window.addEventListener('memorycue:navigation:changed', handleNavigation);
+  const openNoteDraft = ({ title = '', text = '' } = {}) => {
+    const source = typeof text === 'string' ? text.trim() : '';
+    if (!source) return false;
+    activate();
+    if (!active) return false;
+    sourceNoteText = source;
+    const firstLine = source.split(/\r?\n/).find((line) => line.trim()) || source;
+    // Offer a source-grounded excerpt, never an invented answer. The source remains available.
+    const firstSentence = firstLine.trim().match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim();
+    const excerpt = firstSentence && firstSentence.length <= 120 ? firstSentence : firstLine.trim().slice(0, 120);
+    const noteTitle = typeof title === 'string' ? title.trim().slice(0, 160) : '';
+    const titleRepeatsSource = noteTitle && source.startsWith(noteTitle.replace(/(?:\.{3}|…)$/, '').trim());
+    creationDraft = {
+      prompt: noteTitle && !titleRepeatsSource ? `What should I remember about “${noteTitle}”?` : 'What is the key point of this note?',
+      answer: excerpt,
+      itemsText: '',
+      orderMatters: false,
+    };
+    creationError = '';
+    phase = 'create';
+    requestCoachRender('memory-prompt');
+    return true;
+  };
+  if (dueBadge || duePrompt) {
+    document.addEventListener('memoryCue:entriesUpdated', refreshDueStatus);
+    window.addEventListener('storage', refreshDueStatus);
+    window.addEventListener('focus', refreshDueStatus);
+    document.addEventListener('visibilitychange', refreshDueStatus);
+    window.setInterval(() => {
+      if (!document.hidden) refreshDueStatus();
+    }, 60000);
+    duePrompt?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'coach' } }));
+    });
+    refreshDueStatus();
+  }
   syncModeUi();
 
   return {
@@ -868,6 +941,8 @@ export const createMemoryCoachUi = (options = {}) => {
     isActive: () => active,
     saveVocabulary,
     saveMemory,
+    openNoteDraft,
+    refreshDueStatus,
     hasSavedWord,
     getVocabularyState,
   };

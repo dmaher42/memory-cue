@@ -4974,6 +4974,7 @@ body, main, section, div, p, span, li {
     <section data-view="reminders" id="view-reminders" class="view-panel">
       <div class="reminders-mobile-flow reminders-content-shell">
         <div id="inboxSearchResults"></div>
+        <button id="memoryCoachDuePrompt" class="memory-coach-due-prompt" type="button" hidden></button>
 
         <section id="remindersListMobile" aria-labelledby="remindersViewTitle">
           <div class="sr-only">
@@ -5598,7 +5599,7 @@ body, main, section, div, p, span, li {
         data-nav-target="coach"
         data-tab="coach"
         aria-label="Go to Memory Coach"
-      >Coach</button>
+      >Coach <span id="memoryCoachDueBadge" class="memory-coach-due-badge" aria-hidden="true" hidden></span></button>
 
       <button
         type="button"

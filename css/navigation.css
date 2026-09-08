@@ -44,3 +44,8 @@
   font-weight: 600;
   background: none;
 }
+
+#mobile-nav-shell.bottom-nav .bottom-nav-list #memoryCoachLauncher {
+  flex-direction: row;
+  gap: 4px;
+}

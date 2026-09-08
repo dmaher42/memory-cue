@@ -1606,3 +1606,28 @@ html.dark #thinkingBarVoiceButton.is-listening {
   outline: 2px solid var(--accent-color, #1e293b);
   outline-offset: 2px;
 }
+/* Quiet practice cues share the existing Coach schedule and navigation. */
+.memory-coach-due-prompt {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: #334155;
+  text-align: left;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.memory-coach-due-badge {
+  display: inline-block;
+  min-width: 1.15rem;
+  padding: 0.05rem 0.25rem;
+  border-radius: 1rem;
+  background: #334155;
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1.1rem;
+}
+.memory-coach-due-badge[hidden], .memory-coach-due-prompt[hidden] { display: none; }
+.memory-coach-note-source { margin: 0 0 1rem; font-size: 0.9rem; }
+.memory-coach-source-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12rem; overflow-y: auto; }

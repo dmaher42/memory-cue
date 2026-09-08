@@ -171,6 +171,74 @@ beforeEach(() => {
   document.body.className = '';
 });
 
+test('a note opens an editable source-grounded draft without saving until confirmation', () => {
+  const { controller, createEntry, getStoredEntries } = setup();
+  const source = 'Weather describes short-term atmospheric conditions.\nClimate describes patterns over many years.';
+  expect(controller.openNoteDraft({ title: 'Weather and climate', text: source })).toBe(true);
+  expect(createEntry).not.toHaveBeenCalled();
+  expect(document.querySelector('.memory-coach-source-text').textContent).toBe(source);
+  expect(document.getElementById('memoryCoachNewPrompt').value).toContain('Weather and climate');
+  document.getElementById('memoryCoachNewPrompt').value = 'What does weather describe?';
+  document.getElementById('memoryCoachNewAnswer').value = 'Short-term atmospheric conditions';
+  document.querySelector('[data-memory-coach-form="create"]').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  expect(createEntry).toHaveBeenCalledTimes(1);
+  expect(getStoredEntries()[0].metadata.memoryCoach.answer).toBe('Short-term atmospheric conditions');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('Short-term atmospheric conditions');
+});
+
+test('cancelled and empty note drafts do not create practice entries', () => {
+  const { controller, createEntry } = setup();
+  expect(controller.openNoteDraft({ text: '  ' })).toBe(false);
+  controller.openNoteDraft({ title: 'Example', text: 'Useful fact' });
+  document.querySelector('[data-memory-coach-action="cancel-add-memory"]').click();
+  expect(createEntry).not.toHaveBeenCalled();
+  expect(document.querySelector('[data-memory-coach-form]')).toBeNull();
+});
+
+test('long source notes stay available while the proposed answer is a labelled excerpt', () => {
+  const { controller } = setup();
+  const text = 'A long source note without punctuation '.repeat(40);
+  controller.openNoteDraft({ title: 'Long note', text });
+  expect(document.getElementById('memoryCoachNewAnswer').value.length).toBe(120);
+  expect(document.querySelector('.memory-coach-source-text').textContent).toBe(text.trim());
+  expect(document.querySelector('.memory-coach-card').textContent).toContain('excerpt');
+});
+
+test('due cues track reviews, exclude paused cards and refresh as time passes', () => {
+  jest.useFakeTimers();
+  try {
+    const badge = document.createElement('span');
+    const prompt = document.createElement('button');
+    const navigationButton = document.createElement('button');
+    let currentTime = NOW;
+    const paused = makePracticeEntry();
+    paused.id = 'paused';
+    paused.metadata.memoryCoach.enabled = false;
+    const { controller } = setup([makePracticeEntry(), paused], {
+      dueBadge: badge, duePrompt: prompt, navigationButton, now: () => currentTime,
+    });
+    expect(badge.textContent).toBe('1');
+    expect(prompt.hidden).toBe(false);
+    expect(navigationButton.getAttribute('aria-label')).toContain('1 memory ready');
+    const navigate = jest.fn();
+    window.addEventListener('app:navigate', navigate, { once: true });
+    prompt.click();
+    expect(navigate.mock.calls[0][0].detail.view).toBe('coach');
+    controller.activate();
+    document.querySelector('[data-memory-coach-action="reveal"]').click();
+    document.querySelector('[data-memory-coach-action="rate-got_it"]').click();
+    expect(badge.hidden).toBe(true);
+    expect(prompt.hidden).toBe(true);
+    currentTime += 24 * 60 * 60 * 1000;
+    window.dispatchEvent(new window.Event('focus'));
+    expect(badge.hidden).toBe(false);
+    expect(badge.textContent).toBe('1');
+  } finally {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  }
+});
+
 test('opens an empty coach with one existing textarea and a direct Word Help path', () => {
   const { controller, beforeActivate, onFindWord } = setup();
 

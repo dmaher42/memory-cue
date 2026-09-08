@@ -73,6 +73,29 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+test('note practice action flushes current edits and hands the selected note to Coach', async () => {
+  const { initMobileNotesShellUi } = loadMobileNotesShellUi();
+  const overlay = document.createElement('div');
+  const sheet = document.createElement('div');
+  sheet.innerHTML = '<div class="note-options-actions"><button class="note-action-rename">Rename</button></div>';
+  document.body.append(overlay, sheet);
+  let note = { id: 'weather', title: 'Weather', bodyText: 'Old text' };
+  const onPractiseNote = jest.fn();
+  const flushCurrentNote = jest.fn(async () => { note = { ...note, bodyText: 'Latest saved text' }; });
+  const ui = initMobileNotesShellUi({
+    noteOptionsOverlay: overlay, noteOptionsSheet: sheet,
+    getAllNotes: () => [note], flushCurrentNote, onPractiseNote,
+  });
+  ui.openNoteOptionsMenu('weather');
+  sheet.querySelector('.note-action-practise').click();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(flushCurrentNote).toHaveBeenCalledTimes(1);
+  expect(onPractiseNote).toHaveBeenCalledWith(expect.objectContaining({ id: 'weather', bodyText: 'Latest saved text' }));
+  expect(sheet.getAttribute('aria-hidden')).toBe('true');
+});
+
 test('defers note sections bar rendering while typing in the editor', () => {
   const { initMobileNotesShellUi } = loadMobileNotesShellUi();
   const noteEditorSheet = document.getElementById('noteEditorSheet');
