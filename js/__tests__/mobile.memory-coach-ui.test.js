@@ -20,6 +20,7 @@ module.exports = {
   maskPracticeAnswer,
   recordPracticeResult,
   setPracticeItemEnabled,
+  updatePracticeEntry,
 };`;
   const module = { exports: {} };
   const context = vm.createContext({
@@ -54,6 +55,7 @@ const {
   maskPracticeAnswer,
   recordPracticeResult,
   setPracticeItemEnabled,
+  updatePracticeEntry,
 } = globalThis.__recallApi;
 ${source}
 module.exports = { createMemoryCoachUi };
@@ -317,7 +319,7 @@ test('keeps a list draft when fewer than two items are supplied', () => {
   }));
 
   expect(document.querySelector('.memory-coach-create-error').textContent)
-    .toBe('Add a prompt and at least two list items.');
+    .toBe('Add a prompt and 2–20 list items, up to 120 characters each.');
   expect(document.getElementById('memoryCoachListPrompt').value).toBe('Packing list');
   expect(document.getElementById('memoryCoachListItems').value).toBe('Boots');
 });
@@ -463,4 +465,111 @@ test('Escape returns a dedicated Coach view to Capture', () => {
 
   expect(navigate).toHaveBeenCalledTimes(1);
   expect(navigate.mock.calls[0][0].detail).toEqual({ view: 'capture' });
+});
+
+const clickCoach = (action) => document.querySelector(`[data-memory-coach-action="${action}"]`).click();
+const makeListEntry = () => recallApi.addMemoryPracticeEntry([], {
+  prompt: 'What do I need for training?', kind: 'list', items: ['Boots', 'Water', 'Towel'], orderMatters: true,
+}, { now: NOW, createEntry: (payload) => createStoredEntry({ ...payload, id: 'list' }) }).entry;
+
+test('forgotten memories return after the first round and retries never loop or inflate mastery', () => {
+  const second = makePracticeEntry();
+  second.id = 'second';
+  second.metadata.memoryCoach.prompt = 'The second situation';
+  const { controller, getStoredEntries } = setup([makePracticeEntry(), second]);
+  controller.activate();
+  clickCoach('reveal');
+  clickCoach('rate-forgot');
+  expect(document.querySelector('.memory-coach-prompt').textContent).toBe('The second situation');
+  clickCoach('reveal');
+  clickCoach('rate-got_it');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Practise what slipped away');
+  const before = getStoredEntries()[0].metadata.memoryCoach;
+  clickCoach('start-retry');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toContain('evasive');
+  clickCoach('reveal');
+  clickCoach('rate-forgot');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Good retrieval work');
+  expect(document.querySelector('[data-memory-coach-action="start-retry"]')).toBeNull();
+  const after = getStoredEntries()[0].metadata.memoryCoach;
+  expect(after.dueAt).toBe(before.dueAt);
+  expect(after.reviewCount).toBe(before.reviewCount);
+  expect(after.history.at(-1).isRetry).toBe(true);
+});
+
+test('retry round is optional', () => {
+  const { controller, getStoredEntries } = setup([makePracticeEntry()]);
+  controller.activate(); clickCoach('reveal'); clickCoach('rate-forgot'); clickCoach('skip-retry');
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('Good retrieval work');
+  expect(getStoredEntries()[0].metadata.memoryCoach.history).toHaveLength(1);
+});
+
+test('list retry hides and then reveals only missed items in their original positions', () => {
+  const { controller, getStoredEntries } = setup([makeListEntry()]);
+  controller.activate(); clickCoach('reveal');
+  document.querySelector('[aria-label="I missed Water"]').click();
+  expect(document.querySelector('[data-memory-coach-action="rate-got_it"]')).toBeNull();
+  clickCoach('rate-forgot');
+  expect(getStoredEntries()[0].metadata.memoryCoach.lastMissedItems).toEqual(['Water']);
+  clickCoach('start-retry');
+  expect(document.querySelector('.memory-coach-card').textContent).not.toMatch(/Boots|Water|Towel/);
+  expect(document.querySelector('.memory-coach-copy').textContent).toContain('positions 2');
+  clickCoach('reveal');
+  expect([...document.querySelectorAll('.memory-coach-answer-list li')].map((li) => li.textContent)).toEqual(['Water']);
+  expect(document.querySelector('.memory-coach-answer-list li').value).toBe(2);
+  clickCoach('rate-got_it');
+  expect(getStoredEntries()[0].metadata.memoryCoach.reviewCount).toBe(1);
+});
+
+test('order mistakes retry the whole ordered list', () => {
+  const { controller, getStoredEntries } = setup([makeListEntry()]);
+  controller.activate(); clickCoach('reveal');
+  const order = [...document.querySelectorAll('.memory-coach-list-check')].find((label) => label.textContent === 'I mixed up the order');
+  order.querySelector('input').click(); clickCoach('rate-forgot'); clickCoach('start-retry'); clickCoach('reveal');
+  expect(document.querySelectorAll('.memory-coach-answer-list li')).toHaveLength(3);
+  expect(getStoredEntries()[0].metadata.memoryCoach.lastOrderMissed).toBe(true);
+});
+
+test('library finds and resumes paused memories across sessions without creating duplicates', () => {
+  const paused = makePracticeEntry();
+  paused.metadata.memoryCoach.enabled = false;
+  const { controller, getStoredEntries, createEntry } = setup([paused]);
+  controller.activate(); clickCoach('library'); clickCoach('filter-paused');
+  const search = document.getElementById('memoryCoachLibrarySearch');
+  search.value = 'EVA'; search.dispatchEvent(new window.Event('input', { bubbles: true }));
+  expect(document.querySelectorAll('.memory-coach-library-item')).toHaveLength(1);
+  clickCoach('toggle-memory');
+  expect(getStoredEntries()[0].metadata.memoryCoach.enabled).toBe(true);
+  expect(document.querySelectorAll('.memory-coach-library-item')).toHaveLength(0);
+  controller.deactivate(); controller.activate();
+  expect(document.querySelector('.memory-coach-prompt')).not.toBeNull();
+  expect(createEntry).not.toHaveBeenCalled();
+});
+
+test('library editing saves in place and cancelled edits leave the card unchanged', () => {
+  const { controller, getStoredEntries, createEntry } = setup([makePracticeEntry()]);
+  controller.activate(); clickCoach('library'); clickCoach('edit-memory');
+  const field = document.getElementById('memoryCoachNewAnswer');
+  field.value = 'discarded'; field.dispatchEvent(new window.Event('input', { bubbles: true }));
+  clickCoach('cancel-add-memory');
+  expect(getStoredEntries()[0].metadata.memoryCoach.answer).toBe('evasive');
+  clickCoach('edit-memory');
+  document.getElementById('memoryCoachNewPrompt').value = 'A clear and direct response';
+  document.getElementById('memoryCoachNewAnswer').value = 'forthright';
+  document.querySelector('[data-memory-coach-form]').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  expect(getStoredEntries()).toHaveLength(1);
+  expect(getStoredEntries()[0].metadata.memoryCoach).toMatchObject({ answer: 'forthright', prompt: 'A clear and direct response', hints: [] });
+  expect(document.querySelector('.memory-coach-title').textContent).toBe('My memories');
+  expect(createEntry).not.toHaveBeenCalled();
+});
+
+test('library list editing preserves draft through renders and keeps ordering', () => {
+  const { controller, getStoredEntries } = setup([makeListEntry()]);
+  controller.activate(); clickCoach('library'); clickCoach('edit-memory');
+  const field = document.getElementById('memoryCoachListItems');
+  field.value = 'Boots\nWater\nWhistle'; field.dispatchEvent(new window.Event('input', { bubbles: true }));
+  controller.render();
+  expect(document.getElementById('memoryCoachListItems').value).toBe('Boots\nWater\nWhistle');
+  document.querySelector('[data-memory-coach-form]').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  expect(getStoredEntries()[0].metadata.memoryCoach).toMatchObject({ items: ['Boots', 'Water', 'Whistle'], orderMatters: true });
 });

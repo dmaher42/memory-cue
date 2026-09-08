@@ -82,6 +82,9 @@ const normalizeReviewHistory = (value) => (
           effectiveRating,
           hintUsed: review.hintUsed === true,
           wasEarly: review.wasEarly === true,
+          isRetry: review.isRetry === true,
+          missedItems: normalizeTextList(review.missedItems, 20, 120),
+          orderMissed: review.orderMissed === true,
           stageBefore: clampInteger(review.stageBefore, 0, MEMORY_COACH_INTERVAL_DAYS.length - 1, 0),
           stageAfter: clampInteger(review.stageAfter, 0, MEMORY_COACH_INTERVAL_DAYS.length - 1, 0),
           intervalDays: clampInteger(review.intervalDays, 0, 365, 0),
@@ -151,6 +154,8 @@ export const normalizeMemoryCoachMetadata = (value, options = {}) => {
     streak: clampInteger(value.streak, 0, 100000, 0),
     lapses: clampInteger(value.lapses, 0, 100000, 0),
     history: normalizeReviewHistory(value.history),
+    lastMissedItems: normalizeTextList(value.lastMissedItems, 20, 120).filter((item) => items.includes(item)),
+    lastOrderMissed: value.kind === 'list' && value.orderMatters === true && value.lastOrderMissed === true,
   };
 };
 
@@ -242,12 +247,19 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
       return entry;
     }
 
-    const effectiveRating = normalizedRating === MEMORY_COACH_RATINGS.GOT_IT && options.hintUsed === true
+    const missedItems = current.kind === 'list'
+      ? normalizeTextList(options.missedItems, 20, 120).filter((item) => current.items.includes(item))
+      : [];
+    const orderMissed = current.orderMatters && options.orderMissed === true;
+    const effectiveRating = missedItems.length || orderMissed
+      ? MEMORY_COACH_RATINGS.FORGOT
+      : normalizedRating === MEMORY_COACH_RATINGS.GOT_IT && options.hintUsed === true
       ? MEMORY_COACH_RATINGS.HARD
       : normalizedRating;
     const dueAtBefore = current.dueAt;
     const dueTimestampBefore = toTimestamp(dueAtBefore) ?? now;
-    const wasEarly = dueTimestampBefore > now;
+    const isRetry = options.isRetry === true;
+    const wasEarly = isRetry || dueTimestampBefore > now;
     let nextStage = current.stage;
     let intervalDays = wasEarly
       ? Math.max(0, Math.ceil((dueTimestampBefore - now) / DAY_MS))
@@ -291,6 +303,9 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
       effectiveRating,
       hintUsed: options.hintUsed === true,
       wasEarly,
+      isRetry,
+      missedItems,
+      orderMissed,
       stageBefore: current.stage,
       stageAfter: nextStage,
       intervalDays,
@@ -299,13 +314,15 @@ export const recordPracticeResult = (entries = [], entryId, rating, options = {}
       ...current,
       updatedAt: now,
       dueAt: nextDueAt,
-      lastReviewedAt: now,
+      lastReviewedAt: isRetry ? current.lastReviewedAt : now,
       lastRating: nextLastRating,
       stage: nextStage,
-      reviewCount: current.reviewCount + 1,
+      reviewCount: current.reviewCount + (isRetry ? 0 : 1),
       streak: nextStreak,
       lapses: nextLapses,
       history: [...current.history, review],
+      lastMissedItems: wasEarly ? current.lastMissedItems : missedItems,
+      lastOrderMissed: wasEarly ? current.lastOrderMissed : orderMissed,
     }, { now });
     const nextEntry = withMemoryCoachMetadata(entry, nextCoach, now);
     updated = true;
@@ -343,6 +360,44 @@ export const setPracticeItemEnabled = (entries = [], entryId, enabled, options =
   return { entries: nextEntries, updated, item: updatedItem };
 };
 
+export const updatePracticeEntry = (entries = [], entryId, payload = {}, options = {}) => {
+  const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
+  const existing = (Array.isArray(entries) ? entries : []).find((entry) => entry?.id === entryId);
+  const current = normalizeMemoryCoachMetadata(existing?.metadata?.memoryCoach, { now });
+  if (!current) return { status: 'missing', entry: null };
+  if (options.expectedUpdatedAt && options.expectedUpdatedAt !== current.updatedAt) {
+    return { status: 'conflict', entry: null };
+  }
+  const rawPrompt = typeof payload.prompt === 'string' ? payload.prompt.trim() : '';
+  const rawAnswer = typeof payload.answer === 'string' ? payload.answer.trim() : '';
+  const rawItems = Array.isArray(payload.items) ? payload.items : [];
+  const isList = current.kind === 'list';
+  const items = isList ? normalizeTextList(rawItems, 20, 120) : [];
+  if (!rawPrompt || rawPrompt.length > 600 || (isList
+    ? items.length < 2 || rawItems.length > 20 || rawItems.some((item) => typeof item !== 'string' || item.trim().length > 120)
+    : !rawAnswer || rawAnswer.length > 120)) {
+    return { status: 'invalid', entry: null };
+  }
+  const answer = isList ? normalizeText(items.join(' • '), 120) : normalizeText(rawAnswer, 120);
+  const prompt = maskPracticeAnswer(rawPrompt, answer);
+  const orderMatters = isList && payload.orderMatters === true;
+  if (current.prompt === prompt && current.answer === answer
+    && JSON.stringify(current.items) === JSON.stringify(items) && current.orderMatters === orderMatters) {
+    return { status: 'unchanged', entry: existing };
+  }
+  // A changed question/answer is new learning. Keep identity, sync metadata and pause state.
+  const memoryCoach = normalizeMemoryCoachMetadata({
+    ...current, prompt, answer, items, orderMatters,
+    explanation: '', example: '', hints: [], alternatives: [],
+    updatedAt: now, dueAt: now, lastReviewedAt: null, lastRating: null,
+    stage: 0, reviewCount: 0, streak: 0, lapses: 0, history: [],
+    lastMissedItems: [], lastOrderMissed: false,
+  }, { now });
+  const entry = withMemoryCoachMetadata(existing, memoryCoach, now);
+  entry.text = isList ? `Practise list: ${prompt}` : `Practise remembering: ${answer}`;
+  return { status: 'updated', entry };
+};
+
 export const getPracticeSummary = (entries = [], options = {}) => {
   const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
   const items = getMemoryCoachItems(entries, { now });
@@ -363,6 +418,10 @@ export const addMemoryPracticeEntry = (entries = [], payload = {}, options = {})
   const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
   const items = normalizeTextList(payload.items, 20, 120);
   const isList = payload.kind === 'list';
+  if (isList && Array.isArray(payload.items) && (payload.items.length > 20
+    || payload.items.some((item) => typeof item !== 'string' || item.trim().length > 120))) {
+    return { entries, entry: null, status: 'invalid' };
+  }
   const answer = normalizeText(
     payload.answer || payload.word || (isList ? items.join(' • ') : ''),
     120,

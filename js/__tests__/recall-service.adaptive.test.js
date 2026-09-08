@@ -24,6 +24,7 @@ module.exports = {
   createPracticeSession,
   recordPracticeResult,
   setPracticeItemEnabled,
+  updatePracticeEntry,
   getPracticeSummary,
   addMemoryPracticeEntry,
   addVocabularyPracticeEntry,
@@ -350,4 +351,56 @@ test('review history stays bounded for future adaptive scheduling', () => {
 
   expect(normalized.history).toHaveLength(service.MEMORY_COACH_HISTORY_LIMIT);
   expect(normalized.history[0].reviewedAt).toBe(history[5].reviewedAt);
+});
+
+test('a retry records practice without changing the spaced schedule or review count', () => {
+  const first = service.recordPracticeResult([makeCoachEntry('retry', { stage: 3, reviewCount: 4 })], 'retry', 'forgot', { now: NOW });
+  const before = first.item;
+  const retry = service.recordPracticeResult(first.entries, 'retry', 'got_it', { now: NOW + 2 * DAY_MS, isRetry: true });
+  expect(retry.item).toMatchObject({ dueAt: before.dueAt, stage: before.stage, streak: before.streak,
+    lapses: before.lapses, reviewCount: before.reviewCount, lastRating: 'forgot', lastReviewedAt: before.lastReviewedAt });
+  expect(retry.item.history.at(-1)).toMatchObject({ isRetry: true, wasEarly: true, rating: 'got_it' });
+});
+
+test('list reviews retain actual missed items and order trouble, filtering invalid items', () => {
+  const entry = makeCoachEntry('list');
+  Object.assign(entry.metadata.memoryCoach, { kind: 'list', items: ['Boots', 'Water', 'Towel'], orderMatters: true });
+  const result = service.recordPracticeResult([entry], 'list', 'got_it', { now: NOW, missedItems: ['Water', 'Water', 'Unknown'], orderMissed: true });
+  expect(result.item.lastRating).toBe('forgot');
+  expect(result.item.lastMissedItems).toEqual(['Water']);
+  expect(result.item.lastOrderMissed).toBe(true);
+  expect(result.item.history.at(-1)).toMatchObject({ missedItems: ['Water'], orderMissed: true });
+  const retry = service.recordPracticeResult(result.entries, 'list', 'got_it', { now: NOW + 1000, isRetry: true });
+  expect(retry.item.lastMissedItems).toEqual(['Water']);
+});
+
+test('editing preserves identity, pause state and unrelated metadata but resets outdated learning', () => {
+  const entry = makeCoachEntry('edit', { enabled: false, stage: 4, reviewCount: 8 });
+  entry.metadata.integration = { sourceId: 'keep' };
+  const result = service.updatePracticeEntry([entry], 'edit', { prompt: 'What is the capital of France?', answer: 'Paris' }, { now: NOW });
+  expect(result.status).toBe('updated');
+  expect(result.entry).toMatchObject({ id: 'edit', createdAt: entry.createdAt, pendingSync: true,
+    metadata: { integration: { sourceId: 'keep' }, memoryCoach: { kind: 'vocabulary', enabled: false,
+      prompt: 'What is the capital of France?', answer: 'Paris', reviewCount: 0, stage: 0, hints: [], explanation: '', history: [] } } });
+  expect(result.entry.metadata.memoryCoach.dueAt).toBe(new Date(NOW).toISOString());
+  expect(entry.metadata.memoryCoach.reviewCount).toBe(8);
+});
+
+test('unchanged edits preserve review history and stale edits cannot overwrite newer data', () => {
+  const entry = makeCoachEntry('same', { answer: 'Paris', stage: 3, reviewCount: 5 });
+  const payload = { prompt: 'Recall same', answer: 'Paris' };
+  expect(service.updatePracticeEntry([entry], 'same', payload, { now: NOW }).status).toBe('unchanged');
+  expect(service.updatePracticeEntry([entry], 'same', payload, { now: NOW, expectedUpdatedAt: 'old' }).status).toBe('conflict');
+  expect(service.updatePracticeEntry([], 'same', payload).status).toBe('missing');
+  expect(service.updatePracticeEntry([entry], 'same', { prompt: '', answer: 'Paris' }).status).toBe('invalid');
+});
+
+test('editing lists retains order and rejects oversized lists rather than dropping items', () => {
+  const entry = makeCoachEntry('list');
+  Object.assign(entry.metadata.memoryCoach, { kind: 'list', items: ['Old', 'List'] });
+  const payload = { prompt: 'Training kit?', items: ['Boots', 'Water', 'Towel'], orderMatters: true };
+  const result = service.updatePracticeEntry([entry], 'list', payload, { now: NOW });
+  expect(result.entry.metadata.memoryCoach).toMatchObject({ kind: 'list', items: payload.items, orderMatters: true });
+  expect(service.updatePracticeEntry([entry], 'list', { ...payload, items: ['Only one'] }).status).toBe('invalid');
+  expect(service.updatePracticeEntry([entry], 'list', { ...payload, items: Array.from({ length: 21 }, (_, i) => String(i)) }).status).toBe('invalid');
 });

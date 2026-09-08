@@ -41,6 +41,8 @@ Short internal map of the **currently active** paths so future sessions reuse ex
 7. Review state is updated through `src/services/inboxService.js` and the existing Firestore Inbox sync. Normal Inbox readers, assistant recall, daily planning, Notes, and Reminders exclude memory-card entries.
 8. Coach's navigation count and quiet Reminders practice prompt read the same due schedule, refreshing on Inbox changes, app focus and while the app is visible. They do not create reminders or background notifications.
 9. Notes → Help me remember this flushes pending note edits, then opens an editable Coach draft using the note title and a short source excerpt. The full source is available during review. Only Save for practice creates a normal hidden Inbox memory card; the source Note is not converted or removed. This draft makes no AI request.
+10. After a practice round, forgotten cards can be retried once. List reviews record missed items and order mistakes in the existing Coach metadata/history; the retry hides and tests missed items (or the whole list for an order mistake). Retry history is marked `isRetry` and does not advance the schedule, streak or scheduled review count. The optional retry queue exists only for that open session.
+11. Coach → My memories searches active and paused cards. Edit updates the same Inbox entry through `updateMemoryCoachInboxEntry`. Changed content resets its learning schedule and old clues while keeping identity and pause state; unchanged edits preserve progress. An edit with an outdated `updatedAt` is rejected so it cannot overwrite a newer sync result.
 
 ## Current source of truth by domain
 - **Inbox / raw capture:** `memoryCueInbox`, owned by `src/services/inboxService.js` (`memoryEntries` is migration-only).

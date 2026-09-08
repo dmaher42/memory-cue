@@ -686,6 +686,7 @@ html.dark #thinkingBarVoiceButton.is-listening {
 
 #memoryCoachContainer {
   display: grid;
+  align-content: start;
 }
 
 #memoryCoachContainer .memory-coach-card {
@@ -1631,3 +1632,18 @@ html.dark #thinkingBarVoiceButton.is-listening {
 .memory-coach-due-badge[hidden], .memory-coach-due-prompt[hidden] { display: none; }
 .memory-coach-note-source { margin: 0 0 1rem; font-size: 0.9rem; }
 .memory-coach-source-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12rem; overflow-y: auto; }
+.memory-coach-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.65rem; }
+.memory-coach-library { display: grid; gap: 0.9rem; margin-top: 1rem; }
+.memory-coach-library-item { padding: 0.85rem; border: 1px solid var(--border-color, #cbd5e1); border-radius: 0.75rem; min-width: 0; }
+.memory-coach-library-question { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.memory-coach-library-status { margin: 0.35rem 0 0.65rem; font-size: 0.8rem; }
+.memory-coach-library-item .memory-coach-actions { margin-top: 0.7rem; }
+#memoryCoachContainer .memory-coach-list-check { display: flex; align-items: flex-start; gap: 0.55rem; min-height: 2.75rem; padding-block: 0.5rem; cursor: pointer; color: var(--text-main, #1f2937); }
+#memoryCoachContainer .memory-coach-list-check input { flex: 0 0 1.2rem; width: 1.2rem; height: 1.2rem; margin-top: 0.1rem; accent-color: var(--accent-color, #0f766e); }
+#memoryCoachContainer .memory-coach-list-check span { flex: 1 1 auto; overflow-wrap: anywhere; min-width: 0; }
+.memory-coach-library summary { cursor: pointer; }
+.memory-coach-actions [aria-pressed="true"] { border-color: var(--accent-color, #0f766e); font-weight: 800; }
+#memoryCoachContainer .memory-coach-toolbar .memory-coach-button { width: auto; min-height: 2.3rem; }
+#memoryCoachContainer .memory-coach-library-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#memoryCoachContainer .memory-coach-library-filters > .memory-coach-button { grid-column: auto; padding-inline: 0.35rem; }
+#memoryCoachContainer .memory-coach-library-item .memory-coach-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
