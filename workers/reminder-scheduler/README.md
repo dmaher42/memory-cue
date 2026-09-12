@@ -2,9 +2,24 @@
 
 ## Current status
 
-This folder is a local-only implementation. It has not been installed, connected
-to a Cloudflare account, given credentials, or deployed. The existing Memory Cue
-Pages project and public site are unchanged.
+The scheduler is deployed in the account hosting Memory Cue and is running
+every minute. On 13 September 2026, the authenticated Cloudflare dashboard
+showed deployment `e88c461e-86fb-46aa-877a-c6a424b98953` and successful scheduled
+runs with no execution errors in the reviewed hour. The inspected run found
+zero qualifying reminders and attempted zero deliveries. This confirms a
+working timer and query, not delivery to a phone or parity with every feature
+in the current local implementation.
+
+Read-only checks on 13 September 2026 found the public VAPID configuration on
+the live site. An empty request to the existing push-sync endpoint reached
+payload validation rather than the missing-configuration response. This shows
+configuration is present; it does not prove credential validity or delivery.
+The saved Wrangler login accesses a different account with no Pages projects.
+The correct account was verified through the owner's signed-in browser. Do not
+create a duplicate scheduler based on a missing-Worker result in the other
+account. Verify the account hosting `memory-cue.pages.dev` before CLI deployment.
+The owner reports Android device registration; a locked-phone delivery test is
+still required before claiming end-to-end reliability.
 
 This is a separate Cloudflare Worker because the main `wrangler.jsonc` describes
 a Cloudflare Pages project. Pages Functions handle web requests, but the reliable
@@ -85,8 +100,9 @@ The tests load the actual app urgency module and cover:
 
 ## Production settings required later
 
-These steps deliberately remain undone. They require owner approval because they
-change production services, permissions, secrets, or potentially billing.
+The following requirements must be checked against the existing deployment.
+Do not assume they are missing or recreate existing resources. Changes to
+production permissions, secrets or billing require owner approval.
 
 ### Firebase
 
@@ -126,9 +142,10 @@ The Cloudflare Pages project also needs:
   `/api/push-reminder-sync` route can immediately propagate Done, Seen, Snooze,
   Start/Join, and reminder edits between devices.
 
-The public site currently has neither a VAPID key in its runtime configuration
-nor working server-side credentials for the push-sync endpoint. Those are
-deployment settings, not code defaults.
+The public site has a VAPID key and passes the endpoint's configuration-presence
+check. Verify actual Firebase access and device delivery before treating those
+settings as working. The scheduler requires its own encrypted settings; do not
+copy private credentials into client configuration or logs.
 
 ### Cloudflare
 
@@ -160,6 +177,27 @@ Cloudflare and Firebase pricing, quotas, and current account plans must be
 reviewed before deployment; this document does not promise zero cost.
 
 ## Delivery limits
+
+### Android acceptance test
+
+After confirming the correct deployment, cron events, credentials and indexes:
+
+1. Open Memory Cue on Android, sign in to the same account as the laptop, and
+   allow notifications. In a reminder's **More options > Reminder alerts**,
+   use **Reconnect alerts** if needed. Device registration alone is not a pass.
+2. Save a clearly named test appointment with an explicit future time through
+   the normal reminder form. Verify it has synced before closing the app.
+3. Close Memory Cue on both devices, lock the phone and let the laptop sleep.
+   Check the scheduled warning, due alert and overdue repeat on the phone.
+4. Check Seen, Snooze, and Done. Snooze must pause then resume alerts; Done must
+   stop repeats. Reopen the app and confirm the same reminder reflects the action.
+5. Repeat after temporary loss of internet and after restarting the phone.
+   Record actual delivery times and Android notification settings. Do not call
+   the closed-app path verified until these device tests have passed.
+
+The app retries unsuccessful registration with bounded backoff while running,
+and can recover on return to the app or restoration of connectivity. Retries
+do not replace the server scheduler and cannot wake a closed app.
 
 The Worker supplies a reliable server clock, but phones still control final
 delivery. An alert can arrive roughly within the target minute plus network and

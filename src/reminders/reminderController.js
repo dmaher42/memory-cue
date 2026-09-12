@@ -3346,6 +3346,10 @@ export async function initReminders(sel = {}) {
   const reminderSaveQueues = new Map();
   const latestReminderSavePromises = new Map();
   let pushUnregisteredBeforeSignOutUserId = null;
+  let pushRegistrationRetryTimer = null;
+  let pushRegistrationRetryAttempt = 0;
+  let pushRegistrationInFlight = 0;
+  let pushRegistrationPausedForSignOut = false;
   const emitNotificationPermissionState = (phonePushStatus = 'unavailable') => {
     const normalizedPhonePushStatus = phonePushStatus === 'connected'
       ? 'connected'
@@ -4179,12 +4183,14 @@ export async function initReminders(sel = {}) {
       refresh();
       if (!document.hidden) {
         replayPendingUrgentActions({ retryHydration: true });
+        recoverPushRegistration();
       }
     });
     window.addEventListener('pageshow', () => {
       startTimer();
       refresh();
       replayPendingUrgentActions({ retryHydration: true });
+      recoverPushRegistration();
     });
     window.addEventListener('focus', () => {
       acknowledgeBackgroundUrgentStages();
@@ -4192,6 +4198,7 @@ export async function initReminders(sel = {}) {
     });
     window.addEventListener('online', () => {
       void replayPendingUrgentActions({ retryHydration: true });
+      recoverPushRegistration();
     });
     if (navigator.serviceWorker && typeof navigator.serviceWorker.addEventListener === 'function') {
       navigator.serviceWorker.addEventListener('message', (event) => {
@@ -4216,6 +4223,7 @@ export async function initReminders(sel = {}) {
     }
     startTimer();
     window.addEventListener('pagehide', stopTimer);
+    window.addEventListener('pagehide', () => clearPushRegistrationRetry());
     refresh();
     replayPendingUrgentActions();
   }
@@ -5109,6 +5117,7 @@ export async function initReminders(sel = {}) {
 
   function applySignedOutState({ rescheduleSchedules = true } = {}) {
     reminderSyncGeneration += 1;
+    clearPushRegistrationRetry(true);
     clearReminderReconciliationRetry();
     const previousUserId = userId;
     userId = null;
@@ -5997,6 +6006,8 @@ export async function initReminders(sel = {}) {
         const nextUserId = typeof user?.uid === 'string' ? user.uid : (typeof user?.id === 'string' ? user.id : null);
         const previousUserId = userId;
         const sessionSyncGeneration = ++reminderSyncGeneration;
+        clearPushRegistrationRetry(true);
+        pushRegistrationPausedForSignOut = false;
         clearUndoDeleteState();
         if (nextUserId !== previousUserId) {
           remindersHydratedUserId = null;
@@ -6101,6 +6112,8 @@ export async function initReminders(sel = {}) {
   };
 
   const signOutAfterPushCleanup = async () => {
+    pushRegistrationPausedForSignOut = true;
+    clearPushRegistrationRetry(true);
     const signingOutUserId = userId;
     if (signingOutUserId) {
       try {
@@ -6117,6 +6130,7 @@ export async function initReminders(sel = {}) {
     try {
       return await startSignOutFlow();
     } catch (error) {
+      pushRegistrationPausedForSignOut = false;
       if (pushUnregisteredBeforeSignOutUserId === signingOutUserId) {
         pushUnregisteredBeforeSignOutUserId = null;
       }
@@ -6318,7 +6332,72 @@ export async function initReminders(sel = {}) {
     scheduleReminderReconciliationRetry();
   }
 
-  async function syncCurrentDevicePushRegistration(
+  function clearPushRegistrationRetry(resetAttempts = false) {
+    if (pushRegistrationRetryTimer !== null) {
+      clearTimeout(pushRegistrationRetryTimer);
+      pushRegistrationRetryTimer = null;
+    }
+    if (resetAttempts) pushRegistrationRetryAttempt = 0;
+  }
+
+  function canRegisterPushDevice() {
+    return Boolean(userId && !pushRegistrationPausedForSignOut
+      && typeof Notification !== 'undefined' && Notification.permission === 'granted'
+      && navigator.onLine !== false);
+  }
+
+  function recoverPushRegistration() {
+    if (!canRegisterPushDevice() || pushRegistrationInFlight > 0
+      || window.__MEMORY_CUE_PHONE_PUSH_STATUS === 'connected') return;
+    // Keep an existing backoff instead of letting focus/visibility events hammer
+    // registration. Coming back online resumes an attempt that could not run.
+    if (pushRegistrationRetryTimer !== null) return;
+    pushRegistrationRetryAttempt = 0;
+    void syncCurrentDevicePushRegistration();
+  }
+
+  function schedulePushRegistrationRetry(expectedUserId, expectedGeneration) {
+    if (!canRegisterPushDevice() || pushRegistrationRetryTimer !== null
+      || pushRegistrationRetryAttempt >= 5) return;
+    const delay = Math.min(300000, 15000 * (2 ** pushRegistrationRetryAttempt));
+    pushRegistrationRetryAttempt += 1;
+    pushRegistrationRetryTimer = setTimeout(() => {
+      pushRegistrationRetryTimer = null;
+      if (userId === expectedUserId && reminderSyncGeneration === expectedGeneration) {
+        void syncCurrentDevicePushRegistration(expectedUserId, expectedGeneration);
+      }
+    }, delay);
+  }
+
+  function syncCurrentDevicePushRegistration(
+    expectedUserId = userId,
+    expectedGeneration = reminderSyncGeneration
+  ) {
+    if (!canRegisterPushDevice()) {
+      emitNotificationPermissionState('unavailable');
+      return Promise.resolve(null);
+    }
+    // Recovery events share an attempt, but explicit sign-out recovery must
+    // perform a fresh registration after removing a device record.
+    pushRegistrationInFlight += 1;
+    return performDevicePushRegistration(expectedUserId, expectedGeneration)
+      .catch((error) => {
+        console.warn('[reminder-push] Device connection failed; will retry', error);
+        return null;
+      })
+      .then((device) => {
+        if (userId === expectedUserId && reminderSyncGeneration === expectedGeneration) {
+          if (device) clearPushRegistrationRetry(true);
+          else schedulePushRegistrationRetry(expectedUserId, expectedGeneration);
+        }
+        return device;
+      })
+      .finally(() => {
+        pushRegistrationInFlight -= 1;
+      });
+  }
+
+  async function performDevicePushRegistration(
     expectedUserId = userId,
     expectedGeneration = reminderSyncGeneration
   ) {
@@ -6326,6 +6405,7 @@ export async function initReminders(sel = {}) {
     const registrationGeneration = expectedGeneration;
     const registrationSessionIsCurrent = () => (
       registrationUserId
+      && !pushRegistrationPausedForSignOut
       && registrationUserId === userId
       && registrationGeneration === reminderSyncGeneration
     );
@@ -6367,7 +6447,7 @@ export async function initReminders(sel = {}) {
         const replacementGeneration = reminderSyncGeneration;
         if (
           replacementUserId === registrationUserId
-          && replacementGeneration !== registrationGeneration
+          && !pushRegistrationPausedForSignOut
           && userId === replacementUserId
           && reminderSyncGeneration === replacementGeneration
         ) {
@@ -7452,7 +7532,7 @@ export async function initReminders(sel = {}) {
     } catch {
       // Ignore detection errors
     }
-    toast('Tip: Add Memory Cue to your home screen so reminders can run in the background.');
+    toast('Add Memory Cue to your home screen, then test a timed alert with the app closed.');
   }
 
   function normalizeScheduleUpdatedAt(value) {
@@ -9847,7 +9927,7 @@ export async function initReminders(sel = {}) {
     reader.readAsText(file);
   });
 
-  notifBtn?.addEventListener('click', async () => {
+  const connectReminderNotifications = async () => {
     if(!('Notification' in window)){
       toast('Notifications not supported');
       emitNotificationPermissionState('unavailable');
@@ -9865,7 +9945,8 @@ export async function initReminders(sel = {}) {
         adviseInstallForBackground();
       }
       rescheduleAllReminders();
-      render();
+      // Permission/registration changed, not reminder data. Rendering emits a
+      // reminders-updated event which would close the still-open reminder form.
       return;
     }
     try {
@@ -9882,7 +9963,6 @@ export async function initReminders(sel = {}) {
           adviseInstallForBackground();
         }
         rescheduleAllReminders();
-        render();
       } else {
         toast('Notifications blocked');
         emitNotificationPermissionState('unavailable');
@@ -9890,6 +9970,21 @@ export async function initReminders(sel = {}) {
     } catch {
       toast('Notifications blocked');
       emitNotificationPermissionState('unavailable');
+    }
+  };
+  notifBtn?.addEventListener('click', connectReminderNotifications);
+  document.getElementById('retryReminderNotifications')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
+    button.disabled = true;
+    button.textContent = 'Connecting…';
+    clearPushRegistrationRetry(true);
+    try {
+      await connectReminderNotifications();
+    } finally {
+      button.disabled = false;
+      button.textContent = window.__MEMORY_CUE_PHONE_PUSH_STATUS === 'connected'
+        ? 'Check connection' : 'Reconnect alerts';
     }
   });
 

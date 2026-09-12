@@ -17,6 +17,8 @@ describe('mobile reminder notification status', () => {
             <input id="reminderTime" type="time" />
             <select id="priority"><option value="Medium" selected>Medium</option></select>
             <span id="reminderNotificationStatus"></span>
+            <span id="reminderNotificationHelp"></span>
+            <button id="retryReminderNotifications" type="button" hidden>Reconnect alerts</button>
             <div class="reminder-notification-setting">
               <input id="notifBtn" type="checkbox" />
             </div>
@@ -68,14 +70,28 @@ describe('mobile reminder notification status', () => {
       detail: { permission: 'granted', phonePushStatus: 'unavailable' },
     }));
     expect(status.textContent).toBe(
-      'Local reminders on · This device is not registered for lock-screen alerts'
+      'Alerts work while Memory Cue is open. This device needs reconnecting for background alerts.'
     );
+    expect(document.getElementById('retryReminderNotifications').hidden).toBe(false);
+    expect(document.getElementById('retryReminderNotifications').disabled).toBe(false);
 
     document.dispatchEvent(new window.CustomEvent('reminder:notification-permission-changed', {
       detail: { permission: 'granted', phonePushStatus: 'connected' },
     }));
     expect(status.textContent).toBe(
-      'Local reminders on · This device is registered for lock-screen alerts'
+      'This device is registered for push alerts'
     );
+    expect(document.getElementById('reminderNotificationHelp').textContent)
+      .toContain('Test a timed reminder');
+    expect(document.getElementById('retryReminderNotifications').textContent).toBe('Check connection');
+  });
+
+  test('blocked notifications give settings guidance without offering a futile reconnect', () => {
+    window.Notification.permission = 'denied';
+    document.dispatchEvent(new window.CustomEvent('reminder:notification-permission-changed', {
+      detail: { permission: 'denied', phonePushStatus: 'unavailable' },
+    }));
+    expect(document.getElementById('retryReminderNotifications').hidden).toBe(true);
+    expect(document.getElementById('reminderNotificationHelp').textContent).toContain('browser');
   });
 });

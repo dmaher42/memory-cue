@@ -1541,6 +1541,21 @@ body #create-sheet .reminder-notification-copy .reminder-field-help {
   margin: 0;
 }
 
+body #create-sheet #retryReminderNotifications {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 0.35rem;
+  white-space: normal;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+body #create-sheet #retryReminderNotifications[hidden] {
+  display: none;
+}
+
 body #create-sheet .ios-switch {
   position: relative;
   flex: 0 0 auto;

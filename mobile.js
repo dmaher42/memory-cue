@@ -3074,6 +3074,8 @@ function openEditor() {
     const detailsSummary = sheet.querySelector('#reminderDetailsSummary');
     const optionsSummary = sheet.querySelector('#reminderOptionsSummary');
     const notificationStatus = sheet.querySelector('#reminderNotificationStatus');
+    const notificationHelp = sheet.querySelector('#reminderNotificationHelp');
+    const retryNotifications = sheet.querySelector('#retryReminderNotifications');
     const statusMessage = sheet.querySelector('#statusMessage');
     const datePresetButtons = Array.from(
       sheet.querySelectorAll('[data-reminder-date-preset]')
@@ -3253,6 +3255,7 @@ function openEditor() {
       let message = 'Enable alerts on this device';
       let checked = false;
       let disabled = false;
+      let help = '';
 
       const reportedPhonePushStatus = event?.detail?.phonePushStatus;
       if (reportedPhonePushStatus === 'connected' || reportedPhonePushStatus === 'unavailable') {
@@ -3264,12 +3267,16 @@ function openEditor() {
         disabled = true;
       } else if (window.Notification.permission === 'granted') {
         message = phonePushStatus === 'connected'
-          ? 'Local reminders on · This device is registered for lock-screen alerts'
-          : 'Local reminders on · This device is not registered for lock-screen alerts';
+          ? 'This device is registered for push alerts'
+          : 'Alerts work while Memory Cue is open. This device needs reconnecting for background alerts.';
+        help = phonePushStatus === 'connected'
+          ? 'Registration is only the first step. Test a timed reminder with Memory Cue closed and this device locked.'
+          : 'Sign in and reconnect alerts on this device. Keep Memory Cue open until a closed-app test succeeds.';
         checked = true;
         disabled = true;
       } else if (window.Notification.permission === 'denied') {
         message = 'Blocked in browser settings';
+        help = 'Allow notifications for Memory Cue in your browser and device notification settings, then return here.';
         disabled = true;
       }
 
@@ -3278,6 +3285,17 @@ function openEditor() {
       notifToggle.setAttribute('aria-checked', checked ? 'true' : 'false');
       if (notificationStatus instanceof HTMLElement) {
         notificationStatus.textContent = message;
+      }
+      if (notificationHelp instanceof HTMLElement) {
+        notificationHelp.textContent = help;
+        notificationHelp.hidden = !help;
+      }
+      if (retryNotifications instanceof HTMLButtonElement) {
+        retryNotifications.hidden = !checked;
+        if (!retryNotifications.disabled) {
+          retryNotifications.textContent = phonePushStatus === 'connected'
+            ? 'Check connection' : 'Reconnect alerts';
+        }
       }
     };
 
