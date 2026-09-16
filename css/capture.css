@@ -1648,3 +1648,27 @@ html.dark #thinkingBarVoiceButton.is-listening {
 #memoryCoachContainer .memory-coach-library-filters > .memory-coach-button { grid-column: auto; padding-inline: 0.35rem; }
 #memoryCoachContainer .memory-coach-library-item .memory-coach-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #memoryCoachContainer .memory-coach-library-item [data-memory-coach-action="practise-wording"] { grid-column: 1 / -1; }
+.note-reflection { margin: 0.75rem; padding: 0.6rem 0; border: 0; border-top: 1px solid var(--card-border, #e2e8f0); }
+.note-reflection summary { cursor: pointer; font-size: 0.875rem; font-weight: 500; color: var(--text-muted, #64748b); }
+.note-reflection p { margin: 0.4rem 0; font-size: 0.75rem; color: var(--text-muted, #64748b); }
+.note-reflection p:empty { display: none; }
+.note-reflection h3 { margin-top: 0.75rem; font-size: 0.8rem; font-weight: 500; color: var(--text-muted, #64748b); }
+.reflection-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.reflection-polished { white-space: pre-wrap; overflow-wrap: anywhere; padding: 0.4rem 0; min-height: 1.5rem; }
+.reflection-original-heading { display: none; margin: 0.75rem; font-size: 0.8rem; font-weight: 500; color: var(--text-muted, #64748b); }
+.note-reflection .reflection-actions .btn { width: auto; flex: 0 0 auto; min-height: 2rem; padding: 0.3rem 0.6rem; border: 0; box-shadow: none; background: transparent; font-size: 0.8rem; font-weight: 500; }
+.note-reflection .reflection-actions .btn:hover:not(:disabled) { background: color-mix(in srgb, currentColor 6%, transparent); }
+.note-reflection [hidden] { display: none !important; }
+.note-editor-card:has(#noteReflection[open]) .reflection-original-heading { display: block; }
+.note-reflection .btn:disabled { opacity: 0.5; cursor: default; }
+.note-editor-card:has(#noteReflection[open]) .scratch-notes-body-wrapper {
+  flex: 0 0 auto !important;
+  height: auto !important;
+}
+.note-editor-card:has(#noteReflection[open]) #notebook-editor-body {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: 10rem !important;
+  max-height: 40vh !important;
+  overflow-y: auto !important;
+}

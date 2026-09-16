@@ -38,6 +38,16 @@ function loadNotesStorageModule() {
   return module.exports;
 }
 
+test('reflection and undo history survive canonical Notes storage round-trip', () => {
+  const { createNote, saveAllNotes, loadAllNotes } = loadNotesStorageModule();
+  const reflection = { text: 'Polished', sourceText: 'Rough', scope: 'selection',
+    history: [{ text: 'Previous', sourceText: 'Earlier', scope: 'all' }] };
+  const note = createNote('Journal', 'Rough', { metadata: { reflection } });
+  expect(saveAllNotes([note], { skipRemoteSync: true })).toBe(true);
+  expect(loadAllNotes()[0].metadata.reflection).toEqual(reflection);
+  expect(loadAllNotes()[0].bodyHtml).toBe('Rough');
+});
+
 beforeEach(() => {
   localStorage.clear();
 });

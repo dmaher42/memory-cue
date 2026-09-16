@@ -180,6 +180,19 @@ const sanitizeMetadata = (value) => {
 
   const metadata = {};
 
+  if (value.reflection && typeof value.reflection === 'object') {
+    const cleanVersion = (entry) => ({
+      text: typeof entry?.text === 'string' ? entry.text.slice(0, 24000) : '',
+      sourceText: typeof entry?.sourceText === 'string' ? entry.sourceText.slice(0, 12000) : '',
+      scope: entry?.scope === 'selection' ? 'selection' : 'all',
+    });
+    metadata.reflection = {
+      ...cleanVersion(value.reflection),
+      history: Array.isArray(value.reflection.history)
+        ? value.reflection.history.slice(-10).map(cleanVersion) : [],
+    };
+  }
+
   if (typeof value.type === 'string' && value.type.trim()) {
     metadata.type = value.type.trim();
   }

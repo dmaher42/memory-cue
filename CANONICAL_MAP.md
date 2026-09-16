@@ -105,6 +105,10 @@ When working in these areas, prefer:
 
 ## Update rule
 
+### Journal / Reflection trial
+
+Notes now offer an opt-in Reflection panel in the existing editor. The original remains the normal note body; accepted AI versions and up to ten undo snapshots live in that note's `metadata.reflection`, normalized by `js/modules/notes-storage.js` and synced through the existing Notes path. `src/ui/mobileNotesEditorUi.js` owns preview, selection, explicit Keep, persistent undo and stale-result protection. `mobile.js` supplies the existing assistant request function and note-change events. The `organise_reflection` task in `functions/api/assistant-chat.ts` receives only the selected writing, without retrieval or unrelated note context. No new endpoint or storage key is introduced. A static local preview cannot execute the AI Function; a real provider generation must be verified separately.
+
 Whenever a cleanup task successfully changes ownership of a domain:
 - update this file
 - update `AI_HANDOVER.md` if the repo workflow changes

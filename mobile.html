@@ -5240,6 +5240,7 @@ body, main, section, div, p, span, li {
                 </details>
               </div>
 
+            <h3 class="reflection-original-heading">Original</h3>
             <div class="note-editor-inner">
               <!-- Minimal main editor with soft styling -->
               <div class="distraction-free-editor-container note-content-wrapper note-editor-content-wrapper scratch-notes-body-wrapper">
@@ -5256,6 +5257,21 @@ body, main, section, div, p, span, li {
               </div>
             </div>
 
+            <details id="noteReflection" class="note-reflection">
+              <summary>Reflection</summary>
+              <div class="reflection-actions">
+                <button type="button" id="reflectionAll" class="btn btn-sm" aria-label="Organise all with AI">Organise</button>
+                <button type="button" id="reflectionSelection" class="btn btn-sm" aria-label="Organise highlighted text with AI" disabled>Organise selection</button>
+              </div>
+              <p id="reflectionStatus" role="status"></p>
+              <h3>AI polished</h3>
+              <p id="reflectionScope"></p>
+              <div id="reflectionPolished" class="reflection-polished"></div>
+              <div class="reflection-actions">
+                <button type="button" id="reflectionKeep" class="btn btn-sm" aria-label="Keep polished version" disabled>Keep</button>
+                <button type="button" id="reflectionUndo" class="btn btn-sm" aria-label="Undo AI change" disabled>Undo</button>
+              </div>
+            </details>
             <section id="relatedNotesPanel" class="px-3 pb-2 space-y-2" aria-live="polite">
               <h3 class="text-sm font-semibold">Related notes</h3>
               <div id="relatedNotesList" class="space-y-1 text-sm text-base-content/70">

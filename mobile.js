@@ -35,6 +35,7 @@ import { initMobileNotesShellUi } from './src/ui/mobileNotesShellUi.js';
 import { initMobileNotesFolderManager } from './src/ui/mobileNotesFolderManager.js';
 import { initMobileNotesBrowserUi } from './src/ui/mobileNotesBrowserUi.js';
 import { initMobileNotesEditorUi } from './src/ui/mobileNotesEditorUi.js';
+import { requestAssistantChatResult } from './src/services/assistantOrchestrator.js';
 import { initMobileClassHubsUi } from './src/ui/mobileClassHubsUi.js';
 import { createMemoryCoachUi } from './src/ui/mobileMemoryCoachUi.js';
 
@@ -5058,6 +5059,7 @@ const initMobileNotes = () => {
       scratchNotesEditorElement.dataset.noteOriginalBody = getEditorHTML();
       syncNoteFolderButtonLabel(currentEditingNoteFolderId);
       renderRelatedNotes(null);
+      scratchNotesEditorElement.dispatchEvent(new CustomEvent('reflection:noteChanged'));
       return;
     }
     currentTeacherView = nextTeacherView;
@@ -5085,6 +5087,7 @@ const initMobileNotes = () => {
     currentEditingNoteFolderId = note.folderId && typeof note.folderId === 'string' ? note.folderId : 'unsorted';
     syncNoteFolderButtonLabel(currentEditingNoteFolderId);
     renderRelatedNotes(note);
+    scratchNotesEditorElement.dispatchEvent(new CustomEvent('reflection:noteChanged'));
   };
 
   const extractPlainText = (html = '') => getEditorBodyText(html);
@@ -6190,6 +6193,7 @@ const initMobileNotes = () => {
     flushAutoSave: editorFlushAutoSave,
     resizeTitleInput: editorResizeTitleInput,
   } = initMobileNotesEditorUi({
+    requestReflection: (message) => requestAssistantChatResult({ assistantTask: 'organise_reflection', message }),
     saveButton,
     titleInput,
     scratchNotesEditorElement,

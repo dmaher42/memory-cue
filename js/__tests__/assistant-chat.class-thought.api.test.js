@@ -64,6 +64,23 @@ const makeContext = (body, env = { OPENAI_API_KEY: 'test-key' }) => ({
   env,
 });
 
+test('reflection uses only the supplied writing and fails clearly without AI configuration', async () => {
+  const fetchMock = jest.fn(async () => ({ ok: true, json: async () => ({ output_text: 'My organised reflection.' }) }));
+  const { onRequestPost } = loadAssistantChat(fetchMock);
+  const result = await onRequestPost(makeContext({ assistantTask: 'organise_reflection', message: 'My rough words',
+    notes: [{ body: 'PRIVATE_OTHER_NOTE' }], messages: [{ role: 'system', content: 'UNTRUSTED_INSTRUCTION' }] }));
+  expect((await result.json()).reflectionDraft).toBe('My organised reflection.');
+  const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+  expect(sent.store).toBe(false);
+  expect(JSON.stringify(sent)).not.toContain('PRIVATE_OTHER_NOTE');
+  expect(JSON.stringify(sent)).not.toContain('UNTRUSTED_INSTRUCTION');
+  expect(sent.input[1].content).toBe('My rough words');
+  const missing = await onRequestPost(makeContext({ assistantTask: 'organise_reflection', message: 'Words' }, {}));
+  expect(missing.status).toBe(503);
+  const oversized = await onRequestPost(makeContext({ assistantTask: 'organise_reflection', message: 'x'.repeat(12001) }));
+  expect(oversized.status).toBe(413);
+});
+
 test('organises only the supplied class thought into a bounded review draft', async () => {
   let openAiBody = null;
   const fetchMock = jest.fn(async (_url, options) => {

@@ -39,6 +39,7 @@ export const initMobileNotesEditorUi = (options = {}) => {
     updateToolbarState = () => {},
     handleListShortcuts = () => {},
     handleFormattingShortcuts = () => {},
+    requestReflection = async () => { throw new Error('AI unavailable'); },
   } = options;
 
   const buildAutomaticNoteTitle = (bodyText = '') => {
@@ -343,6 +344,136 @@ export const initMobileNotesEditorUi = (options = {}) => {
         persistBeforeSuspension();
       }
     });
+  }
+
+  const reflectionPanel = document.getElementById('noteReflection');
+  if (reflectionPanel) {
+    const allButton = document.getElementById('reflectionAll');
+    const selectedButton = document.getElementById('reflectionSelection');
+    const keepButton = document.getElementById('reflectionKeep');
+    const undoButton = document.getElementById('reflectionUndo');
+    const polished = document.getElementById('reflectionPolished');
+    const scopeLabel = document.getElementById('reflectionScope');
+    const status = document.getElementById('reflectionStatus');
+    let selectionText = '';
+    let draft = null;
+    let busy = false;
+    let generation = 0;
+    const current = () => loadAllNotes().find((note) => note.id === getCurrentNoteId());
+    const render = () => {
+      const saved = current()?.metadata?.reflection;
+      const version = draft || saved;
+      polished.textContent = version?.text || '';
+      scopeLabel.textContent = version?.text
+        ? `${draft ? 'Preview' : 'Saved'}${version.scope === 'selection' ? ' · Selection' : ''}` : '';
+      allButton.disabled = busy;
+      selectedButton.disabled = busy || !selectionText;
+      selectedButton.hidden = !selectionText;
+      keepButton.disabled = busy || !draft;
+      undoButton.disabled = busy || (!draft && !saved?.history?.length);
+      keepButton.hidden = !draft;
+      undoButton.hidden = !draft && !saved?.history?.length;
+    };
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection();
+      if (selection?.rangeCount && !selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        if (scratchNotesEditorElement.contains(range.commonAncestorContainer)) {
+          selectionText = selection.toString();
+          render();
+          return;
+        }
+      }
+      // Keep a selection while its action button takes focus, but clear it on a new caret.
+      if (document.activeElement === scratchNotesEditorElement) {
+        selectionText = '';
+        render();
+      }
+    });
+    [allButton, selectedButton].forEach((button) => button.addEventListener('mousedown', (event) => event.preventDefault()));
+    const organise = async (scope) => {
+      if (busy || scratchNotesEditorElement.getAttribute('aria-readonly') === 'true') return;
+      const sourceText = scope === 'selection' ? selectionText : getEditorBodyText(getEditorBodyHtml());
+      if (!sourceText.trim()) { status.textContent = 'No writing yet.'; return; }
+      if (sourceText.length > 12000) { status.textContent = 'Too long — select up to 12,000 characters.'; return; }
+      if (!persistCurrentNote({ refreshAfterSave: false })) {
+        status.textContent = 'Could not save your original. Try again.';
+        return;
+      }
+      const noteId = getCurrentNoteId();
+      const originalBody = getEditorBodyHtml();
+      const token = ++generation;
+      busy = true;
+      status.textContent = 'Organising…';
+      render();
+      try {
+        const result = await requestReflection(sourceText);
+        if (token !== generation || noteId !== getCurrentNoteId()) return;
+        if (originalBody !== getEditorBodyHtml()) {
+          status.textContent = 'Writing changed. Organise again.';
+          return;
+        }
+        const text = result?.reflectionDraft;
+        if (typeof text !== 'string' || !text.trim() || text.length > 24000) throw new Error('Invalid draft');
+        draft = { text, sourceText, scope };
+        status.textContent = '';
+      } catch {
+        if (token === generation) status.textContent = 'AI is unavailable. Your writing is saved.';
+      } finally {
+        if (token === generation) { busy = false; render(); }
+      }
+    };
+    allButton.addEventListener('click', () => organise('all'));
+    selectedButton.addEventListener('click', () => organise('selection'));
+    const saveVersion = (reflection) => {
+      flushAutoSave();
+      const notes = loadAllNotes();
+      const index = notes.findIndex((note) => note.id === getCurrentNoteId());
+      if (index < 0) return false;
+      notes[index] = { ...notes[index], metadata: { ...notes[index].metadata, reflection },
+        updatedAt: new Date().toISOString(), pendingSync: true };
+      return saveAllNotes(notes);
+    };
+    keepButton.addEventListener('click', () => {
+      if (!draft || busy) return;
+      const saved = current()?.metadata?.reflection;
+      const previous = { text: saved?.text || '', sourceText: saved?.sourceText || '', scope: saved?.scope || 'all' };
+      const next = { ...draft, history: [...(saved?.history || []), previous].slice(-10) };
+      if (!saveVersion(next)) { status.textContent = 'Could not save. Preview retained.'; return; }
+      draft = null;
+      status.textContent = '';
+      render();
+    });
+    undoButton.addEventListener('click', () => {
+      if (busy) return;
+      if (draft) {
+        draft = null;
+        status.textContent = 'Discarded.';
+      } else {
+        const saved = current()?.metadata?.reflection;
+        if (!saved?.history?.length) return;
+        const history = [...saved.history];
+        const previous = history.pop();
+        if (!saveVersion({ ...previous, history })) { status.textContent = 'Could not undo. Try again.'; return; }
+        status.textContent = 'Restored.';
+      }
+      render();
+    });
+    scratchNotesEditorElement.addEventListener('reflection:noteChanged', () => {
+      generation += 1;
+      busy = false;
+      draft = null;
+      selectionText = '';
+      status.textContent = '';
+      reflectionPanel.open = Boolean(current()?.metadata?.reflection?.text);
+      render();
+    });
+    scratchNotesEditorElement.addEventListener('input', () => {
+      selectionText = '';
+      if (draft) { draft = null; status.textContent = 'Writing changed. Organise again.'; }
+      render();
+    });
+    render();
   }
 
   return {
