@@ -307,7 +307,8 @@ test('installs the full-page Notes writing canvas styles', () => {
   const style = document.getElementById('memory-cue-notebook-polish');
   expect(style).toBeInstanceOf(HTMLStyleElement);
   expect(style.textContent).toContain('body[data-active-view="notebooks"] #notebook-editor-body');
-  expect(style.textContent).toContain('height: calc(100dvh - 151px)');
+  expect(style.textContent).not.toContain('height: calc(100dvh - 151px)');
+  expect(style.textContent).toContain('height: auto !important');
   expect(style.textContent).toContain('border-radius: 0 !important');
   expect(style.textContent).toContain('.scratch-notes-header-block');
   expect(style.textContent).toContain('display: none !important');

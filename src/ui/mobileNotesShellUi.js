@@ -836,7 +836,8 @@ const NOTEBOOK_POLISH_CSS = `
     color: var(--text-main, #1e293b);
   }
 
-  @media (max-width: 899px) {
+  /* Shared writing canvas: content sets the height at every screen size. */
+  @media (min-width: 0px) {
     body[data-active-view="notebooks"] #view-notebook {
       --notes-canvas-bg: #ffffff;
     }
@@ -891,6 +892,10 @@ const NOTEBOOK_POLISH_CSS = `
       ) !important;
     }
 
+    body[data-active-view="notebooks"] #scratch-notes-card {
+      min-height: 0;
+    }
+
     body[data-active-view="notebooks"] .note-editor-card {
       flex: 0 0 auto;
       width: 100%;
@@ -907,8 +912,9 @@ const NOTEBOOK_POLISH_CSS = `
     }
 
     body[data-active-view="notebooks"] .note-editor-toolbar {
-      position: relative;
-      top: auto;
+      position: sticky;
+      top: 0;
+      z-index: 20;
       width: 100%;
       margin: 0 !important;
       padding: 0.58rem 0.75rem 0.66rem !important;
@@ -929,16 +935,17 @@ const NOTEBOOK_POLISH_CSS = `
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-select,
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-menu-trigger,
     body[data-active-view="notebooks"] .note-editor-toolbar .rte-more-trigger {
-      min-height: 30px;
-      height: 30px;
+      min-height: 36px;
+      height: 36px;
+      border-radius: 0.6rem;
     }
 
     body[data-active-view="notebooks"] .note-content-wrapper,
     body[data-active-view="notebooks"] .note-editor-content-wrapper,
     body[data-active-view="notebooks"] .scratch-notes-body-wrapper {
-      flex: 0 0 calc(100dvh - 151px);
+      flex: 0 0 auto;
       width: 100%;
-      height: calc(100dvh - 151px);
+      height: auto;
       min-height: 0;
       margin: 0 !important;
       padding: 0 !important;
@@ -954,10 +961,10 @@ const NOTEBOOK_POLISH_CSS = `
     }
 
     body[data-active-view="notebooks"] #notebook-editor-body {
-      flex: 0 0 calc(100dvh - 151px);
+      flex: 0 0 auto;
       width: 100%;
-      height: calc(100dvh - 151px) !important;
-      min-height: calc(100dvh - 151px);
+      height: auto !important;
+      min-height: clamp(14rem, 40dvh, 24rem);
       max-height: none !important;
       margin: 0 !important;
       padding: 1.2rem 1.25rem calc(1.75rem + env(safe-area-inset-bottom, 0px)) !important;
@@ -966,10 +973,13 @@ const NOTEBOOK_POLISH_CSS = `
       background: var(--notes-canvas-bg, #ffffff) !important;
       box-shadow: none !important;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: visible;
+      overflow-wrap: anywhere;
       scroll-padding-bottom: 1.75rem;
-      font-size: 17px;
-      line-height: 1.58;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 1rem;
+      font-weight: 400 !important;
+      line-height: 1.65;
     }
 
     body[data-active-view="notebooks"] #notebook-editor-body p {
