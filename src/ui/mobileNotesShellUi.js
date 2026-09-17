@@ -847,6 +847,12 @@ const NOTEBOOK_POLISH_CSS = `
       --notes-canvas-bg: var(--surface-elevated, #172033);
     }
 
+    :is(html[data-theme="dark"], html[data-theme="professional-dark"]) body[data-active-view="notebooks"] :is(#notesHeaderActions .notes-overview-toggle, #notesHeaderActions .notes-header-action, .rte-more-trigger, .rte-more-panel) {
+      background: var(--surface-elevated, #172033);
+      color: var(--text-main, #e2e8f0);
+      border-color: var(--card-border, #475569);
+    }
+
     body[data-active-view="notebooks"] #main {
       /* Let content below the editor scroll clear of the fixed bottom navigation. */
       padding-bottom: calc(
