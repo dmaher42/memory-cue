@@ -847,7 +847,17 @@ const NOTEBOOK_POLISH_CSS = `
     }
 
     body[data-active-view="notebooks"] #main {
-      padding-bottom: 0 !important;
+      /* Let content below the editor scroll clear of the fixed bottom navigation. */
+      padding-bottom: calc(
+        var(--mobile-bottom-nav-height, 48px)
+        + 1rem
+        + env(safe-area-inset-bottom, 0px)
+      ) !important;
+      scroll-padding-bottom: calc(
+        var(--mobile-bottom-nav-height, 48px)
+        + 1rem
+        + env(safe-area-inset-bottom, 0px)
+      );
     }
 
     body[data-active-view="notebooks"] #view-notebook,
