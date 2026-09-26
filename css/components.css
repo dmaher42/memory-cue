@@ -193,6 +193,7 @@
 #notesOverviewPanel .notes-overview-category-list { display: grid; gap: 0.36rem; padding-bottom: 0.4rem; }
 #notesOverviewPanel.class-hub-is-open > #classHubsDisclosure { margin-top: 0; border-top: 0; }
 #notesOverviewPanel.class-hub-is-open > #classHubsDisclosure > summary { display: none; }
+#classHubsDisclosure .class-hub-row { background: var(--surface-elevated, #ffffff); }
 #notesOverviewPanel:not(.class-hub-is-open) #classHubsPanel {
   padding: 0;
   border: 0;

@@ -113,7 +113,7 @@ const NOTEBOOK_POLISH_CSS = `
     padding: 0.32rem 0.52rem;
     margin: 0.16rem 0.7rem 0.12rem;
     border-radius: 0.78rem;
-    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
+    background: var(--surface-elevated, #ffffff);
     box-shadow: none;
   }
 
@@ -162,7 +162,7 @@ const NOTEBOOK_POLISH_CSS = `
     padding: 0.62rem 0.85rem 0.62rem 2.35rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 82%, transparent);
     border-radius: 0.78rem;
-    background: color-mix(in srgb, var(--surface-elevated, #ffffff) 97%, #f8fafc 3%);
+    background: var(--surface-elevated, #ffffff);
     color: var(--text-main, #1e293b);
     font: inherit;
     font-size: 0.88rem;
@@ -198,7 +198,7 @@ const NOTEBOOK_POLISH_CSS = `
     padding: 0.18rem 0.62rem;
     border-radius: 999px;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
-    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
+    background: var(--surface-elevated, #ffffff);
     font-size: 0.72rem;
     line-height: 1;
     font-weight: 600;
@@ -242,7 +242,7 @@ const NOTEBOOK_POLISH_CSS = `
     margin: 0;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 72%, transparent);
     border-radius: 0.78rem;
-    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
+    background: var(--surface-elevated, #ffffff);
     overflow: clip;
   }
 
@@ -268,7 +268,7 @@ const NOTEBOOK_POLISH_CSS = `
 
   #view-notebook #notesOverviewList .notes-overview-category-toggle:hover,
   #view-notebook #notesOverviewList .notes-overview-category-toggle:focus-visible {
-    background: color-mix(in srgb, var(--accent-color, #0f766e) 8%, #ffffff 92%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 8%, var(--surface-elevated, #ffffff) 92%);
   }
 
   #view-notebook #notesOverviewList .notes-overview-category-toggle:focus-visible {
@@ -295,7 +295,7 @@ const NOTEBOOK_POLISH_CSS = `
     min-height: 1.35rem;
     padding: 0.08rem 0.38rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--accent-color, #0f766e) 9%, #f8fafc 91%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 9%, var(--surface-elevated, #f8fafc) 91%);
     color: color-mix(in srgb, var(--text-main, #1e293b) 74%, #64748b 26%);
     font-size: 0.72rem;
     line-height: 1;
@@ -344,13 +344,13 @@ const NOTEBOOK_POLISH_CSS = `
     margin: 0;
     border-radius: 0.72rem;
     border: 1px solid color-mix(in srgb, var(--card-border, rgba(30, 41, 59, 0.14)) 70%, transparent);
-    background: color-mix(in srgb, #ffffff 97%, #f8fafc 3%);
+    background: var(--surface-elevated, #ffffff);
     box-shadow: none;
   }
 
   #view-notebook #notesOverviewList .notes-overview-item:hover,
   #view-notebook #notesOverviewList .notes-overview-item:focus-within {
-    background: color-mix(in srgb, #ffffff 91%, #f8fafc 9%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 4%, var(--surface-elevated, #ffffff) 96%);
     border-color: color-mix(in srgb, var(--accent-color, #1e293b) 18%, transparent);
     outline: none;
     box-shadow: none;
@@ -359,7 +359,7 @@ const NOTEBOOK_POLISH_CSS = `
 
   #view-notebook #notesOverviewList .notes-overview-item.is-active {
     border-color: color-mix(in srgb, var(--accent-color, #1e293b) 32%, var(--card-border, #e2e8f0));
-    background: color-mix(in srgb, var(--accent-color, #1e293b) 6%, #ffffff 94%);
+    background: color-mix(in srgb, var(--accent-color, #1e293b) 6%, var(--surface-elevated, #ffffff) 94%);
     box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent-color, #1e293b) 72%, transparent);
   }
 
@@ -403,7 +403,7 @@ const NOTEBOOK_POLISH_CSS = `
     margin-top: 0.08rem;
     padding: 0.15rem 0.38rem;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, #ffffff 90%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, var(--surface-elevated, #ffffff) 90%);
     color: color-mix(in srgb, var(--accent-color, #0f766e) 82%, #0f172a 18%);
     font-size: 0.62rem;
     line-height: 1;
@@ -427,7 +427,7 @@ const NOTEBOOK_POLISH_CSS = `
 
   #view-notebook #notesOverviewList .notes-overview-item-actions:hover,
   #view-notebook #notesOverviewList .notes-overview-item-actions:focus-visible {
-    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, #ffffff 90%);
+    background: color-mix(in srgb, var(--accent-color, #0f766e) 10%, var(--surface-elevated, #ffffff) 90%);
     color: var(--text-main, #1e293b);
   }
 
