@@ -1812,49 +1812,12 @@ function initAssistant() {
 
       const dashboard = buildDashboard();
       const recentItems = Array.isArray(dashboard.recent) ? dashboard.recent.slice(0, 3) : [];
-      const todayCount = Array.isArray(dashboard.today) ? dashboard.today.length : 0;
-      const inboxCount = Array.isArray(dashboard.inbox) ? dashboard.inbox.length : 0;
-      const reminderCount = readRemindersForRecall().length;
 
       chatConversationContainer.innerHTML = '';
 
       const shell = document.createElement('div');
       shell.className = 'capture-home-shell w-full';
       shell.style.alignSelf = 'stretch';
-
-      const statsRow = document.createElement('div');
-      statsRow.className = 'flex flex-wrap gap-2';
-      [
-        { label: 'Today', value: todayCount },
-        { label: 'Reminders', value: reminderCount },
-        { label: 'Inbox', value: inboxCount },
-      ].forEach(({ label, value }) => {
-        const chip = document.createElement('span');
-        chip.className = 'badge badge-outline badge-sm';
-        chip.textContent = `${label} ${value}`;
-        statsRow.appendChild(chip);
-      });
-
-      const actionsRow = document.createElement('div');
-      actionsRow.className = 'capture-home-actions';
-
-      const notebooksButton = document.createElement('button');
-      notebooksButton.type = 'button';
-      notebooksButton.className = 'btn btn-sm btn-primary';
-      notebooksButton.textContent = 'Open notes';
-      notebooksButton.addEventListener('click', () => {
-        document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
-      });
-
-      const remindersButton = document.createElement('button');
-      remindersButton.type = 'button';
-      remindersButton.className = 'btn btn-sm btn-ghost';
-      remindersButton.textContent = 'Open reminders';
-      remindersButton.addEventListener('click', () => {
-        document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'reminders' } }));
-      });
-
-      actionsRow.append(notebooksButton, remindersButton);
 
       const recentSection = document.createElement('section');
       recentSection.className = 'capture-recent';
@@ -1875,14 +1838,14 @@ function initAssistant() {
         recentItems.forEach((item) => {
           const recentButton = document.createElement('button');
           recentButton.type = 'button';
-          recentButton.className = 'group w-full rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-left transition hover:border-primary/30 hover:bg-primary/5';
+          recentButton.className = 'capture-recent-note';
 
           const recentTitle = document.createElement('div');
-          recentTitle.className = 'text-sm font-medium text-base-content';
+          recentTitle.className = 'capture-recent-title';
           recentTitle.textContent = typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : 'Untitled note';
 
           const recentMeta = document.createElement('div');
-          recentMeta.className = 'mt-1 text-xs text-base-content/60';
+          recentMeta.className = 'capture-recent-meta';
           const metaParts = [];
           if (typeof item?.folder === 'string' && item.folder.trim()) {
             metaParts.push(item.folder.trim());
@@ -1895,12 +1858,14 @@ function initAssistant() {
 
           recentButton.append(recentTitle, recentMeta);
           recentButton.addEventListener('click', () => {
-            if (typeof openNoteFromDashboard === 'function' && item?.id) {
-              openNoteFromDashboard(item.id);
+            if (item?.id) {
+              document.dispatchEvent(new CustomEvent('thinkingBar:openNote', {
+                detail: { noteId: item.id },
+              }));
               return;
             }
 
-            document.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
+            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { view: 'notebooks' } }));
           });
 
           recentList.appendChild(recentButton);
@@ -1908,7 +1873,7 @@ function initAssistant() {
       }
 
       recentSection.appendChild(recentList);
-      shell.append(statsRow, actionsRow, recentSection);
+      shell.appendChild(recentSection);
       chatConversationContainer.appendChild(shell);
     };
 

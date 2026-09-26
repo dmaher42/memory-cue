@@ -574,6 +574,40 @@ describe('mobile capture result rendering', () => {
     expect(launchers[0].getAttribute('aria-controls')).toBe('chatConversationContainer');
   });
 
+  test('keeps Capture focused on recent notes and opens the selected note directly', () => {
+    window.__mobileMocks.getMessages = () => [];
+    window.__mobileMocks.buildDashboard = () => ({
+      recent: [
+        { id: 'reading', title: 'Reading group ideas', folder: 'School' },
+        { id: 'excursion', title: 'Excursion checklist', folder: 'Year 8' },
+        { id: 'training', title: 'Thursday training plan', folder: 'Coaching' },
+        { id: 'older', title: 'Older note', folder: 'Everyday' },
+      ],
+      today: [{ id: 'reading' }],
+      inbox: [{ id: 'older' }],
+    });
+    const openedNote = jest.fn();
+    document.addEventListener('thinkingBar:openNote', openedNote, { once: true });
+
+    loadMobileModule();
+    document.dispatchEvent(new window.Event('DOMContentLoaded'));
+
+    const home = document.querySelector('.capture-home-shell');
+    const recentButtons = home.querySelectorAll('.capture-recent button');
+    expect(recentButtons).toHaveLength(3);
+    expect(home.querySelectorAll('button')).toHaveLength(3);
+    expect(home.querySelector('.badge')).toBeNull();
+    expect(home.textContent).not.toMatch(/Open notes|Open reminders|Today|Inbox/);
+    expect(document.getElementById('thinkingBarInput')).not.toBeNull();
+    expect(document.getElementById('thinkingBarVoiceButton')).not.toBeNull();
+    expect(document.getElementById('wordRescueLauncher')).not.toBeNull();
+
+    recentButtons[1].click();
+    expect(openedNote).toHaveBeenCalledWith(expect.objectContaining({
+      detail: { noteId: 'excursion' },
+    }));
+  });
+
   test('opens Word help as an in-conversation choice while keeping one textbox', () => {
     window.__mobileMocks.getMessages = () => [];
     window.__mobileMocks.buildDashboard = () => ({ recent: [], today: [], inbox: [] });
