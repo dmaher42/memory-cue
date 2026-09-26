@@ -1394,6 +1394,30 @@ body #create-sheet .reminder-datetime-grid {
   gap: 0.65rem;
 }
 
+body #create-sheet .reminder-datetime-grid[hidden],
+body #create-sheet .reminder-add-time[hidden] {
+  display: none;
+}
+
+body #create-sheet .reminder-add-time {
+  align-self: flex-start;
+  min-height: 2rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-main, #1e293b);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body #create-sheet .reminder-add-time:focus-visible {
+  outline: 2px solid var(--accent-color, #0f766e);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
 body #create-sheet #dateFeedback {
   min-height: 0;
   margin: -0.08rem 0 0;

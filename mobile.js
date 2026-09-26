@@ -3035,6 +3035,10 @@ function openEditor() {
     const titleInput = sheet.querySelector('#reminderText');
     const detailsInput = sheet.querySelector('#reminderDetails');
     const dateInput = sheet.querySelector('#reminderDate');
+    const timeInput = sheet.querySelector('#reminderTime');
+    const dateTimeFields = sheet.querySelector('#reminderDateTimeFields');
+    const addTimeButton = sheet.querySelector('#reminderAddTime');
+    let dateTimeExpanded = false;
     const detailsDisclosure = sheet.querySelector('#reminderDetailsDisclosure');
     const optionsDisclosure = sheet.querySelector('#reminderOptionsDisclosure');
     const detailsSummary = sheet.querySelector('#reminderDetailsSummary');
@@ -3145,8 +3149,16 @@ function openEditor() {
     const syncDatePresets = () => {
       const values = getDatePresetValues();
       const currentDate = dateInput instanceof HTMLInputElement ? dateInput.value : '';
+      const hasCustomDate = Boolean(currentDate) && currentDate !== values.today && currentDate !== values.tomorrow;
+      const showFields = dateTimeExpanded || hasCustomDate || Boolean(timeInput?.value);
+      if (dateTimeFields instanceof HTMLElement) dateTimeFields.hidden = !showFields;
+      if (addTimeButton instanceof HTMLElement) {
+        addTimeButton.hidden = !currentDate || showFields;
+        addTimeButton.setAttribute('aria-expanded', showFields ? 'true' : 'false');
+      }
       datePresetButtons.forEach((button) => {
         const preset = button.dataset.reminderDatePreset;
+        if (preset === 'choose') button.setAttribute('aria-expanded', showFields ? 'true' : 'false');
         const isActive = preset === 'today'
           ? currentDate === values.today
           : preset === 'tomorrow'
@@ -3176,6 +3188,8 @@ function openEditor() {
         if (!(dateInput instanceof HTMLInputElement)) return;
         const preset = button.dataset.reminderDatePreset;
         if (preset === 'choose') {
+          dateTimeExpanded = true;
+          syncDatePresets();
           openNativeDatePicker();
           return;
         }
@@ -3189,6 +3203,13 @@ function openEditor() {
     });
     dateInput?.addEventListener('input', syncDatePresets);
     dateInput?.addEventListener('change', syncDatePresets);
+    timeInput?.addEventListener('input', syncDatePresets);
+    timeInput?.addEventListener('change', syncDatePresets);
+    addTimeButton?.addEventListener('click', () => {
+      dateTimeExpanded = true;
+      syncDatePresets();
+      timeInput?.focus();
+    });
 
     const syncDisclosureSummaries = () => {
       if (detailsSummary instanceof HTMLElement) {
@@ -3332,6 +3353,7 @@ function openEditor() {
       }
 
       syncRadiosFromSelect();
+      dateTimeExpanded = false;
       syncDatePresets();
       prepareDisclosureState();
       syncNotificationPresentation();

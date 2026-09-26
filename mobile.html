@@ -5748,9 +5748,10 @@ body, main, section, div, p, span, li {
                   <div class="reminder-date-preset-row" aria-label="Quick date choices">
                     <button type="button" class="reminder-date-preset" data-reminder-date-preset="today" aria-pressed="false">Today</button>
                     <button type="button" class="reminder-date-preset" data-reminder-date-preset="tomorrow" aria-pressed="false">Tomorrow</button>
-                    <button type="button" class="reminder-date-preset" data-reminder-date-preset="choose" aria-pressed="false">Choose date</button>
+                    <button type="button" class="reminder-date-preset" data-reminder-date-preset="choose" aria-pressed="false" aria-controls="reminderDateTimeFields" aria-expanded="false">Choose date</button>
                   </div>
-                  <div class="reminder-datetime-grid">
+                  <button type="button" id="reminderAddTime" class="reminder-add-time" aria-controls="reminderDateTimeFields" aria-expanded="false" hidden>Add time</button>
+                  <div id="reminderDateTimeFields" class="reminder-datetime-grid" hidden>
                     <div class="reminder-field">
                       <label class="reminder-field-label" for="reminderDate">Date</label>
                       <input id="reminderDate" type="date" class="reminder-field-input input input-bordered input-sm w-full text-sm text-base-content" />
