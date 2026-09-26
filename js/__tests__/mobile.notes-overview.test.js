@@ -168,6 +168,9 @@ describe('mobile Saved notes overview', () => {
     expect(notesTabClick).not.toHaveBeenCalled();
 
     const categoryButtons = Array.from(document.querySelectorAll('[data-notes-category-toggle]'));
+    const categories = document.querySelector('[data-notes-categories]');
+    expect(categories.open).toBe(false);
+    categories.open = true;
     expect(categoryButtons.map((button) => button.querySelector('.notes-overview-category-name').textContent))
       .toEqual(['School', 'Coaching', 'Everyday', 'No category']);
     expect(categoryButtons.every((button) => button.getAttribute('aria-expanded') === 'false')).toBe(true);
@@ -216,6 +219,7 @@ describe('mobile Saved notes overview', () => {
     search.value = '';
     search.dispatchEvent(new window.Event('input', { bubbles: true }));
     expect(document.querySelector('[data-notes-recent]')).not.toBeNull();
+    expect(document.querySelector('[data-notes-categories]').open).toBe(true);
     expect(document.querySelector('[data-notes-category-toggle="school"]').getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -226,6 +230,7 @@ describe('mobile Saved notes overview', () => {
     document.dispatchEvent(new window.Event('DOMContentLoaded'));
 
     expect(document.querySelector('[data-notes-recent]')).toBeNull();
+    expect(document.getElementById('notesOverviewList').textContent).toContain('No saved notes yet.');
   });
 
   test('keeps notes beyond the old thirty-note limit reachable in their category', () => {

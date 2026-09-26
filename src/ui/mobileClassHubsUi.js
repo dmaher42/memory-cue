@@ -149,7 +149,7 @@ export function initMobileClassHubsUi(options = {}) {
     }
   };
 
-  const focusSoon = (selector, { resetMainScroll = false } = {}) => {
+  const focusSoon = (selector, { resetMainScroll = false, preventScroll = true } = {}) => {
     setTimeout(() => {
       if (resetMainScroll) {
         const mainElement = rootElement.closest('main');
@@ -159,7 +159,7 @@ export function initMobileClassHubsUi(options = {}) {
       }
       const target = rootElement.querySelector(selector);
       if (target instanceof HTMLElement) {
-        try { target.focus({ preventScroll: true }); } catch { target.focus(); }
+        try { target.focus({ preventScroll }); } catch { target.focus(); }
       }
     }, 0);
   };
@@ -250,7 +250,7 @@ export function initMobileClassHubsUi(options = {}) {
         activeHubId = result.folder.id;
         statusMessage = result.status === 'duplicate' ? 'That class already exists. Opened it for you.' : 'Class hub created.';
         render();
-        focusSoon('[data-class-hub-heading]');
+        focusSoon('[data-class-hub-heading]', { resetMainScroll: true });
         return;
       }
       if (error) {
@@ -471,7 +471,7 @@ export function initMobileClassHubsUi(options = {}) {
       const escapedId = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
         ? CSS.escape(focusHubIdAfterBack)
         : focusHubIdAfterBack.replace(/["\\]/g, '\\$&');
-      focusSoon(`[data-class-hub-open="${escapedId}"]`);
+      focusSoon(`[data-class-hub-open="${escapedId}"]`, { preventScroll: false });
       focusHubIdAfterBack = null;
     }
   };
@@ -568,6 +568,9 @@ export function initMobileClassHubsUi(options = {}) {
       statusMessage = 'That class hub is no longer available.';
     }
     rootElement.closest('#notesOverviewPanel')?.classList.toggle('class-hub-is-open', Boolean(activeHub));
+    // A linked reminder can open a hub while its overview section is collapsed.
+    const disclosure = rootElement.closest('#classHubsDisclosure');
+    if (activeHub && disclosure) disclosure.open = true;
     document.body?.classList.toggle('class-hub-open', Boolean(activeHub));
     if (activeHub) renderHub(activeHub);
     else renderList();
@@ -587,7 +590,7 @@ export function initMobileClassHubsUi(options = {}) {
       activeHubId = button.dataset.classHubOpen;
       statusMessage = '';
       render();
-      focusSoon('[data-class-hub-heading]');
+      focusSoon('[data-class-hub-heading]', { resetMainScroll: true });
       return;
     }
     if (button.dataset.classHubBack) {

@@ -162,6 +162,37 @@
 }
 .class-hub-action:disabled { opacity: 0.56; cursor: wait; }
 /* Keep the overview light; the full hub keeps its existing detail layout. */
+#notesOverviewPanel .notes-overview-disclosure {
+  margin-top: 0.45rem;
+  border-top: 1px solid var(--card-border, rgba(30, 41, 59, 0.14));
+  color: var(--text-main, #1e293b);
+}
+#notesOverviewPanel .notes-overview-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0.5rem 0.2rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+#notesOverviewPanel .notes-overview-disclosure > summary::-webkit-details-marker { display: none; }
+#notesOverviewPanel .notes-overview-disclosure > summary::after {
+  content: '\203a';
+  font-size: 1.2rem;
+  transition: transform 120ms ease;
+}
+#notesOverviewPanel .notes-overview-disclosure[open] > summary::after { transform: rotate(90deg); }
+#notesOverviewPanel .notes-overview-disclosure > summary:focus-visible {
+  outline: 3px solid var(--accent-color, #0f766e);
+  outline-offset: 2px;
+  border-radius: 0.4rem;
+}
+#notesOverviewPanel .notes-overview-category-list { display: grid; gap: 0.36rem; padding-bottom: 0.4rem; }
+#notesOverviewPanel.class-hub-is-open > #classHubsDisclosure { margin-top: 0; border-top: 0; }
+#notesOverviewPanel.class-hub-is-open > #classHubsDisclosure > summary { display: none; }
 #notesOverviewPanel:not(.class-hub-is-open) #classHubsPanel {
   padding: 0;
   border: 0;

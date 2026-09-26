@@ -4594,6 +4594,7 @@ const initMobileNotes = () => {
   let notesOverviewSortValue = 'recent';
   let notesOverviewStateValue = 'all';
   let notesOverviewOpenCategoryId = null;
+  let notesOverviewCategoriesExpanded = false;
   let notesMode = 'notebooks';
   let skipAutoSelectOnce = false;
   let currentNoteSections = [];
@@ -4874,6 +4875,10 @@ const initMobileNotes = () => {
     if (!(notesOverviewList instanceof HTMLElement)) {
       return;
     }
+    const previousCategories = notesOverviewList.querySelector('[data-notes-categories]');
+    if (previousCategories) {
+      notesOverviewCategoriesExpanded = previousCategories.open;
+    }
     notesOverviewList.innerHTML = '';
     const items = getNotesOverviewItems();
     const hasSearch = Boolean((notesOverviewQuery || '').trim());
@@ -4935,12 +4940,23 @@ const initMobileNotes = () => {
 
       recentSection.append(recentHeading, recentList);
       notesOverviewList.appendChild(recentSection);
+    } else {
+      const empty = document.createElement('p');
+      empty.className = 'notes-overview-empty-copy';
+      empty.textContent = 'No saved notes yet. Tap + New to start.';
+      notesOverviewList.appendChild(empty);
     }
 
-    const label = document.createElement('div');
-    label.className = 'notes-overview-categories-label';
+    const categories = document.createElement('details');
+    categories.className = 'notes-overview-disclosure';
+    categories.dataset.notesCategories = 'true';
+    categories.open = notesOverviewCategoriesExpanded;
+    const label = document.createElement('summary');
     label.textContent = 'Categories';
-    notesOverviewList.appendChild(label);
+    const categoryList = document.createElement('div');
+    categoryList.className = 'notes-overview-category-list';
+    categories.append(label, categoryList);
+    notesOverviewList.appendChild(categories);
 
     sections.forEach((category, index) => {
       const section = document.createElement('section');
@@ -5002,7 +5018,7 @@ const initMobileNotes = () => {
 
       section.appendChild(toggle);
       section.appendChild(content);
-      notesOverviewList.appendChild(section);
+      categoryList.appendChild(section);
     });
     updateListSelection();
   };

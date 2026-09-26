@@ -58,7 +58,7 @@ describe('mobile Class Hubs UI', () => {
 
   beforeEach(() => {
     document.head.innerHTML = '';
-    document.body.innerHTML = '<main id="main"><section id="classHubsPanel" aria-label="Class hubs"></section></main>';
+    document.body.innerHTML = '<main id="main"><section id="notesOverviewPanel"><details id="classHubsDisclosure"><summary>Class Hubs</summary><section id="classHubsPanel" aria-label="Class hubs"></section></details></section></main>';
     folders = [
       { id: 'school', name: 'School', order: 0 },
       { id: 'class-existing', name: 'Year 9 English', order: 1, kind: 'class-hub' },
@@ -338,6 +338,7 @@ describe('mobile Class Hubs UI', () => {
   });
 
   test('returns to the requested hub with a live status and heading focus', async () => {
+    expect(document.getElementById('classHubsDisclosure').open).toBe(false);
     document.getElementById('main').scrollTop = 240;
     document.dispatchEvent(new CustomEvent('memoryCue:classHubOpen', {
       detail: {
@@ -353,6 +354,12 @@ describe('mobile Class Hubs UI', () => {
       .toBe('Saved: 1 note and 2 follow-ups.');
     expect(document.activeElement).toBe(heading);
     expect(document.getElementById('main').scrollTop).toBe(0);
+    expect(document.getElementById('classHubsDisclosure').open).toBe(true);
+    document.querySelector('[data-class-hub-back]').click();
+    await flush();
+    expect(document.getElementById('classHubsDisclosure').open).toBe(true);
+    expect(document.activeElement.dataset.classHubOpen).toBe('class-existing');
+    expect(document.getElementById('notesOverviewPanel').classList.contains('class-hub-is-open')).toBe(false);
   });
 
   test('places New note mode beside the one existing Capture input', () => {

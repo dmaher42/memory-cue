@@ -5004,7 +5004,6 @@ body, main, section, div, p, span, li {
         <div class="mobile-view-inner mx-auto w-full px-0 pt-2 pb-2 space-y-0" style="padding: 0 !important; max-width: 100%;">
         <section id="notesOverviewPanel" class="memory-glass-card-soft p-2 m-1">
           <h2 class="sr-only">Notes</h2>
-          <section id="classHubsPanel" aria-label="Class hubs"></section>
           <div class="notes-overview-search-shell">
             <label class="sr-only" for="notesOverviewSearch">Search saved notes</label>
             <span class="notes-overview-search-icon" aria-hidden="true">⌕</span>
@@ -5018,6 +5017,10 @@ body, main, section, div, p, span, li {
             />
           </div>
           <div id="notesOverviewList" class="space-y-2 mt-2" aria-live="polite"></div>
+          <details id="classHubsDisclosure" class="notes-overview-disclosure">
+            <summary>Class Hubs</summary>
+            <section id="classHubsPanel" aria-label="Class hubs"></section>
+          </details>
         </section>
         <!-- notebook view header removed to keep UI minimal -->
         <!-- Enhanced Notebook Card -->
