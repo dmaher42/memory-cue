@@ -2985,7 +2985,7 @@ body #view-reminders .reminder-resizable .reminder-resize-details {
 body #view-reminders .reminder-resizable .reminder-resize-handle {
   display: block; position: absolute; bottom: 0; left: 0; width: 100%; height: 16px;
   border: 0; border-radius: 0 0 .78rem .78rem; background: transparent;
-  color: var(--text-muted, #64748b); cursor: ns-resize; touch-action: none;
+  color: var(--text-muted, #64748b); cursor: default; touch-action: none;
   user-select: none; line-height: 14px; padding: 0;
 }
 body #view-reminders .reminder-resize-handle:focus-visible { outline: 2px solid var(--accent-color, #0d9488); outline-offset: -2px; }

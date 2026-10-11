@@ -46,8 +46,6 @@ export function attachReminderCardResize(card, reminder) {
   handle.dataset.noSwipe = 'true';
   handle.draggable = false;
   handle.setAttribute('aria-label', `Resize reminder: ${card.dataset.title}`);
-  handle.title = 'Drag to resize; use Up and Down arrows';
-  handle.textContent = '━';
   let gesture;
   function update(value) {
     const next = height(value);
