@@ -9367,12 +9367,16 @@ export async function initReminders(sel = {}) {
         titleWrapper.className = 'reminder-title reminder-row-title';
         titleWrapper.dataset.reminderTitle = 'true';
         const titleToggle = document.createElement('span');
-        titleToggle.dataset.role = 'reminder-today-toggle';
         titleToggle.className = 'reminder-title-toggle cursor-pointer';
         titleToggle.setAttribute('role', 'button');
         titleToggle.tabIndex = 0;
+        bindReminderControlAction(titleToggle, openReminder);
+        titleToggle.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); openReminder(); }
+        });
         titleToggle.textContent = reminderTitle;
-        updatePinToggleVisualState(titleToggle, summary.pinToToday);
+        titleToggle.classList.toggle(PIN_TOGGLE_PINNED_CLASS, summary.pinToToday);
+        titleToggle.classList.toggle(PIN_TOGGLE_UNPINNED_CLASS, !summary.pinToToday);
         titleWrapper.appendChild(titleToggle);
         rowMain.appendChild(titleWrapper);
 
