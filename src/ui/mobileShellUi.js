@@ -788,7 +788,7 @@ export const initSettingsModal = () => {
     document.getElementById('settingsCloseBtn') ||
     document.getElementById('closeSettings');
 
-  if (!openButtons.length || !(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) {
+  if (!(modal instanceof HTMLElement) || !(closeBtn instanceof HTMLElement)) {
     return;
   }
 

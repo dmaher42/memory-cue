@@ -5849,6 +5849,14 @@ body, main, section, div, p, span, li {
       </header>
       <div class="card bg-base-100 border-0">
         <div class="card-body gap-4 compact">
+          <h2 class="card-title text-base">Reminder display</h2>
+          <label class="reminder-resize-setting"><input id="reminderResizableCards" type="checkbox" /> Resizable cards</label>
+          <p class="text-sm text-base-content/70">Drag the bottom handle of a reminder to show more detail. Card sizes are remembered on this device. Turn off to return to compact cards.</p>
+          <button id="resetReminderCardSizes" class="btn btn-outline" type="button">Reset card sizes</button>
+        </div>
+      </div>
+      <div class="card bg-base-100 border-0">
+        <div class="card-body gap-4 compact">
           <h2 class="card-title text-base">Account Sync</h2>
           <p class="text-sm text-base-content/70">Memory Cue syncs notes and reminders automatically while you are signed in.</p>
           <div class="card-actions flex-col gap-2">

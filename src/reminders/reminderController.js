@@ -1,3 +1,4 @@
+import { initReminderCardDisplay, attachReminderCardResize } from '../ui/reminderCardDisplay.js';
 import { initAuth, startSignInFlow, startSignOutFlow } from '../../js/auth.js';
 import {
   saveReminder,
@@ -543,6 +544,7 @@ function getReminderBoardColumnDefinition(columnKey) {
 let activeReminderControllerApi = null;
 
 export async function initReminders(sel = {}) {
+  initReminderCardDisplay();
   const $ = (s) => (typeof s === 'string' && s ? document.querySelector(s) : null);
   const $$ = (s) => (typeof s === 'string' && s ? Array.from(document.querySelectorAll(s)) : []);
 
@@ -9424,6 +9426,7 @@ export async function initReminders(sel = {}) {
         bindReminderControlAction(actionsBtn, () => openReminderQuickActions(reminder));
         controls.append(actionsBtn);
         itemEl.append(toggleBtn, rowMain, controls);
+        attachReminderCardResize(itemEl, reminder);
 
         itemEl.addEventListener('click', (event) => {
           if (event.defaultPrevented) return;
