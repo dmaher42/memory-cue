@@ -2992,3 +2992,12 @@ body #view-reminders .reminder-resize-handle:focus-visible { outline: 2px solid 
 
 #settingsModal .reminder-resize-setting { display: flex; align-items: center; gap: 12px; cursor: pointer; }
 #settingsModal #reminderResizableCards { appearance: auto; width: 22px; height: 22px; flex: 0 0 22px; margin: 0; accent-color: #0d9488; }
+body #view-reminders #reminderList .reminder-stream-row.reminder-resizable {
+  display: grid !important; grid-template-rows: minmax(0, 1fr) !important;
+}
+body #view-reminders #reminderList .reminder-resizable .reminder-row-main {
+  justify-content: flex-start !important; align-self: stretch !important;
+}
+body #view-reminders #reminderList .reminder-resizable .reminder-stream-checkbox,
+body #view-reminders #reminderList .reminder-resizable .task-toolbar { align-self: start !important; }
+body #view-reminders #reminderList .reminder-resizable .reminder-resize-handle { text-align: center !important; }
