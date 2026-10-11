@@ -37,3 +37,11 @@ test('cards can shrink to the compact minimum and remember it',()=>{
  for(let i=0;i<8;i++)handle.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
  expect(a.style.getPropertyValue('--reminder-card-height')).toBe('60px');expect(card(load()).style.getPropertyValue('--reminder-card-height')).toBe('60px');
 });
+
+test('new reminders start at minimum while another card has a saved larger size',()=>{
+ localStorage.setItem('memoryCue:reminderCardDisplay',JSON.stringify({enabled:true,heights:{existing:240}}));
+ const api=load();api.initReminderCardDisplay();const existing=card(api,'existing');const fresh=card(api,'new-reminder');
+ expect(existing.style.getPropertyValue('--reminder-card-height')).toBe('240px');
+ expect(fresh.style.getPropertyValue('--reminder-card-height')).toBe('60px');
+ expect(card(load(),'new-reminder').style.getPropertyValue('--reminder-card-height')).toBe('60px');
+});
