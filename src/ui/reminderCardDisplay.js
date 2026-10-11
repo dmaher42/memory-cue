@@ -6,7 +6,7 @@ function read() {
   catch { return { enabled: false, heights: {} }; }
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(preferences)); } catch { /* Still usable for this visit. */ } }
-function height(value) { return Math.max(96, Math.min(480, Number(value) || 120)); }
+function height(value) { return Math.max(60, Math.min(480, Number(value) || 60)); }
 function apply(card) {
   card.classList.toggle('reminder-resizable', preferences.enabled);
   if (preferences.enabled) card.style.setProperty('--reminder-card-height', `${height(preferences.heights[card.dataset.id])}px`);
@@ -75,7 +75,7 @@ export function attachReminderCardResize(card, reminder) {
   handle.addEventListener('keydown', (event) => {
     if (!['ArrowUp', 'ArrowDown', 'Home'].includes(event.key)) return;
     event.preventDefault(); event.stopPropagation();
-    preferences.heights[card.dataset.id] = update(event.key === 'Home' ? 120 : card.getBoundingClientRect().height + (event.key === 'ArrowDown' ? 24 : -24)); save();
+    preferences.heights[card.dataset.id] = update(event.key === 'Home' ? 60 : card.getBoundingClientRect().height + (event.key === 'ArrowDown' ? 24 : -24)); save();
   });
   card.append(handle); apply(card);
 }
